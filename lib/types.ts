@@ -131,3 +131,35 @@ export interface Contract {
   status: ContractStatus;
   value: number;
 }
+
+/**
+ * The five standard account classes (IFRS / Dynamics 365 "main account type" /
+ * Odoo "account type" all agree on this split — everything else is a
+ * sub-category underneath one of these five).
+ */
+export type AccountClass = "asset" | "liability" | "equity" | "income" | "expense";
+
+export interface LedgerAccountNode {
+  id: string;
+  code: string;
+  name: string;
+  accountClass: AccountClass;
+  /** Odoo-style account sub-type, e.g. "asset_cash", "liability_payable". */
+  category: string;
+  parentId?: string;
+  /** Group/header row that only ever shows a rolled-up total of its children. */
+  isGroup?: boolean;
+}
+
+export interface LedgerDrillDownItem {
+  label: string;
+  detail?: string;
+  amount: number;
+  date?: string;
+}
+
+export interface LedgerAccountBalance extends LedgerAccountNode {
+  balance: number;
+  drillDown: LedgerDrillDownItem[];
+  depth: number;
+}
