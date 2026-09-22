@@ -19,6 +19,7 @@ import {
 import { NAV_ITEMS, PLAN_LABEL, tierMeets } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
@@ -29,9 +30,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-4">
+      <PlotGridMotif variant="inverted" className="opacity-[0.07]" />
+      <SidebarHeader className="relative px-3 py-4">
         <Link href="/dashboard" className="flex items-center gap-2.5 px-1">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-[color-mix(in_oklch,var(--sidebar-primary),black_15%)] text-sidebar-primary-foreground shadow-sm">
             <Building2 className="size-4.5" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
@@ -65,7 +67,7 @@ export function AppSidebar() {
                           "relative transition-colors duration-150",
                           locked && "opacity-55",
                           active &&
-                            "before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary",
+                            "bg-gradient-to-r from-sidebar-primary/20 via-sidebar-primary/5 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary",
                         )}
                       >
                         <Link href={locked ? "/dashboard/settings/billing" : item.href}>
@@ -88,8 +90,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3">
-        <div className="relative overflow-hidden rounded-lg bg-sidebar-accent/60 p-3 ring-1 ring-sidebar-border group-data-[collapsible=icon]:hidden">
-          <div className="absolute -right-4 -top-6 size-20 rounded-full bg-sidebar-primary/10 blur-2xl" />
+        <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3 ring-1 ring-sidebar-border group-data-[collapsible=icon]:hidden">
+          <div className="absolute -right-4 -top-6 size-20 rounded-full bg-sidebar-primary/15 blur-2xl" />
           <div className="relative mb-1.5 flex items-center gap-1.5 text-sidebar-accent-foreground">
             <Sparkles className="size-3.5 text-sidebar-primary" />
             <span className="text-xs font-semibold">{PLAN_LABEL[tier]} plan</span>
