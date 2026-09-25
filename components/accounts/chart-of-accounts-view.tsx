@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import {
   ChevronRight,
   ChevronDown,
+  Folder,
+  FolderOpen,
+  FileText,
   Landmark,
   TrendingUp,
   TrendingDown,
@@ -79,9 +82,9 @@ export function ChartOfAccountsView() {
 
   const byId = React.useMemo(() => new Map(tree.map((n) => [n.id, n])), [tree]);
 
-  const totalAssets = byId.get("1000")?.balance ?? 0;
-  const totalLiabilities = byId.get("2000")?.balance ?? 0;
-  const totalEquity = byId.get("3000")?.balance ?? 0;
+  const totalAssets = byId.get("03")?.balance ?? 0;
+  const totalLiabilities = byId.get("02")?.balance ?? 0;
+  const totalEquity = byId.get("01")?.balance ?? 0;
   const balanced = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 1;
 
   function isAncestorCollapsed(node: LedgerAccountBalance): boolean {
@@ -102,6 +105,14 @@ export function ChartOfAccountsView() {
     if (search && !matchesSearch(n)) return false;
     if (!search && isAncestorCollapsed(n)) return false;
     return true;
+  });
+
+  // Precomputed so the render below never mutates a variable mid-map — each
+  // leaf row's position among leaves only, for the zebra stripe.
+  const leafZebraIndex = new Map<string, number>();
+  visible.forEach((n) => {
+    const hasChildren = tree.some((c) => c.parentId === n.id);
+    if (!hasChildren) leafZebraIndex.set(n.id, leafZebraIndex.size);
   });
 
   function toggle(id: string) {
@@ -167,69 +178,99 @@ export function ChartOfAccountsView() {
           </Select>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border/60">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Code</th>
-                <th className="pb-2.5 font-medium">Account</th>
-                <th className="pb-2.5 font-medium">Class</th>
-                <th className="pb-2.5 text-right font-medium">Balance</th>
+              <tr className="border-b border-border/70 bg-secondary/40 text-left text-xs text-muted-foreground">
+                <th className="py-2.5 pl-3 font-medium">Code</th>
+                <th className="py-2.5 font-medium">Account</th>
+                <th className="py-2.5 font-medium">Class</th>
+                <th className="py-2.5 pr-3 text-right font-medium">Balance</th>
               </tr>
             </thead>
             <tbody>
               {visible.map((n, i) => {
-                const hasChildren = tree.some((c) => c.parentId === n.id);
-                const isCollapsed = collapsed.has(n.id);
-                const negative = n.balance < 0;
-                return (
-                  <motion.tr
-                    key={n.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: Math.min(i, 12) * 0.02 }}
-                    className={cn(
-                      "border-b border-border/40 transition-colors last:border-0",
-                      n.isGroup ? "bg-secondary/30" : "cursor-pointer hover:bg-secondary/40",
-                    )}
-                    onClick={() => !n.isGroup && setSelected(n)}
-                  >
-                    <td className="py-2.5 font-mono text-xs text-muted-foreground">{n.code}</td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-1.5" style={{ paddingLeft: `${n.depth * 18}px` }}>
-                        {hasChildren ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggle(n.id);
-                            }}
-                            className="flex size-4 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
-                          >
-                            {isCollapsed ? <ChevronRight className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-                          </button>
-                        ) : (
-                          <span className="size-4 shrink-0" />
-                        )}
-                        <span className={cn(n.isGroup ? "font-semibold" : "font-medium")}>{n.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5">
-                      <Badge variant="outline" className={cn("text-[10px] capitalize", CLASS_STYLES[n.accountClass])}>
-                        {n.accountClass}
-                      </Badge>
-                    </td>
-                    <td
+                  const hasChildren = tree.some((c) => c.parentId === n.id);
+                  const isCollapsed = collapsed.has(n.id);
+                  const negative = n.balance < 0;
+
+                  // Darker shading for higher-level groups, a light zebra
+                  // stripe for leaf accounts — mirrors how level-wise COA
+                  // screens (e.g. Numbers ERP) shade folder vs. account rows.
+                  const rowBg = hasChildren
+                    ? ["bg-secondary/60", "bg-secondary/40", "bg-secondary/20"][Math.min(n.depth, 2)]
+                    : (leafZebraIndex.get(n.id) ?? 0) % 2 === 0
+                      ? "bg-transparent"
+                      : "bg-secondary/10";
+
+                  return (
+                    <motion.tr
+                      key={n.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: Math.min(i, 12) * 0.02 }}
                       className={cn(
-                        "py-2.5 text-right tabular-nums",
-                        n.isGroup ? "font-semibold" : "font-medium",
-                        negative && "text-destructive",
+                        "border-b border-border/30 transition-colors last:border-0",
+                        rowBg,
+                        !hasChildren && "cursor-pointer hover:bg-secondary/40",
                       )}
+                      onClick={() => !hasChildren && setSelected(n)}
                     >
-                      {negative ? "-" : ""}{formatLedgerBalance(n.balance)}
-                    </td>
-                  </motion.tr>
-                );
+                      <td className="py-2 pl-3 font-mono text-xs text-muted-foreground">{n.code}</td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-1.5">
+                          {Array.from({ length: n.depth }).map((_, d) => (
+                            <span key={d} className="flex h-4 w-4 shrink-0 items-center justify-center">
+                              <span className="h-full w-px bg-border/50" />
+                            </span>
+                          ))}
+                          {hasChildren ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggle(n.id);
+                              }}
+                              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                            >
+                              {isCollapsed ? <ChevronRight className="size-3.5 shrink-0" /> : <ChevronDown className="size-3.5 shrink-0" />}
+                              {isCollapsed ? (
+                                <Folder className="size-3.5 shrink-0 text-primary/70" />
+                              ) : (
+                                <FolderOpen className="size-3.5 shrink-0 text-primary/70" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-1.5 pl-[19px] text-muted-foreground/60">
+                              <FileText className="size-3.5 shrink-0" />
+                            </span>
+                          )}
+                          <span
+                            className={cn(
+                              hasChildren ? "font-semibold" : "font-medium",
+                              n.depth === 0 && "text-[15px]",
+                            )}
+                          >
+                            {n.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2">
+                        <Badge variant="outline" className={cn("text-[10px] capitalize", CLASS_STYLES[n.accountClass])}>
+                          {n.accountClass}
+                        </Badge>
+                      </td>
+                      <td
+                        className={cn(
+                          "py-2 pr-3 text-right tabular-nums",
+                          hasChildren ? "font-semibold" : "font-medium",
+                          negative && "text-destructive",
+                        )}
+                      >
+                        {negative ? "-" : ""}{formatLedgerBalance(n.balance)}
+                      </td>
+                    </motion.tr>
+                  );
               })}
             </tbody>
           </table>
