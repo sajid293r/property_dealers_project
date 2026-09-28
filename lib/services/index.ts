@@ -10,6 +10,12 @@ import {
   roles,
   systemUsers,
   vouchers,
+  quotations,
+  salesInvoices,
+  postDatedCheques,
+  serviceInvoices,
+  payrollAdjustments,
+  leaveRequests,
 } from "@/lib/mock-data";
 import { contracts } from "@/lib/mock-data/expenses";
 
@@ -62,4 +68,28 @@ export const systemUsersService = {
 
 export const vouchersService = {
   list: () => withLatency(vouchers),
+};
+
+export const quotationsService = {
+  list: () => withLatency(quotations),
+};
+
+export const salesInvoicesService = {
+  list: () => withLatency(salesInvoices),
+};
+
+export const postDatedChequesService = {
+  list: () => withLatency(postDatedCheques),
+};
+
+export const serviceInvoicesService = {
+  list: () => withLatency(serviceInvoices),
+};
+
+export const payrollAdjustmentsService = {
+  list: () => withLatency(payrollAdjustments),
+};
+
+export const leaveRequestsService = {
+  list: () => withLatency(leaveRequests),
 };

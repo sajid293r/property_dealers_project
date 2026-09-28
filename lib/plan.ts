@@ -16,6 +16,11 @@ import {
   ClipboardList,
   UserCog,
   ScrollText,
+  FileStack,
+  ReceiptText,
+  CalendarClock,
+  Wrench,
+  Palmtree,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,7 +47,11 @@ export function tierMeets(current: PlanTier, minimum: PlanTier) {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minTier: "basic", section: "Overview" },
   { href: "/dashboard/crm", label: "Leads (CRM)", icon: Users2, minTier: "moderate", section: "Sales & CRM" },
+  { href: "/dashboard/quotations", label: "Quotations", icon: FileStack, minTier: "basic", section: "Sales & CRM" },
   { href: "/dashboard/deals", label: "Deals & Bookings", icon: Handshake, minTier: "basic", section: "Sales & CRM" },
+  { href: "/dashboard/sales-invoices", label: "Sales Invoices", icon: ReceiptText, minTier: "basic", section: "Sales & CRM" },
+  { href: "/dashboard/cheques", label: "Post-Dated Cheques", icon: CalendarClock, minTier: "moderate", section: "Sales & CRM" },
+  { href: "/dashboard/service-invoices", label: "Service Invoices", icon: Wrench, minTier: "moderate", section: "Sales & CRM" },
   { href: "/dashboard/contracts", label: "Contracts", icon: FileSignature, minTier: "moderate", section: "Sales & CRM" },
   { href: "/dashboard/inventory", label: "Inventory / Units", icon: Building2, minTier: "basic", section: "Inventory" },
   { href: "/dashboard/plot-map", label: "Plot Map", icon: MapPinned, minTier: "premium", section: "Inventory" },
@@ -52,6 +61,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/reports", label: "Reports", icon: FileText, minTier: "moderate", section: "Finance" },
   { href: "/dashboard/staff", label: "Staff", icon: UserSquare2, minTier: "basic", section: "People" },
   { href: "/dashboard/payroll", label: "Payroll", icon: Banknote, minTier: "moderate", section: "People" },
+  { href: "/dashboard/leave", label: "Leave", icon: Palmtree, minTier: "moderate", section: "People" },
   { href: "/dashboard/customers", label: "Customers", icon: Wallet, minTier: "basic", section: "People" },
   {
     href: "/dashboard/administration/company-profile",

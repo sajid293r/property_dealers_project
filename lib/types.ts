@@ -87,6 +87,43 @@ export interface StaffMember {
   avatarUrl: string;
 }
 
+export type PayrollAdjustmentType = "increment" | "deduction" | "allowance" | "loan";
+export type PayrollAdjustmentStatus = "pending" | "approved" | "rejected";
+
+export interface PayrollAdjustment {
+  id: string;
+  staffId: string;
+  type: PayrollAdjustmentType;
+  amount: number;
+  reason: string;
+  effectiveDate: string;
+  status: PayrollAdjustmentStatus;
+  /** Increment only — lets an approval apply the new figure to the staff record. */
+  previousSalary?: number;
+  newSalary?: number;
+  createdBy: string;
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
+export type LeaveType = "Casual" | "Sick" | "Annual" | "Unpaid";
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+export interface LeaveRequest {
+  id: string;
+  staffId: string;
+  type: LeaveType;
+  fromDate: string;
+  toDate: string;
+  days: number;
+  reason: string;
+  status: LeaveStatus;
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+}
+
 export type AccountType = "cash" | "bank" | "petty";
 
 export interface Account {
@@ -132,6 +169,72 @@ export interface Contract {
   endDate: string;
   status: ContractStatus;
   value: number;
+}
+
+export type QuotationStatus = "draft" | "sent" | "accepted" | "expired" | "converted";
+
+export interface Quotation {
+  id: string;
+  number: string;
+  date: string;
+  validUntil: string;
+  customerId: string;
+  unitId: string;
+  salesPerson: string;
+  price: number;
+  discountPercent: number;
+  paymentTerms: string;
+  remarks?: string;
+  status: QuotationStatus;
+  createdAt: string;
+}
+
+export type SalesInvoiceStatus = "unpaid" | "paid";
+
+export interface SalesInvoice {
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  customerId: string;
+  dealId?: string;
+  description: string;
+  amount: number;
+  paymentMode: string;
+  status: SalesInvoiceStatus;
+  createdAt: string;
+}
+
+export type ChequeStatus = "in_hand" | "deposited" | "cleared" | "bounced";
+
+export interface PostDatedCheque {
+  id: string;
+  chequeNo: string;
+  bankName: string;
+  amount: number;
+  chequeDate: string;
+  receivedDate: string;
+  customerId: string;
+  dealId?: string;
+  status: ChequeStatus;
+  remarks?: string;
+}
+
+export type ServiceInvoiceStatus = "unpaid" | "paid";
+export type ServiceType = "Maintenance" | "Security" | "Development Charges" | "Utility" | "Other";
+
+export interface ServiceInvoice {
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  customerId: string;
+  unitId?: string;
+  serviceType: ServiceType;
+  period: string;
+  amount: number;
+  status: ServiceInvoiceStatus;
+  createdAt: string;
 }
 
 /**

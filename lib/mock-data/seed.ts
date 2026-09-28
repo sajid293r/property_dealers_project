@@ -19,8 +19,14 @@ export function range(n: number): number[] {
   return Array.from({ length: n }, (_, i) => i);
 }
 
+// Fixed "today" for deterministic demo data — every seeded record is dated
+// relative to this, not the real clock, so a fresh `npm run dev` looks the
+// same on any day. Exported for the rare view that needs to evaluate mock
+// data "as of" the same reference point (e.g. "who's on leave today").
+export const MOCK_TODAY_ISO = new Date(2026, 8, 20).toISOString().slice(0, 10);
+
 export function dateOffset(daysFromToday: number): string {
-  const d = new Date(2026, 8, 20); // fixed "today" for deterministic demo data
+  const d = new Date(2026, 8, 20);
   d.setDate(d.getDate() + daysFromToday);
   return d.toISOString().slice(0, 10);
 }

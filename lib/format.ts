@@ -24,3 +24,10 @@ export function formatDate(dateStr: string) {
     year: "numeric",
   }).format(new Date(dateStr));
 }
+
+/** ISO date `days` from the real current date — for defaults on freshly-created records (not seeded mock data, which anchors to a fixed date). */
+export function dateOffsetFromToday(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}

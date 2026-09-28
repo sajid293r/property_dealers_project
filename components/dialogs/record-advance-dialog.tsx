@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useStaff, useAccounts } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
-import type { StaffMember, Account, Transaction } from "@/lib/types";
+import type { Account, PayrollAdjustment, StaffMember, Transaction } from "@/lib/types";
 import { toast } from "sonner";
 
 export function RecordAdvanceDialog({
@@ -49,6 +49,7 @@ export function RecordAdvanceDialog({
   function handleSubmit() {
     if (!member || !cashAccount) return;
     const value = Number(amount) || 0;
+    const today = new Date().toISOString().slice(0, 10);
 
     queryClient.setQueryData<StaffMember[]>(["staff"], (old = []) =>
       old.map((s) => (s.id === member.id ? { ...s, balance: s.balance + value } : s)),
@@ -64,8 +65,25 @@ export function RecordAdvanceDialog({
         amount: value,
         title: note || `Advance — ${member.name}`,
         category: "Salary",
-        date: new Date().toISOString().slice(0, 10),
+        date: today,
         confirmed: true,
+      },
+      ...old,
+    ]);
+    // Cash already moved, so this lands straight in the adjustments history as approved.
+    queryClient.setQueryData<PayrollAdjustment[]>(["payrollAdjustments"], (old = []) => [
+      {
+        id: `padj-${Date.now()}`,
+        staffId: member.id,
+        type: "loan",
+        amount: value,
+        reason: note || "Salary advance",
+        effectiveDate: today,
+        status: "approved",
+        createdBy: "You",
+        createdAt: today,
+        approvedBy: "You",
+        approvedAt: today,
       },
       ...old,
     ]);
