@@ -1,5 +1,6 @@
 import type {
   Account,
+  AccountClass,
   Contract,
   Customer,
   Expense,
@@ -8,6 +9,8 @@ import type {
   StaffMember,
   Transaction,
   Unit,
+  Voucher,
+  VoucherType,
 } from "@/lib/types";
 import { formatPkr } from "@/lib/format";
 
@@ -330,4 +333,60 @@ export function accountClassLabel(cls: LedgerAccountBalance["accountClass"]) {
 
 export function formatLedgerBalance(n: number) {
   return formatPkr(Math.abs(n), { compact: n >= 1000000 || n <= -1000000 });
+}
+
+/** Which side of a posting increases this account's balance. */
+export function normalBalanceSide(cls: AccountClass): "debit" | "credit" {
+  return cls === "asset" || cls === "expense" ? "debit" : "credit";
+}
+
+export interface LedgerEntry {
+  voucherId: string;
+  voucherNumber: string;
+  voucherType: VoucherType;
+  date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  /** Running balance after this entry, signed per the account's normal side. */
+  balance: number;
+}
+
+/**
+ * A dated, itemized posting history for one account — built from approved
+ * voucher lines rather than `buildChartOfAccounts`'s derived balances, since
+ * that's the only place transactions carry a real debit/credit pair and a
+ * date. This is the seam a real ledger report plugs into; other statements
+ * (Trial Balance, Balance Sheet, P&L) stay on the broader derived-balance
+ * engine so they keep matching the Chart of Accounts screen.
+ */
+export function buildAccountLedger(
+  vouchers: Voucher[],
+  accountId: string,
+  accountClass: AccountClass,
+): LedgerEntry[] {
+  const side = normalBalanceSide(accountClass);
+
+  const postings = vouchers
+    .filter((v) => v.status === "approved")
+    .flatMap((v) =>
+      v.lines
+        .filter((l) => l.accountId === accountId)
+        .map((l) => ({
+          voucherId: v.id,
+          voucherNumber: v.number,
+          voucherType: v.type,
+          date: v.date,
+          description: l.remarks || v.description,
+          debit: l.debit,
+          credit: l.credit,
+        })),
+    )
+    .sort((a, b) => a.date.localeCompare(b.date) || a.voucherNumber.localeCompare(b.voucherNumber));
+
+  let running = 0;
+  return postings.map((p) => {
+    running += side === "debit" ? p.debit - p.credit : p.credit - p.debit;
+    return { ...p, balance: running };
+  });
 }

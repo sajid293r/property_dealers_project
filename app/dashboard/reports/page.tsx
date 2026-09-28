@@ -6,8 +6,6 @@ import {
   FileText,
   Download,
   Landmark,
-  TrendingUp,
-  TrendingDown,
   Handshake,
   Building2,
   HandCoins,
@@ -21,9 +19,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { UnitStatusDonut } from "@/components/charts/unit-status-donut";
-import { useTransactions, useDeals, useUnits, useExpenses } from "@/lib/hooks/use-data";
+import { LedgerTab } from "@/components/reports/ledger-tab";
+import { TrialBalanceTab } from "@/components/reports/trial-balance-tab";
+import { BalanceSheetTab } from "@/components/reports/balance-sheet-tab";
+import { ProfitLossTab } from "@/components/reports/profit-loss-tab";
+import { useDeals, useUnits, useExpenses } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function ReportsPage() {
@@ -48,15 +49,27 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="income">
+      <Tabs defaultValue="balance-sheet">
         <TabsList>
-          <TabsTrigger value="income">Income Statement</TabsTrigger>
+          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="profit-loss">Profit &amp; Loss</TabsTrigger>
+          <TabsTrigger value="trial-balance">Trial Balance</TabsTrigger>
+          <TabsTrigger value="ledger">Ledger</TabsTrigger>
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="stock">Stock</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
         </TabsList>
-        <TabsContent value="income" className="mt-5">
-          <IncomeStatementTab />
+        <TabsContent value="balance-sheet" className="mt-5">
+          <BalanceSheetTab />
+        </TabsContent>
+        <TabsContent value="profit-loss" className="mt-5">
+          <ProfitLossTab />
+        </TabsContent>
+        <TabsContent value="trial-balance" className="mt-5">
+          <TrialBalanceTab />
+        </TabsContent>
+        <TabsContent value="ledger" className="mt-5">
+          <LedgerTab />
         </TabsContent>
         <TabsContent value="sales" className="mt-5">
           <SalesTab />
@@ -82,76 +95,6 @@ function TabSection({ children }: { children: React.ReactNode }) {
     >
       {children}
     </motion.div>
-  );
-}
-
-function IncomeStatementTab() {
-  const { data: transactions, isLoading } = useTransactions();
-
-  const byCategory = React.useMemo(() => {
-    const map = new Map<string, { income: number; expense: number }>();
-    (transactions ?? []).forEach((t) => {
-      const entry = map.get(t.category) ?? { income: 0, expense: 0 };
-      if (t.kind === "credit") entry.income += t.amount;
-      else entry.expense += t.amount;
-      map.set(t.category, entry);
-    });
-    return Array.from(map.entries())
-      .map(([category, v]) => ({ category, ...v, net: v.income - v.expense }))
-      .sort((a, b) => b.income + b.expense - (a.income + a.expense));
-  }, [transactions]);
-
-  const revenue = byCategory.reduce((s, c) => s + c.income, 0);
-  const expense = byCategory.reduce((s, c) => s + c.expense, 0);
-  const net = revenue - expense;
-
-  if (isLoading) return <Skeleton className="h-72 w-full rounded-xl" />;
-
-  return (
-    <TabSection>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Total Revenue" value={revenue} format={(n) => formatPkr(n, { compact: true })} icon={TrendingUp} index={0} />
-        <KpiCard label="Total Expenses" value={expense} format={(n) => formatPkr(n, { compact: true })} icon={TrendingDown} index={1} />
-        <KpiCard label="Net Profit" value={net} format={(n) => formatPkr(n, { compact: true })} icon={Landmark} index={2} accent="gold" />
-      </div>
-      <Card className="p-5">
-        <h3 className="mb-4 font-heading text-base font-semibold">By category</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Category</th>
-                <th className="pb-2.5 font-medium">Income</th>
-                <th className="pb-2.5 font-medium">Expense</th>
-                <th className="pb-2.5 font-medium">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byCategory.map((c) => (
-                <tr key={c.category} className="border-b border-border/40 last:border-0">
-                  <td className="py-2.5 font-medium">{c.category}</td>
-                  <td className="py-2.5 tabular-nums text-success">{c.income > 0 ? formatPkr(c.income) : "—"}</td>
-                  <td className="py-2.5 tabular-nums text-destructive">{c.expense > 0 ? formatPkr(c.expense) : "—"}</td>
-                  <td className={cn("py-2.5 tabular-nums font-medium", c.net >= 0 ? "text-success" : "text-destructive")}>
-                    {formatPkr(c.net)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-border">
-                <td className="py-2.5 font-semibold">Total</td>
-                <td className="py-2.5 tabular-nums font-semibold text-success">{formatPkr(revenue)}</td>
-                <td className="py-2.5 tabular-nums font-semibold text-destructive">{formatPkr(expense)}</td>
-                <td className={cn("py-2.5 tabular-nums font-semibold", net >= 0 ? "text-success" : "text-destructive")}>
-                  {formatPkr(net)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </Card>
-    </TabSection>
   );
 }
 
