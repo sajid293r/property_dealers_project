@@ -10,6 +10,9 @@ import {
   accountsService,
   expensesService,
   contractsService,
+  rolesService,
+  systemUsersService,
+  vouchersService,
 } from "@/lib/services";
 
 export const useUnits = () => useQuery({ queryKey: ["units"], queryFn: unitsService.list });
@@ -22,3 +25,6 @@ export const useTransactions = () =>
   useQuery({ queryKey: ["transactions"], queryFn: accountsService.transactions });
 export const useExpenses = () => useQuery({ queryKey: ["expenses"], queryFn: expensesService.list });
 export const useContracts = () => useQuery({ queryKey: ["contracts"], queryFn: contractsService.list });
+export const useRoles = () => useQuery({ queryKey: ["roles"], queryFn: rolesService.list });
+export const useSystemUsers = () => useQuery({ queryKey: ["systemUsers"], queryFn: systemUsersService.list });
+export const useVouchers = () => useQuery({ queryKey: ["vouchers"], queryFn: vouchersService.list });

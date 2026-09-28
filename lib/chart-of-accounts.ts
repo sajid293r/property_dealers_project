@@ -247,6 +247,15 @@ function buildCashLeaves(accounts: Account[]): LedgerAccountNode[] {
   }));
 }
 
+/**
+ * Just the postable (non-group) leaf accounts — no balances computed. Used
+ * wherever a voucher or form needs an account picker without paying for a
+ * full `buildChartOfAccounts` balance rollup.
+ */
+export function chartLeafAccounts(accounts: Account[]): LedgerAccountNode[] {
+  return [...COA_TREE.filter((n) => !n.isGroup), ...buildCashLeaves(accounts)];
+}
+
 export function buildChartOfAccounts(input: ChartOfAccountsInput): LedgerAccountBalance[] {
   const cashLeaves = buildCashLeaves(input.accounts);
   const cashBalanceById = new Map(cashLeaves.map((leaf, i) => [leaf.id, input.accounts[i].balance]));

@@ -7,6 +7,9 @@ import {
   accounts,
   transactions,
   expenses,
+  roles,
+  systemUsers,
+  vouchers,
 } from "@/lib/mock-data";
 import { contracts } from "@/lib/mock-data/expenses";
 
@@ -47,4 +50,16 @@ export const expensesService = {
 
 export const contractsService = {
   list: () => withLatency(contracts),
+};
+
+export const rolesService = {
+  list: () => withLatency(roles),
+};
+
+export const systemUsersService = {
+  list: () => withLatency(systemUsers),
+};
+
+export const vouchersService = {
+  list: () => withLatency(vouchers),
 };

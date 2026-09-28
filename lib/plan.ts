@@ -13,8 +13,16 @@ import {
   FileSignature,
   MapPinned,
   Settings,
+  ClipboardList,
+  UserCog,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
+
+export interface NavChild {
+  href: string;
+  label: string;
+}
 
 export interface NavItem {
   href: string;
@@ -22,6 +30,7 @@ export interface NavItem {
   icon: LucideIcon;
   minTier: PlanTier;
   section: string;
+  children?: NavChild[];
 }
 
 const TIER_RANK: Record<PlanTier, number> = { basic: 0, moderate: 1, premium: 2 };
@@ -38,11 +47,30 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/inventory", label: "Inventory / Units", icon: Building2, minTier: "basic", section: "Inventory" },
   { href: "/dashboard/plot-map", label: "Plot Map", icon: MapPinned, minTier: "premium", section: "Inventory" },
   { href: "/dashboard/accounts", label: "Accounts", icon: Landmark, minTier: "basic", section: "Finance" },
+  { href: "/dashboard/vouchers", label: "Vouchers", icon: ScrollText, minTier: "basic", section: "Finance" },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt, minTier: "basic", section: "Finance" },
   { href: "/dashboard/reports", label: "Reports", icon: FileText, minTier: "moderate", section: "Finance" },
   { href: "/dashboard/staff", label: "Staff", icon: UserSquare2, minTier: "basic", section: "People" },
   { href: "/dashboard/payroll", label: "Payroll", icon: Banknote, minTier: "moderate", section: "People" },
   { href: "/dashboard/customers", label: "Customers", icon: Wallet, minTier: "basic", section: "People" },
+  {
+    href: "/dashboard/administration/company-profile",
+    label: "Company Profile",
+    icon: ClipboardList,
+    minTier: "basic",
+    section: "Administration",
+  },
+  {
+    href: "/dashboard/administration/users",
+    label: "User Management",
+    icon: UserCog,
+    minTier: "basic",
+    section: "Administration",
+    children: [
+      { href: "/dashboard/administration/users", label: "Users" },
+      { href: "/dashboard/administration/roles", label: "Roles & Permissions" },
+    ],
+  },
   { href: "/dashboard/settings", label: "Settings", icon: Settings, minTier: "basic", section: "Configuration" },
 ];
 

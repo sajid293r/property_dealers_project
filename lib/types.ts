@@ -1,3 +1,5 @@
+import type { PermissionMatrix, RoleColor } from "@/lib/permissions";
+
 export type PlanTier = "basic" | "moderate" | "premium";
 
 export type UnitStatus = "available" | "reserved" | "sold";
@@ -162,4 +164,71 @@ export interface LedgerAccountBalance extends LedgerAccountNode {
   balance: number;
   drillDown: LedgerDrillDownItem[];
   depth: number;
+}
+
+/**
+ * A role is a named, reusable bundle of module permissions. The seven
+ * default roles ship with the system (isSystem: true, cannot be deleted —
+ * but can be duplicated into a custom role); administrators can define
+ * additional custom roles on top.
+ */
+export interface UserRole {
+  id: string;
+  name: string;
+  description: string;
+  color: RoleColor;
+  isSystem: boolean;
+  permissions: PermissionMatrix;
+}
+
+export type VoucherType = "CPV" | "CRV" | "BPV" | "BRV" | "JV";
+export type VoucherStatus = "draft" | "pending" | "approved" | "rejected";
+
+export interface VoucherLine {
+  id: string;
+  /** A postable leaf account id from the chart of accounts (`LedgerAccountNode.id`). */
+  accountId: string;
+  debit: number;
+  credit: number;
+  remarks?: string;
+  costCenter?: string;
+  project?: string;
+}
+
+export interface Voucher {
+  id: string;
+  type: VoucherType;
+  number: string;
+  date: string;
+  /** Only meaningful for BPV/BRV (cheque-based bank vouchers). */
+  chequeDate?: string;
+  /** "Pay to" (CPV/BPV) or "Receive from" (CRV/BRV); unused for JV. */
+  partyName?: string;
+  description: string;
+  lines: VoucherLine[];
+  status: VoucherStatus;
+  recurring: boolean;
+  createdBy: string;
+  createdAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  /** Approver's comment — used as the reason when a voucher is rejected. */
+  approvalNote?: string;
+}
+
+export type SystemUserStatus = "active" | "invited" | "suspended";
+
+/** A login/staff account within the ERP itself — distinct from Customer or StaffMember (HR roster). */
+export interface SystemUser {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  roleId: string;
+  department: string;
+  status: SystemUserStatus;
+  lastActiveAt: string;
+  createdAt: string;
 }

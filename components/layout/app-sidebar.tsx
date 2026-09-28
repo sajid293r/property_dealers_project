@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Lock, Sparkles } from "lucide-react";
+import { Building2, ChevronDown, Lock, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +16,9 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { NAV_ITEMS, PLAN_LABEL, tierMeets } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
@@ -22,9 +26,17 @@ import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { cn } from "@/lib/utils";
 
+/** Exact match, or a nested route under `href` (e.g. /vouchers/new, /vouchers/[id]) — except the dashboard root, which every route nests under. */
+function isActivePath(pathname: string, href: string) {
+  if (pathname === href) return true;
+  if (href === "/dashboard") return false;
+  return pathname.startsWith(`${href}/`);
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { tier } = usePlanTier();
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
 
   const sections = Array.from(new Set(NAV_ITEMS.map((i) => i.section)));
 
@@ -57,7 +69,61 @@ export function AppSidebar() {
               <SidebarMenu>
                 {NAV_ITEMS.filter((i) => i.section === section).map((item) => {
                   const locked = !tierMeets(tier, item.minTier);
-                  const active = pathname === item.href;
+                  const childActive =
+                    item.children?.some((c) => isActivePath(pathname, c.href)) ?? false;
+                  const active = isActivePath(pathname, item.href) || childActive;
+
+                  if (item.children?.length) {
+                    const isOpen = openGroups[item.href] ?? childActive;
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          isActive={active}
+                          aria-expanded={isOpen}
+                          className={cn(
+                            "relative transition-colors duration-150",
+                            locked && "opacity-55 pointer-events-none",
+                            active &&
+                              "bg-gradient-to-r from-sidebar-primary/20 via-sidebar-primary/5 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary",
+                          )}
+                          onClick={() =>
+                            setOpenGroups((prev) => ({ ...prev, [item.href]: !isOpen }))
+                          }
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                          <ChevronDown
+                            className={cn(
+                              "ml-auto size-3.5 shrink-0 text-sidebar-foreground/50 transition-transform duration-200",
+                              isOpen && "rotate-180",
+                            )}
+                          />
+                        </SidebarMenuButton>
+                        {locked && (
+                          <SidebarMenuBadge>
+                            <Lock className="size-3" />
+                          </SidebarMenuBadge>
+                        )}
+                        {isOpen && !locked && (
+                          <SidebarMenuSub>
+                            {item.children.map((child) => {
+                              const childOneActive = isActivePath(pathname, child.href);
+                              return (
+                                <SidebarMenuSubItem key={child.href}>
+                                  <SidebarMenuSubButton asChild isActive={childOneActive}>
+                                    <Link href={child.href}>
+                                      <span>{child.label}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
+                          </SidebarMenuSub>
+                        )}
+                      </SidebarMenuItem>
+                    );
+                  }
+
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
