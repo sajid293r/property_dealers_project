@@ -21,6 +21,8 @@ import {
   CalendarClock,
   Wrench,
   Palmtree,
+  FolderKanban,
+  HardHat,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +48,8 @@ export function tierMeets(current: PlanTier, minimum: PlanTier) {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minTier: "basic", section: "Overview" },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderKanban, minTier: "moderate", section: "Projects" },
+  { href: "/dashboard/contractors", label: "Contractors", icon: HardHat, minTier: "moderate", section: "Projects" },
   { href: "/dashboard/crm", label: "Leads (CRM)", icon: Users2, minTier: "moderate", section: "Sales & CRM" },
   { href: "/dashboard/quotations", label: "Quotations", icon: FileStack, minTier: "basic", section: "Sales & CRM" },
   { href: "/dashboard/deals", label: "Deals & Bookings", icon: Handshake, minTier: "basic", section: "Sales & CRM" },

@@ -83,6 +83,7 @@ export const COA_TREE: LedgerAccountNode[] = [
   { id: "05.01", code: "05.01", name: "Cost of Revenue", accountClass: "expense", category: "expense_direct_cost", parentId: "05", isGroup: true },
   { id: "05.01.01", code: "05.01.01", name: "Direct Costs", accountClass: "expense", category: "expense_direct_cost", parentId: "05.01", isGroup: true },
   { id: "05.01.01.0001", code: "05.01.01.0001", name: "Land Acquisition Cost", accountClass: "expense", category: "expense_direct_cost", parentId: "05.01.01" },
+  { id: "05.01.01.0002", code: "05.01.01.0002", name: "Contractor & Construction Cost", accountClass: "expense", category: "expense_direct_cost", parentId: "05.01.01" },
   { id: "05.02", code: "05.02", name: "Operating Expenses", accountClass: "expense", category: "expense", parentId: "05", isGroup: true },
   { id: "05.02.01", code: "05.02.01", name: "Administrative Expenses", accountClass: "expense", category: "expense", parentId: "05.02", isGroup: true },
   { id: "05.02.01.0001", code: "05.02.01.0001", name: "Utility Expense", accountClass: "expense", category: "expense", parentId: "05.02.01" },
@@ -128,6 +129,7 @@ const EXPENSE_TYPE_TO_ACCOUNT: Record<string, string> = {
   Maintenance: "05.02.02.0002",
   Marketing: "05.02.03.0001",
   Travel: "05.02.03.0002",
+  Construction: "05.01.01.0002",
 };
 
 function leafBalance(id: string, input: ChartOfAccountsInput): { balance: number; drillDown: LedgerAccountBalance["drillDown"] } {
@@ -207,6 +209,7 @@ function leafBalance(id: string, input: ChartOfAccountsInput): { balance: number
         drillDown: items.slice(0, 12).map((t) => ({ label: t.title, detail: t.category, amount: t.amount, date: t.date })),
       };
     }
+    case "05.01.01.0002":
     case "05.02.01.0001":
     case "05.02.01.0002":
     case "05.02.02.0001":

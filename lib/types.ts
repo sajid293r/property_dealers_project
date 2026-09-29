@@ -156,6 +156,8 @@ export interface Expense {
   paidVia: string;
   status: "paid" | "unpaid";
   date: string;
+  /** Ties a cost back to a development project — matches `Unit.project` / `Project.name`. */
+  project?: string;
 }
 
 export type ContractStatus = "active" | "expiring" | "expired";
@@ -333,5 +335,77 @@ export interface SystemUser {
   department: string;
   status: SystemUserStatus;
   lastActiveAt: string;
+  createdAt: string;
+}
+
+export type ProjectType = "Residential" | "Commercial" | "Mixed-Use";
+export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
+
+/**
+ * Master data for a development project (a housing scheme) — location,
+ * timeline, ownership and the approved budget. Deliberately doesn't carry
+ * totals like sales/receipts/actual-cost: those are derived on the fly from
+ * Units, Vouchers and Expenses (see `lib/projects.ts`), the same way the
+ * Chart of Accounts derives balances instead of storing them.
+ */
+export interface Project {
+  id: string;
+  code: string;
+  /** Matches `Unit.project` — the project/scheme name units already carry. */
+  name: string;
+  type: ProjectType;
+  status: ProjectStatus;
+  description: string;
+  city: string;
+  address: string;
+  landAreaMarla: number;
+  projectManagerId: string;
+  /** Approved budget — a planning input, not a computed total. */
+  budget: number;
+  plannedStartDate: string;
+  plannedEndDate: string;
+  actualStartDate?: string;
+  handoverDate?: string;
+  createdAt: string;
+}
+
+export type ContractorTrade =
+  | "General Contractor"
+  | "Civil Works"
+  | "Electrical"
+  | "Plumbing"
+  | "Landscaping"
+  | "Road & Infrastructure"
+  | "Interior Finishing";
+
+export interface Contractor {
+  id: string;
+  name: string;
+  companyName: string;
+  trade: ContractorTrade;
+  phone: string;
+  email: string;
+  cnicOrNtn: string;
+  address: string;
+  rating: number;
+  createdAt: string;
+}
+
+export type ConstructionContractStatus = "active" | "completed" | "terminated";
+
+/** A construction contractor's engagement on a project — the thing that gets added/removed. */
+export interface ConstructionContract {
+  id: string;
+  number: string;
+  projectId: string;
+  contractorId: string;
+  scopeOfWork: string;
+  contractValue: number;
+  paidAmount: number;
+  retentionPercent: number;
+  startDate: string;
+  endDate: string;
+  status: ConstructionContractStatus;
+  progressPercent: number;
   createdAt: string;
 }

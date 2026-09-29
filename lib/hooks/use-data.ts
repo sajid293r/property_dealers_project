@@ -19,6 +19,9 @@ import {
   serviceInvoicesService,
   payrollAdjustmentsService,
   leaveRequestsService,
+  projectsService,
+  contractorsService,
+  constructionContractsService,
 } from "@/lib/services";
 
 export const useUnits = () => useQuery({ queryKey: ["units"], queryFn: unitsService.list });
@@ -44,3 +47,7 @@ export const usePayrollAdjustments = () =>
   useQuery({ queryKey: ["payrollAdjustments"], queryFn: payrollAdjustmentsService.list });
 export const useLeaveRequests = () =>
   useQuery({ queryKey: ["leaveRequests"], queryFn: leaveRequestsService.list });
+export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: projectsService.list });
+export const useContractors = () => useQuery({ queryKey: ["contractors"], queryFn: contractorsService.list });
+export const useConstructionContracts = () =>
+  useQuery({ queryKey: ["constructionContracts"], queryFn: constructionContractsService.list });

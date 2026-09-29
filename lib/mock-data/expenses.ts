@@ -8,7 +8,7 @@ const rand = mulberry32(7007);
 const EXPENSE_TYPES = ["Utility", "Rent", "Marketing", "Maintenance", "Travel", "Office Supplies"] as const;
 const PAID_VIA = ["Company Cash", "HBL Current Account", "Petty Cash"] as const;
 
-export const expenses: Expense[] = range(22).map((i) => {
+const generalExpenses: Expense[] = range(22).map((i) => {
   const status = rand() > 0.25 ? "paid" : "unpaid";
   return {
     id: `exp-${i + 1}`,
@@ -20,6 +20,35 @@ export const expenses: Expense[] = range(22).map((i) => {
     date: dateOffset(-Math.floor(rand() * 60)),
   };
 });
+
+// Construction/development costs, tagged per project — feeds each project's
+// "Actual spend" (Budget vs Actual) and rolls up into the P&L's
+// "Contractor & Construction Cost" line via EXPENSE_TYPE_TO_ACCOUNT.
+const CONSTRUCTION_SPEND: { project: string; title: string; amount: number; daysAgo: number; status: "paid" | "unpaid" }[] = [
+  { project: "Green Valley Homes", title: "Civil works — running bill #6", amount: 25_200_000, daysAgo: 12, status: "paid" },
+  { project: "Green Valley Homes", title: "Internal roads — final bill", amount: 65_000_000, daysAgo: 95, status: "paid" },
+  { project: "Green Valley Homes", title: "Earthwork & leveling — running bill", amount: 31_500_000, daysAgo: 40, status: "paid" },
+  { project: "Green Valley Homes", title: "Landscaping Phase 1 — mobilization advance", amount: 3_600_000, daysAgo: 20, status: "unpaid" },
+  { project: "Al-Noor Heights", title: "Structural works — running bill #3", amount: 60_000_000, daysAgo: 30, status: "paid" },
+  { project: "Al-Noor Heights", title: "Electrical infrastructure — running bill", amount: 14_000_000, daysAgo: 18, status: "paid" },
+  { project: "Al-Noor Heights", title: "Water & sewerage network — running bill", amount: 15_300_000, daysAgo: 25, status: "unpaid" },
+  { project: "Riverside Enclave", title: "Topographic survey & site leveling — advance", amount: 3_600_000, daysAgo: 8, status: "paid" },
+  { project: "Emerald Gardens", title: "Main civil works — final settlement", amount: 95_000_000, daysAgo: 150, status: "paid" },
+  { project: "Emerald Gardens", title: "Interior finishing — final bill", amount: 21_000_000, daysAgo: 110, status: "paid" },
+];
+
+const constructionExpenses: Expense[] = CONSTRUCTION_SPEND.map((c, i) => ({
+  id: `exp-construction-${i + 1}`,
+  title: c.title,
+  type: "Construction",
+  amount: c.amount,
+  paidVia: "HBL Current Account",
+  status: c.status,
+  date: dateOffset(-c.daysAgo),
+  project: c.project,
+}));
+
+export const expenses: Expense[] = [...generalExpenses, ...constructionExpenses];
 
 const CONTRACT_TYPES = ["Sale Agreement", "Lease Agreement", "Dealer Agreement", "Vendor Contract"] as const;
 const rand2 = mulberry32(8008);

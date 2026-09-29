@@ -16,6 +16,9 @@ import {
   serviceInvoices,
   payrollAdjustments,
   leaveRequests,
+  projects,
+  contractors,
+  constructionContracts,
 } from "@/lib/mock-data";
 import { contracts } from "@/lib/mock-data/expenses";
 
@@ -92,4 +95,16 @@ export const payrollAdjustmentsService = {
 
 export const leaveRequestsService = {
   list: () => withLatency(leaveRequests),
+};
+
+export const projectsService = {
+  list: () => withLatency(projects),
+};
+
+export const contractorsService = {
+  list: () => withLatency(contractors),
+};
+
+export const constructionContractsService = {
+  list: () => withLatency(constructionContracts),
 };
