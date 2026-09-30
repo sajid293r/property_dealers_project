@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Banknote,
@@ -111,22 +112,46 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div>
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="surface-hero sheen relative isolate overflow-hidden rounded-3xl p-6 shadow-xl shadow-primary/15 ring-1 ring-white/10 md:p-8"
+      >
+        <div className="pointer-events-none absolute -right-10 -top-16 -z-10 size-72 animate-aurora rounded-full bg-gold/25 blur-3xl" />
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.1]"
+          style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+        />
         <Link
           href="/dashboard/projects"
-          className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20 hover:text-white"
         >
           <ArrowLeft className="size-3.5" />
-          Projects
+          All projects
         </Link>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="font-heading text-2xl font-semibold">{project.name}</h1>
-          <span className="font-mono text-sm text-muted-foreground">{project.code}</span>
-          <ProjectStatusBadge status={project.status} />
-          <ProjectTypeBadge type={project.type} />
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-heading text-3xl font-semibold text-white md:text-4xl">{project.name}</h1>
+          <span className="font-mono text-sm text-white/55">{project.code}</span>
+          <ProjectStatusBadge status={project.status} className="bg-white/15 text-white" />
+          <ProjectTypeBadge type={project.type} className="bg-white/15 text-white" />
         </div>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{project.description}</p>
-      </div>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">{project.description}</p>
+        <div className="mt-5 max-w-md">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-white/70">
+            <span>Budget utilized</span>
+            <span className="font-semibold text-gold">{utilization}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-white/15">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-gold to-[oklch(0.9_0.12_90)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${utilization}%` }}
+              transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </div>
+        </div>
+      </motion.section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Approved Budget" value={project.budget} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} index={0} />

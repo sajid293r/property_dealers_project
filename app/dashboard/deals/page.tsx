@@ -1,5 +1,9 @@
 "use client";
 
+import { Handshake as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { Handshake as KpiHandshake, HandCoins as KpiHandCoins, TimerReset as KpiTimerReset, BadgeCheck as KpiBadgeCheck } from "lucide-react";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { PlusCircle } from "lucide-react";
@@ -40,6 +44,11 @@ export default function DealsPage() {
   const unitOf = (id: string) => units?.find((u) => u.id === id);
   const customerOf = (id: string) => customers?.find((c) => c.id === id);
 
+  const totalValue = deals?.reduce((s, d) => s + d.totalAmount, 0) ?? 0;
+  const collected = deals?.reduce((s, d) => s + d.paidAmount, 0) ?? 0;
+  const outstanding = totalValue - collected;
+  const completed = deals?.filter((d) => d.status === "completed").length ?? 0;
+
   const filtered = (deals ?? []).filter((d) => {
     if (status !== "all" && d.status !== status) return false;
     if (search) {
@@ -52,15 +61,24 @@ export default function DealsPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Deals &amp; Bookings</h1>
-          <p className="text-sm text-muted-foreground">{deals?.length ?? 0} bookings on record</p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Sales & CRM"
+        title="Deals &amp; Bookings"
+        description={<>{deals?.length ?? 0} bookings on record</>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setBookingOpen(true)}>
           <PlusCircle className="size-4" />
           New Booking
         </Button>
+        </>}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Total bookings" value={deals?.length ?? 0} format={(n) => n.toString()} icon={KpiHandshake} index={0} />
+        <KpiCard label="Deal value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiHandCoins} accent="gold" index={1} />
+        <KpiCard label="Outstanding" value={outstanding} format={(n) => formatPkr(n, { compact: true })} icon={KpiTimerReset} index={2} />
+        <KpiCard label="Completed" value={completed} format={(n) => n.toString()} icon={KpiBadgeCheck} accent="gold" index={3} />
       </div>
 
       <Card className="p-4">

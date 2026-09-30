@@ -1,5 +1,7 @@
 "use client";
 
+import { FileSignature as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { differenceInCalendarDays } from "date-fns";
@@ -84,18 +86,18 @@ export default function ContractsPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Contracts</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} agreements on record — sale, lease and dealer contracts in one place.
-          </p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Sales & CRM"
+        title="Contracts"
+        description={<>{total} agreements on record — sale, lease and dealer contracts in one place.</>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setNewOpen(true)}>
           <PlusCircle className="size-4" />
           New Contract
         </Button>
-      </div>
+        </>}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard

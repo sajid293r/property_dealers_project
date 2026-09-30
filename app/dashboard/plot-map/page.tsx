@@ -36,6 +36,7 @@ import { formatPkr } from "@/lib/format";
 import type { Unit, UnitStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const STATUS_CELL: Record<UnitStatus, string> = {
   available: "bg-[var(--chart-1)]/85 hover:bg-[var(--chart-1)] text-white",
@@ -104,6 +105,12 @@ export default function PlotMapPage() {
     setQuery("");
   }
 
+  const blockGroups = React.useMemo(() => {
+    const groups = new Map<string, Unit[]>();
+    for (const u of visibleUnits) groups.set(u.block, [...(groups.get(u.block) ?? []), u]);
+    return Array.from(groups.entries()).sort(([x], [y]) => x.localeCompare(y));
+  }, [visibleUnits]);
+
   const counts = {
     available: visibleUnits.filter((u) => u.status === "available").length,
     reserved: visibleUnits.filter((u) => u.status === "reserved").length,
@@ -112,20 +119,18 @@ export default function PlotMapPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-heading text-2xl font-semibold">Plot Map</h1>
-            <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold gap-1">
-              <Sparkles className="size-3" />
-              Premium
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Pick a plot visually — click any unit to see pricing and booking status.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={MapPinned}
+        eyebrow="Inventory"
+        title="Plot Map"
+        badge={
+          <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/10 text-gold">
+            <Sparkles className="size-3" />
+            Premium
+          </Badge>
+        }
+        description="Pick a plot visually — click any unit to see pricing and booking status."
+      />
 
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-2.5">
@@ -221,6 +226,17 @@ export default function PlotMapPage() {
               <span className="font-medium tabular-nums">{counts[s]}</span>
             </div>
           ))}
+          <div className="ml-auto hidden h-2 w-56 overflow-hidden rounded-full bg-secondary sm:flex">
+            {(["available", "reserved", "sold"] as const).map((s) => (
+              <motion.div
+                key={s}
+                className={cn("h-full", STATUS_CELL[s].split(" ")[0])}
+                initial={{ width: 0 }}
+                animate={{ width: `${(counts[s] / Math.max(visibleUnits.length, 1)) * 100}%` }}
+                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              />
+            ))}
+          </div>
         </div>
       </Card>
 
@@ -228,7 +244,9 @@ export default function PlotMapPage() {
         <Card
           className={cn(
             "relative overflow-auto p-5 transition-colors duration-300",
-            viewMode === "satellite" ? "bg-[#1c2620]" : "bg-secondary/25",
+            viewMode === "satellite"
+              ? "bg-[radial-gradient(ellipse_at_30%_20%,#2c3f30_0%,#1a241d_60%,#111813_100%)]"
+              : "bg-[radial-gradient(color-mix(in_oklch,var(--foreground)_10%,transparent)_1px,transparent_1px)] [background-size:18px_18px] bg-secondary/25",
           )}
           style={{ minHeight: 440 }}
         >
@@ -247,39 +265,74 @@ export default function PlotMapPage() {
                 width: zoom > 1 ? `${100 / zoom}%` : "100%",
               }}
             >
-              <div
-                className="grid gap-2.5"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))" }}
-              >
-                {visibleUnits.map((unit) => {
-                  const match = matchesQuery(unit);
-                  const isSelected = unit.id === selectedId;
-                  return (
-                    <Tooltip key={unit.id}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedId(isSelected ? null : unit.id)}
-                          className={cn(
-                            "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-md text-[10px] font-semibold transition-all duration-200",
-                            STATUS_CELL[unit.status],
-                            viewMode === "satellite" && "ring-1 ring-white/15",
-                            query && !match && "opacity-25",
-                            query && match && "ring-2 ring-white ring-offset-1 ring-offset-transparent",
-                            isSelected && "z-10 scale-110 shadow-lg ring-2 ring-primary ring-offset-2 ring-offset-background",
-                          )}
-                        >
-                          <span className="leading-none">{unit.code.replace("UNT-", "")}</span>
-                          <span className="text-[8px] font-normal opacity-80">{unit.block}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-medium">{unit.code} · Block {unit.block}</p>
-                        <p className="text-muted-foreground">{formatPkr(unit.price)} · {unit.status}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+              <div className="space-y-7">
+                {blockGroups.map(([blockName, blockUnits]) => (
+                  <section key={blockName}>
+                    <div className="mb-3 flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "flex size-7 items-center justify-center rounded-lg font-heading text-sm font-semibold",
+                          viewMode === "satellite" ? "bg-white/10 text-white" : "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {blockName}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          viewMode === "satellite" ? "text-white/70" : "text-muted-foreground",
+                        )}
+                      >
+                        Block {blockName} · {blockUnits.length} plots ·{" "}
+                        {blockUnits.filter((u) => u.status === "available").length} available
+                      </span>
+                      <span
+                        className={cn(
+                          "h-px flex-1 border-t border-dashed",
+                          viewMode === "satellite" ? "border-white/20" : "border-border",
+                        )}
+                      />
+                    </div>
+                    <div
+                      className="grid gap-3"
+                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))" }}
+                    >
+                    {blockUnits.map((unit, idx) => {
+                      const match = matchesQuery(unit);
+                      const isSelected = unit.id === selectedId;
+                      return (
+                        <Tooltip key={unit.id}>
+                          <TooltipTrigger asChild>
+                            <motion.button
+                              type="button"
+                              initial={{ opacity: 0, scale: 0.5 }}
+                              animate={{ opacity: query && !match ? 0.25 : 1, scale: 1 }}
+                              transition={{ delay: Math.min(idx * 0.008, 0.6), type: "spring", stiffness: 320, damping: 22 }}
+                              whileHover={{ y: -3, scale: 1.12 }}
+                              whileTap={{ scale: 0.94 }}
+                              onClick={() => setSelectedId(isSelected ? null : unit.id)}
+                              className={cn(
+                                "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-md text-[10px] font-semibold transition-all duration-200",
+                                STATUS_CELL[unit.status],
+                                viewMode === "satellite" && "ring-1 ring-white/15",
+                                query && match && "ring-2 ring-white ring-offset-1 ring-offset-transparent",
+                                isSelected && "z-10 scale-110 shadow-lg ring-2 ring-primary ring-offset-2 ring-offset-background",
+                              )}
+                            >
+                              <span className="leading-none">{unit.code.replace("UNT-", "")}</span>
+                              <span className="text-[8px] font-normal opacity-80">{unit.block}</span>
+                            </motion.button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-medium">{unit.code} · Block {unit.block}</p>
+                            <p className="text-muted-foreground">{formatPkr(unit.price)} · {unit.status}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                    </div>
+                  </section>
+                ))}
               </div>
             </div>
           )}
@@ -307,6 +360,13 @@ export default function PlotMapPage() {
                 <Badge variant="outline" className={cn("mt-2 capitalize", STATUS_BADGE[selectedUnit.status])}>
                   {selectedUnit.status}
                 </Badge>
+                <div className="surface-hero relative mt-4 overflow-hidden rounded-xl p-4">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Asking price</p>
+                  <p className="text-gradient-gold mt-1 font-heading text-3xl font-semibold tabular-nums">
+                    {formatPkr(selectedUnit.price, { compact: true })}
+                  </p>
+                  <p className="text-xs text-white/60">{formatPkr(selectedUnit.price)}</p>
+                </div>
 
                 <div className="mt-4 space-y-3 border-t border-border/60 pt-4 text-sm">
                   <DetailRow icon={Building2} label="Category" value={selectedUnit.category} />
@@ -321,6 +381,7 @@ export default function PlotMapPage() {
 
                 <div className="mt-5 flex flex-col gap-2">
                   <Button
+                    className="h-9 bg-gold text-gold-foreground shadow-md shadow-gold/25 hover:bg-gold/90"
                     disabled={selectedUnit.status !== "available"}
                     onClick={() => toast.success(`Booking started for ${selectedUnit.code}`)}
                   >

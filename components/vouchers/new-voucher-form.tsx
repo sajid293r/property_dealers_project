@@ -1,10 +1,11 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Repeat } from "lucide-react";
+import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,22 +101,13 @@ export function NewVoucherForm() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link
-            href="/dashboard/vouchers"
-            className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            Vouchers
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-heading text-2xl font-semibold">New {meta.label}</h1>
-            <VoucherTypeBadge type={type} />
-          </div>
-          <p className="mt-0.5 text-sm text-muted-foreground">{meta.description}</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={meta.icon}
+        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
+        title={`New ${meta.label}`}
+        badge={<VoucherTypeBadge type={type} />}
+        description={meta.description}
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
         <div className="space-y-5">

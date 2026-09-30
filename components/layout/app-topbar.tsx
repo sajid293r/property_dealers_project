@@ -1,6 +1,8 @@
 "use client";
 
-import { Bell, ChevronDown, Wallet } from "lucide-react";
+import * as React from "react";
+import { Bell, ChevronDown, Search, Wallet } from "lucide-react";
+import { CommandPalette } from "@/components/layout/command-palette";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function AppTopbar() {
   const { data: accounts, isLoading } = useAccounts();
   const totalCash = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-border/70 bg-background/80 px-4 backdrop-blur-md">
@@ -64,7 +78,27 @@ export function AppTopbar() {
         </PopoverContent>
       </Popover>
 
-      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <button
+        type="button"
+        onClick={() => setPaletteOpen(true)}
+        className="group ml-auto hidden h-9 w-64 items-center gap-2 rounded-full border border-border/70 bg-secondary/50 px-3 text-sm text-muted-foreground shadow-sm transition-all hover:border-gold/50 hover:bg-secondary hover:shadow-md lg:flex"
+      >
+        <Search className="size-4 transition-colors group-hover:text-primary" />
+        <span className="flex-1 text-left">Search modules…</span>
+        <kbd className="rounded-md border bg-background px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
+      </button>
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-2 lg:ml-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8 lg:hidden"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Search"
+        >
+          <Search className="size-4" />
+        </Button>
         <div className="hidden md:block">
           <PlanSwitcher />
         </div>
@@ -104,10 +138,13 @@ export function AppTopbar() {
 
         <Separator orientation="vertical" className="h-6" />
 
-        <Avatar className="size-8 ring-2 ring-transparent transition-all hover:ring-primary/20">
-          <AvatarImage src="https://i.pravatar.cc/64?u=owner" />
-          <AvatarFallback>OA</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar className="size-8 ring-2 ring-gold/40 transition-all hover:ring-gold">
+            <AvatarImage src="https://i.pravatar.cc/64?u=owner" />
+            <AvatarFallback>OA</AvatarFallback>
+          </Avatar>
+          <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
+        </div>
       </div>
     </header>
   );

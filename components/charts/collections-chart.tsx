@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -35,8 +36,8 @@ export function CollectionsChart() {
   const data = React.useMemo(
     () =>
       range === "monthly"
-        ? monthlyCollections.map((d) => ({ label: d.month, collections: d.collections }))
-        : weeklyCollections.map((d) => ({ label: d.week, collections: d.collections })),
+        ? monthlyCollections.map((d) => ({ label: d.month, collections: d.collections, target: d.target as number | null }))
+        : weeklyCollections.map((d) => ({ label: d.week, collections: d.collections, target: null as number | null })),
     [range],
   );
   const xKey = "label";
@@ -46,7 +47,14 @@ export function CollectionsChart() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="font-heading text-base font-semibold">Collections</h3>
-          <p className="text-xs text-muted-foreground">Installments &amp; booking amounts received</p>
+          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>Installments &amp; booking amounts received</span>
+            {range === "monthly" && (
+              <span className="hidden items-center gap-1 sm:flex">
+                <span className="h-0 w-4 border-t-2 border-dashed border-gold" /> Target
+              </span>
+            )}
+          </p>
         </div>
         <Tabs value={range} onValueChange={(v) => setRange(v as "weekly" | "monthly")}>
           <TabsList>
@@ -77,15 +85,27 @@ export function CollectionsChart() {
             tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
             tickFormatter={(v) => formatPkr(v, { compact: true })}
           />
-          <Tooltip content={ChartTooltip} cursor={{ stroke: "var(--chart-1)", strokeDasharray: "4 4" }} />
+          <Tooltip content={ChartTooltip} cursor={{ stroke: "var(--gold)", strokeWidth: 1.5, strokeDasharray: "4 4" }} />
+          <Line
+            type="monotone"
+            dataKey="target"
+            name="Target"
+            stroke="var(--gold)"
+            strokeWidth={1.5}
+            strokeDasharray="5 5"
+            dot={false}
+            activeDot={false}
+            animationDuration={1200}
+          />
           <Area
             type="monotone"
             dataKey="collections"
             name="Collections"
             stroke="var(--chart-1)"
-            strokeWidth={2.5}
+            strokeWidth={3}
             fill="url(#collectionsFill)"
-            animationDuration={900}
+            activeDot={{ r: 6, strokeWidth: 3, stroke: "var(--card)", fill: "var(--chart-1)" }}
+            animationDuration={1400}
             animationEasing="ease-out"
           />
         </AreaChart>

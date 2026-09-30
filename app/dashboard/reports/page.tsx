@@ -1,5 +1,7 @@
 "use client";
 
+import { FileText as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
@@ -30,13 +32,12 @@ import { toast } from "sonner";
 export default function ReportsPage() {
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Reports</h1>
-          <p className="text-sm text-muted-foreground">
-            Income statements, profit reports and exportable financial statements
-          </p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Finance"
+        title="Reports"
+        description="Income statements, profit reports and exportable financial statements"
+        actions={<>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-1.5" onClick={() => toast.success("CSV export queued")}>
             <Download className="size-4" />
@@ -47,7 +48,8 @@ export default function ReportsPage() {
             Export PDF
           </Button>
         </div>
-      </div>
+        </>}
+      />
 
       <Tabs defaultValue="balance-sheet">
         <TabsList>

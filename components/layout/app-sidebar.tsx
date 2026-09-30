@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ChevronDown, Lock, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { Building2, ChevronDown, Crown, Lock, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +34,17 @@ function isActivePath(pathname: string, href: string) {
   return pathname.startsWith(`${href}/`);
 }
 
+/** Gradient wash + gold rail that glides between active nav items (shared layout animation). */
+function ActiveRail() {
+  return (
+    <motion.span
+      layoutId="sidebar-active"
+      className="pointer-events-none absolute inset-0 -z-10 rounded-md bg-gradient-to-r from-sidebar-primary/25 via-sidebar-primary/8 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary before:shadow-[0_0_10px_var(--sidebar-primary)]"
+      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+    />
+  );
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { tier } = usePlanTier();
@@ -45,9 +57,13 @@ export function AppSidebar() {
       <PlotGridMotif variant="inverted" className="opacity-[0.07]" />
       <SidebarHeader className="relative px-3 py-4">
         <Link href="/dashboard" className="flex items-center gap-2.5 px-1">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-[color-mix(in_oklch,var(--sidebar-primary),black_15%)] text-sidebar-primary-foreground shadow-sm">
-            <Building2 className="size-4.5" />
-          </div>
+          <motion.div
+            whileHover={{ rotate: -8, scale: 1.08 }}
+            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-[color-mix(in_oklch,var(--sidebar-primary),black_15%)] text-sidebar-primary-foreground shadow-[0_0_20px_-2px_var(--sidebar-primary)]"
+          >
+            <Building2 className="size-5" />
+          </motion.div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-heading text-[15px] font-semibold text-sidebar-foreground">
               {APP_NAME}
@@ -83,13 +99,13 @@ export function AppSidebar() {
                           className={cn(
                             "relative transition-colors duration-150",
                             locked && "opacity-55 pointer-events-none",
-                            active &&
-                              "bg-gradient-to-r from-sidebar-primary/20 via-sidebar-primary/5 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary",
+                            "isolate hover:translate-x-0.5",
                           )}
                           onClick={() =>
                             setOpenGroups((prev) => ({ ...prev, [item.href]: !isOpen }))
                           }
                         >
+                          {active && <ActiveRail />}
                           <item.icon />
                           <span>{item.label}</span>
                           <ChevronDown
@@ -132,11 +148,11 @@ export function AppSidebar() {
                         className={cn(
                           "relative transition-colors duration-150",
                           locked && "opacity-55",
-                          active &&
-                            "bg-gradient-to-r from-sidebar-primary/20 via-sidebar-primary/5 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary",
+                          "isolate hover:translate-x-0.5",
                         )}
                       >
                         <Link href={locked ? "/dashboard/settings/billing" : item.href}>
+                          {active && <ActiveRail />}
                           <item.icon />
                           <span>{item.label}</span>
                         </Link>
@@ -156,15 +172,24 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3">
-        <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3 ring-1 ring-sidebar-border group-data-[collapsible=icon]:hidden">
-          <div className="absolute -right-4 -top-6 size-20 rounded-full bg-sidebar-primary/15 blur-2xl" />
-          <div className="relative mb-1.5 flex items-center gap-1.5 text-sidebar-accent-foreground">
-            <Sparkles className="size-3.5 text-sidebar-primary" />
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-sidebar-primary/25 via-sidebar-accent/70 to-sidebar-accent/30 p-3.5 ring-1 ring-sidebar-primary/25 group-data-[collapsible=icon]:hidden">
+          <div className="absolute -right-6 -top-8 size-24 animate-float-slow rounded-full bg-sidebar-primary/30 blur-2xl" />
+          <div className="relative mb-1.5 flex items-center gap-2 text-sidebar-accent-foreground">
+            <span className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+              {tier === "premium" ? <Crown className="size-3.5" /> : <Sparkles className="size-3.5" />}
+            </span>
             <span className="text-xs font-semibold">{PLAN_LABEL[tier]} plan</span>
+            <span className="ml-auto flex size-2 rounded-full bg-success animate-pulse-ring" />
           </div>
-          <p className="relative text-[11px] leading-snug text-sidebar-foreground/60">
-            Manage your plan from Settings to preview what each tier unlocks.
+          <p className="relative text-[11px] leading-snug text-sidebar-foreground/65">
+            Switch tiers from Settings to preview what each plan unlocks.
           </p>
+          <Link
+            href="/dashboard/settings/billing"
+            className="relative mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-sidebar-primary transition-all hover:gap-2"
+          >
+            Compare plans →
+          </Link>
         </div>
       </SidebarFooter>
     </Sidebar>

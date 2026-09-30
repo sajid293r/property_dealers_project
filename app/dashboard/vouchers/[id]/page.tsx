@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -87,17 +88,12 @@ export default function VoucherDetailPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link
-            href="/dashboard/vouchers"
-            className="mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            Vouchers
-          </Link>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-heading text-2xl font-semibold">{voucher.number}</h1>
+      <PageHeader
+        icon={meta.icon}
+        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
+        title={voucher.number}
+        badge={
+          <>
             <VoucherTypeBadge type={voucher.type} />
             <VoucherStatusBadge status={voucher.status} />
             {voucher.recurring && (
@@ -106,10 +102,10 @@ export default function VoucherDetailPage() {
                 Recurring
               </span>
             )}
-          </div>
-          <p className="mt-0.5 text-sm text-muted-foreground">{meta.label}</p>
-        </div>
-      </div>
+          </>
+        }
+        description={meta.label}
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_300px]">
         <div className="space-y-5">

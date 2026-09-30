@@ -1,5 +1,7 @@
 "use client";
 
+import { FolderKanban as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -33,16 +35,18 @@ export default function ProjectsPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Projects</h1>
-          <p className="text-sm text-muted-foreground">{projects?.length ?? 0} development schemes</p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Projects"
+        title="Projects"
+        description={<>{projects?.length ?? 0} development schemes</>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
           New Project
         </Button>
-      </div>
+        </>}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon={FolderKanban} label="Total projects" value={stats.total} />
@@ -69,22 +73,32 @@ export default function ProjectsPage() {
                   transition={{ delay: Math.min(i, 8) * 0.05, duration: 0.4 }}
                 >
                   <Link href={`/dashboard/projects/${p.id}`} className="group block">
-                    <Card className="p-5 shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-primary/[0.06]">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-mono text-xs text-muted-foreground">{p.code}</p>
-                          <h3 className="mt-0.5 truncate font-heading text-lg font-semibold">{p.name}</h3>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            <ProjectTypeBadge type={p.type} />
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <MapPin className="size-3" />
-                              {p.city}
-                            </span>
+                    <Card className="spotlight gap-0 p-0 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary/[0.1] group-hover:ring-gold/40">
+                      <div className="surface-hero relative overflow-hidden px-5 pb-4 pt-5">
+                        <div className="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-gold/25 blur-3xl transition-transform duration-500 group-hover:scale-125" />
+                        <div
+                          className="pointer-events-none absolute inset-0 opacity-[0.1]"
+                          style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+                        />
+                        <div className="relative flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-mono text-[11px] tracking-wider text-white/55">{p.code}</p>
+                            <h3 className="mt-0.5 truncate font-heading text-xl font-semibold text-white">{p.name}</h3>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <ProjectTypeBadge type={p.type} className="bg-white/15 text-white" />
+                              <span className="flex items-center gap-1 text-xs text-white/65">
+                                <MapPin className="size-3" />
+                                {p.city}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <ProjectStatusBadge status={p.status} className="bg-white/15 text-white" />
+                            <SoldRing percent={soldPercent} />
                           </div>
                         </div>
-                        <ProjectStatusBadge status={p.status} className="shrink-0" />
                       </div>
-
+                      <div className="p-5 pt-4">
                       <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{p.description}</p>
 
                       <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-3 text-center">
@@ -114,6 +128,7 @@ export default function ProjectsPage() {
                         <span>{manager?.name ?? "Unassigned"} · {formatLandArea(p.landAreaMarla)}</span>
                         <span>{soldPercent}% sold · Due {formatDate(p.plannedEndDate)}</span>
                       </div>
+                      </div>
                     </Card>
                   </Link>
                 </motion.div>
@@ -122,6 +137,33 @@ export default function ProjectsPage() {
       </div>
 
       <NewProjectDialog open={open} onOpenChange={setOpen} />
+    </div>
+  );
+}
+
+function SoldRing({ percent }: { percent: number }) {
+  const c = 2 * Math.PI * 15;
+  return (
+    <div className="relative size-11">
+      <svg viewBox="0 0 36 36" className="size-full -rotate-90">
+        <circle cx="18" cy="18" r="15" fill="none" stroke="white" strokeOpacity="0.15" strokeWidth="3.5" />
+        <motion.circle
+          cx="18"
+          cy="18"
+          r="15"
+          fill="none"
+          stroke="oklch(0.82 0.13 85)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - percent / 100) }}
+          transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white">
+        {percent}%
+      </span>
     </div>
   );
 }
@@ -144,8 +186,8 @@ function StatTile({
   }[accent];
 
   return (
-    <Card className="flex-row items-center gap-3 p-3.5">
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${accentClasses}`}>
+    <Card className="group/stat flex-row items-center gap-3 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold/40">
+      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover/stat:scale-110 group-hover/stat:-rotate-6 ${accentClasses}`}>
         <Icon className="size-4.5" />
       </div>
       <div className="min-w-0">

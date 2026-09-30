@@ -1,6 +1,10 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { CreditCard as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { AnimatedNumber } from "@/components/animated-number";
+import { motion } from "framer-motion";
+import { Check, Crown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,34 +20,45 @@ export default function BillingPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold">Billing &amp; subscription</h1>
-        <p className="text-sm text-muted-foreground">
-          Switch plans below to preview what each tier unlocks across the app.
-        </p>
-      </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Configuration"
+        title="Billing &amp; subscription"
+        description="Switch plans below to preview what each tier unlocks across the app."
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {PRICING.map((p) => {
+        {PRICING.map((p, i) => {
           const current = p.id === tier;
           return (
-            <Card
+            <motion.div
               key={p.id}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex"
+            >
+            <Card
               className={cn(
-                "relative isolate flex flex-col p-6 transition-transform duration-300",
+                "relative isolate h-full w-full flex-col p-6 transition-all duration-300",
                 current
-                  ? "border-primary/60 shadow-lg shadow-primary/10 md:-translate-y-1.5"
-                  : "hover:-translate-y-0.5 hover:shadow-md",
+                  ? "border-gold/60 shadow-2xl shadow-gold/15 ring-2 ring-gold/50 md:-translate-y-2"
+                  : "hover:-translate-y-1 hover:shadow-xl",
               )}
             >
-              {current && <PlotGridMotif className="rounded-xl opacity-50" />}
-              <div className="relative flex items-center justify-between">
-                <h3 className="font-heading text-lg font-semibold">{p.name}</h3>
-                {current && <Badge>Current plan</Badge>}
+              {current && <PlotGridMotif className="rounded-xl opacity-60" />}
+              {current && (
+                <span className="absolute -top-px left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-b-lg bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-foreground shadow-md">
+                  <Crown className="size-3" /> Your plan
+                </span>
+              )}
+              <div className="relative mt-2 flex items-center justify-between">
+                <h3 className="font-heading text-xl font-semibold">{p.name}</h3>
+                {p.highlight && !current && <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold">Most popular</Badge>}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{p.tagline}</p>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="font-heading text-2xl font-semibold">{formatPkr(p.priceMonthlyPkr)}</span>
+                <span className="font-heading text-3xl font-semibold"><AnimatedNumber value={p.priceMonthlyPkr} format={(n) => formatPkr(n)} /></span>
                 <span className="text-sm text-muted-foreground">/month</span>
               </div>
               <ul className="mt-5 flex-1 space-y-2">
@@ -66,6 +81,7 @@ export default function BillingPage() {
                 {current ? "Currently active" : `Switch to ${p.name}`}
               </Button>
             </Card>
+            </motion.div>
           );
         })}
       </div>

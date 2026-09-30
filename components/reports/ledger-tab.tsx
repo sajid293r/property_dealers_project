@@ -164,8 +164,8 @@ function StatTile({
   }[accent];
 
   return (
-    <Card className="flex-row items-center gap-3 p-3.5">
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${accentClasses}`}>
+    <Card className="group/stat flex-row items-center gap-3 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold/40">
+      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover/stat:-rotate-6 group-hover/stat:scale-110 ${accentClasses}`}>
         <Icon className="size-4.5" />
       </div>
       <div className="min-w-0">

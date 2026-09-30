@@ -1,9 +1,11 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { AnimatedNumber } from "@/components/animated-number";
+import { Sparkline } from "@/components/sparkline";
 import { cn } from "@/lib/utils";
 
 const MotionLink = motion.create(Link);
@@ -19,6 +21,7 @@ export function KpiCard({
   href,
   onClick,
   hintLabel,
+  trend,
 }: {
   label: string;
   value: number;
@@ -30,14 +33,16 @@ export function KpiCard({
   href?: string;
   onClick?: () => void;
   hintLabel?: string;
+  /** Optional series drawn as a sparkline along the card bottom. */
+  trend?: number[];
 }) {
   const positive = (delta ?? 0) >= 0;
   const interactive = Boolean(href || onClick);
   const resolvedHint = hintLabel ?? (href ? "View" : "Filter");
 
   const cardClassName = cn(
-    "group relative block w-full overflow-hidden rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/[0.06]",
-    interactive && "cursor-pointer hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    "spotlight group relative block w-full overflow-hidden rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.08]",
+    interactive && "cursor-pointer hover:border-gold/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   );
 
   const motionProps = {
@@ -46,8 +51,15 @@ export function KpiCard({
     transition: { duration: 0.45, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] as const },
   };
 
+  function trackPointer(e: React.PointerEvent<HTMLElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+  }
+
   const content = (
     <>
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div
         className={cn(
           "absolute -right-6 -top-6 size-24 rounded-full opacity-[0.08] blur-[2px] transition-transform duration-500 group-hover:scale-125",
@@ -71,7 +83,7 @@ export function KpiCard({
               : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground",
           )}
         >
-          <Icon className="size-4.5" />
+          <Icon className="size-4.5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
         </div>
       </div>
       <div className="relative mt-3 flex items-center gap-1.5 text-xs">
@@ -96,12 +108,17 @@ export function KpiCard({
           </span>
         )}
       </div>
+      {trend && trend.length > 1 && (
+        <div className="relative -mx-4 -mb-4 mt-3 opacity-80 transition-opacity group-hover:opacity-100">
+          <Sparkline data={trend} stroke={accent === "gold" ? "var(--gold)" : "var(--primary)"} height={34} />
+        </div>
+      )}
     </>
   );
 
   if (href) {
     return (
-      <MotionLink href={href} className={cardClassName} {...motionProps}>
+      <MotionLink href={href} className={cardClassName} onPointerMove={trackPointer} {...motionProps}>
         {content}
       </MotionLink>
     );
@@ -111,6 +128,7 @@ export function KpiCard({
     <motion.div
       {...motionProps}
       className={cardClassName}
+      onPointerMove={trackPointer}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}

@@ -1,5 +1,9 @@
 "use client";
 
+import { Receipt as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { Receipt as KpiReceipt, CircleAlert as KpiCircleAlert, CircleCheck as KpiCircleCheck, TrendingDown as KpiTrendingDown } from "lucide-react";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { PlusCircle } from "lucide-react";
@@ -16,21 +20,31 @@ export default function ExpensesPage() {
   const { data: expenses, isLoading } = useExpenses();
   const unpaidTotal = expenses?.filter((e) => e.status === "unpaid").reduce((s, e) => s + e.amount, 0) ?? 0;
   const [open, setOpen] = React.useState(false);
+  const totalSpend = expenses?.reduce((s, e) => s + e.amount, 0) ?? 0;
+  const paidTotal = totalSpend - unpaidTotal;
+  const unpaidCount = expenses?.filter((e) => e.status === "unpaid").length ?? 0;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Expenses</h1>
-          <p className="text-sm text-muted-foreground">
-            {expenses?.length ?? 0} vouchers ·{" "}
-            <span className="text-warning">{formatPkr(unpaidTotal)} unpaid</span>
-          </p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Finance"
+        title="Expenses"
+        description={<>{expenses?.length ?? 0} vouchers ·{" "}
+            <span className="text-warning">{formatPkr(unpaidTotal)} unpaid</span></>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
           New Expense
         </Button>
+        </>}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Total expenses" value={totalSpend} format={(n) => formatPkr(n, { compact: true })} icon={KpiTrendingDown} index={0} />
+        <KpiCard label="Paid" value={paidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleCheck} index={1} />
+        <KpiCard label="Unpaid" value={unpaidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleAlert} accent="gold" index={2} />
+        <KpiCard label="Open vouchers" value={unpaidCount} format={(n) => n.toString()} icon={KpiReceipt} accent="gold" index={3} />
       </div>
 
       <Card className="p-5">

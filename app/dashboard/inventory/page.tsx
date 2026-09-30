@@ -1,5 +1,9 @@
 "use client";
 
+import { Building2 as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { KpiCard } from "@/components/dashboard/kpi-card";
+import { Building2 as KpiBuilding2, CircleCheck as KpiCircleCheck, Hourglass as KpiHourglass, Banknote as KpiBanknote } from "lucide-react";
 import * as React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -38,6 +42,10 @@ export default function InventoryPage() {
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [addOpen, setAddOpen] = React.useState(false);
 
+  const availableCount = units?.filter((u) => u.status === "available").length ?? 0;
+  const reservedCount = units?.filter((u) => u.status === "reserved").length ?? 0;
+  const availableValue = units?.filter((u) => u.status === "available").reduce((s, u) => s + u.price, 0) ?? 0;
+
   const categories = React.useMemo(
     () => Array.from(new Set((units ?? []).map((u) => u.category))),
     [units],
@@ -69,17 +77,24 @@ export default function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Inventory / Units</h1>
-          <p className="text-sm text-muted-foreground">
-            {units?.length ?? 0} units across all active projects
-          </p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Inventory"
+        title="Inventory / Units"
+        description={<>{units?.length ?? 0} units across all active projects</>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setAddOpen(true)}>
           <PlusCircle className="size-4" />
           Add Unit
         </Button>
+        </>}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Total units" value={units?.length ?? 0} format={(n) => n.toString()} icon={KpiBuilding2} index={0} />
+        <KpiCard label="Available" value={availableCount} format={(n) => n.toString()} icon={KpiCircleCheck} index={1} />
+        <KpiCard label="Reserved" value={reservedCount} format={(n) => n.toString()} icon={KpiHourglass} accent="gold" index={2} />
+        <KpiCard label="Available stock value" value={availableValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={3} />
       </div>
 
       <Card className="p-4">

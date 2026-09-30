@@ -125,6 +125,7 @@ export default function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-background">
       <SiteNav />
       <Hero />
+      <ModuleMarquee />
       <StatsStrip />
       <FeaturesSection />
       <HowItWorks />
@@ -296,7 +297,7 @@ function Hero() {
           className="font-heading text-[2.75rem] font-semibold leading-[1.05] tracking-tight md:text-7xl"
         >
           The ERP &amp; CRM built for how property dealers{" "}
-          <span className="italic text-primary">actually</span> work
+          <span className="text-gradient-brand italic">actually</span> work
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 14 }}
@@ -356,6 +357,39 @@ function Hero() {
         >
           <Sparkles className="size-3" />
           3 subscription tiers
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute -left-6 top-24 z-20 hidden xl:block"
+        >
+          <div className="glass animate-float flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-primary/10">
+            <span className="flex size-9 items-center justify-center rounded-full bg-success/15 text-success">
+              <HandCoins className="size-4.5" />
+            </span>
+            <div className="text-left">
+              <p className="text-xs font-semibold">Installment received</p>
+              <p className="text-[11px] text-muted-foreground">Rs 450,000 · UNT-1042</p>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute -right-6 top-56 z-20 hidden xl:block"
+        >
+          <div className="glass animate-float-slow flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-primary/10 [animation-delay:-3s]">
+            <span className="flex size-9 items-center justify-center rounded-full bg-gold/20 text-gold">
+              <MapPinned className="size-4.5" />
+            </span>
+            <div className="text-left">
+              <p className="text-xs font-semibold">Plot B-14 booked</p>
+              <p className="text-[11px] text-muted-foreground">Emerald Gardens · just now</p>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -420,10 +454,30 @@ function Hero() {
   );
 }
 
+const MARQUEE_ITEMS = [
+  "Inventory & Bookings", "CRM Pipeline", "Double-entry Accounts", "Plot Map", "Payroll & Leave",
+  "Post-Dated Cheques", "Quotations", "Sales Invoices", "Vouchers", "Contracts", "Project Budgets", "Financial Reports",
+];
+
+function ModuleMarquee() {
+  return (
+    <div className="relative overflow-hidden border-t border-border/60 bg-background py-5 [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
+      <div className="flex w-max animate-marquee gap-10 whitespace-nowrap hover:[animation-play-state:paused]">
+        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+          <span key={i} className="flex items-center gap-10 font-heading text-lg text-muted-foreground/70">
+            {item}
+            <span className="size-1.5 rotate-45 rounded-[2px] bg-gold" />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StatsStrip() {
   const stats = [
-    { icon: Sparkles, value: "3", label: "Subscription tiers" },
-    { icon: ListChecks, value: "12+", label: "ERP/CRM modules" },
+    { icon: Sparkles, value: "3", label: "Subscription tiers", count: 3 },
+    { icon: ListChecks, value: "12+", label: "ERP/CRM modules", count: 12, suffix: "+" },
     { icon: HandCoins, value: "PKR", label: "Native currency & CNIC fields" },
     { icon: Users2, value: "EN/UR", label: "Bilingual ready" },
   ];
@@ -438,7 +492,9 @@ function StatsStrip() {
             <div className="flex size-9 items-center justify-center rounded-full bg-background text-primary shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-md">
               <s.icon className="size-4" />
             </div>
-            <p className="font-heading text-2xl font-semibold">{s.value}</p>
+            <p className="font-heading text-3xl font-semibold">
+              {s.count ? <AnimatedNumber value={s.count} format={(n) => `${n}${s.suffix ?? ""}`} /> : s.value}
+            </p>
             <p className="text-xs text-muted-foreground">{s.label}</p>
           </div>
         ))}
@@ -466,8 +522,13 @@ function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.45, delay: (i % 3) * 0.08 }}
+            onPointerMove={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+              e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+            }}
             className={cn(
-              "group relative overflow-hidden rounded-xl border border-border/70 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl hover:shadow-primary/[0.06]",
+              "spotlight group relative overflow-hidden rounded-xl border border-border/70 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-xl hover:shadow-primary/[0.08]",
               f.big && "lg:col-span-2",
             )}
           >
@@ -501,10 +562,13 @@ function FeaturesSection() {
             {f.title === "Interactive Plot Map" && (
               <div className="relative mt-5 grid grid-cols-6 gap-1.5">
                 {PLOT_PREVIEW.map((status, idx) => (
-                  <span
+                  <motion.span
                     key={idx}
                     className="aspect-square rounded-[3px]"
-                    style={{ backgroundColor: PLOT_COLOR[status], opacity: 0.85 }}
+                    style={{ backgroundColor: PLOT_COLOR[status] }}
+                    animate={{ opacity: [0.55, 1, 0.55] }}
+                    transition={{ duration: 2.8, repeat: Infinity, delay: (idx % 6) * 0.2 + Math.floor(idx / 6) * 0.3 }}
+                    whileHover={{ scale: 1.25 }}
                   />
                 ))}
               </div>
@@ -666,7 +730,8 @@ function PricingSection() {
 function CtaBanner() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24 md:px-6">
-      <div className="relative isolate overflow-hidden rounded-2xl bg-primary px-8 py-14 text-primary-foreground">
+      <div className="surface-hero sheen relative isolate overflow-hidden rounded-3xl px-8 py-16 text-primary-foreground shadow-2xl shadow-primary/25">
+        <div className="pointer-events-none absolute -left-10 bottom-0 size-64 animate-aurora rounded-full bg-[oklch(0.55_0.12_165/0.4)] blur-3xl" />
         <PlotGridMotif variant="inverted" className="opacity-70" />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.15]"
@@ -678,12 +743,12 @@ function CtaBanner() {
         <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-gold/25 blur-3xl" />
         <div className="relative flex flex-col items-center gap-5 text-center md:flex-row md:justify-between md:text-left">
           <div>
-            <h3 className="font-heading text-2xl font-semibold">Ready to modernize your agency?</h3>
+            <h3 className="font-heading text-3xl font-semibold md:text-4xl">Ready to modernize <span className="text-gradient-gold italic">your agency?</span></h3>
             <p className="mt-1.5 text-primary-foreground/80">
               Explore the full prototype with dummy data — no signup required.
             </p>
           </div>
-          <Button size="lg" variant="secondary" asChild>
+          <Button size="lg" className="h-11 bg-gold px-6 text-gold-foreground shadow-lg shadow-gold/30 transition-transform hover:-translate-y-0.5 hover:bg-gold/90" asChild>
             <Link href="/dashboard">
               Open the demo
               <ArrowRight className="size-4" />

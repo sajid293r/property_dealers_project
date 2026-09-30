@@ -1,5 +1,7 @@
 "use client";
 
+import { HardHat as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { Banknote, HardHat, PlusCircle, ShieldCheck, Star } from "lucide-react";
@@ -38,16 +40,18 @@ export default function ContractorsPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Contractors</h1>
-          <p className="text-sm text-muted-foreground">{contractors?.length ?? 0} construction vendors on your roster</p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Projects"
+        title="Contractors"
+        description={<>{contractors?.length ?? 0} construction vendors on your roster</>}
+        actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
           Add Contractor
         </Button>
-      </div>
+        </>}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile icon={HardHat} label="Total contractors" value={stats.total} />
@@ -143,8 +147,8 @@ function StatTile({
   }[accent];
 
   return (
-    <Card className="flex-row items-center gap-3 p-3.5">
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${accentClasses}`}>
+    <Card className="group/stat flex-row items-center gap-3 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold/40">
+      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover/stat:-rotate-6 group-hover/stat:scale-110 ${accentClasses}`}>
         <Icon className="size-4.5" />
       </div>
       <div className="min-w-0">

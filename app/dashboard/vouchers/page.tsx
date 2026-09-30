@@ -1,5 +1,7 @@
 "use client";
 
+import { ScrollText as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,11 +93,12 @@ export default function VouchersPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Vouchers</h1>
-          <p className="text-sm text-muted-foreground">{vouchers?.length ?? 0} vouchers · cash, bank &amp; journal entries</p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Finance"
+        title="Vouchers"
+        description={<>{vouchers?.length ?? 0} vouchers · cash, bank &amp; journal entries</>}
+        actions={<>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="gap-1.5">
@@ -115,7 +118,8 @@ export default function VouchersPage() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+        </>}
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile icon={ScrollText} label="Total vouchers" value={stats.total} />
@@ -261,8 +265,8 @@ function StatTile({
   }[accent];
 
   return (
-    <Card className="flex-row items-center gap-3 p-3.5">
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${accentClasses}`}>
+    <Card className="group/stat flex-row items-center gap-3 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold/40">
+      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover/stat:-rotate-6 group-hover/stat:scale-110 ${accentClasses}`}>
         <Icon className="size-4.5" />
       </div>
       <div className="min-w-0">

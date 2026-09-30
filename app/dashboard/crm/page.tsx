@@ -1,5 +1,7 @@
 "use client";
 
+import { Users2 as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { differenceInCalendarDays } from "date-fns";
@@ -53,6 +55,14 @@ const STAGE_DOT: Record<LeadStatus, string> = {
   negotiation: "bg-gold",
   won: "bg-success",
   lost: "bg-destructive",
+};
+
+const STAGE_TINT: Record<LeadStatus, string> = {
+  new: "from-primary/10",
+  contacted: "from-muted-foreground/10",
+  negotiation: "from-gold/15",
+  won: "from-success/12",
+  lost: "from-destructive/10",
 };
 
 function initials(name: string) {
@@ -110,6 +120,16 @@ export default function CrmPage() {
     toast.success(`${lead.name} moved to ${STAGES.find((s) => s.id === next)?.label}`);
   }
 
+  const [dragId, setDragId] = React.useState<string | null>(null);
+  const [overCol, setOverCol] = React.useState<LeadStatus | null>(null);
+
+  function handleDrop(col: LeadStatus) {
+    const lead = leads?.find((l) => l.id === dragId);
+    setOverCol(null);
+    setDragId(null);
+    if (lead && statusOf(lead) !== col) moveLead(lead, col);
+  }
+
   const columns = STAGES.map((stage) => ({
     ...stage,
     leads: filtered.filter((l) => statusOf(l) === stage.id),
@@ -117,18 +137,18 @@ export default function CrmPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Leads (CRM)</h1>
-          <p className="text-sm text-muted-foreground">
-            {leads?.length ?? 0} leads across all sources — track from first contact to a closed deal.
-          </p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Sales & CRM"
+        title="Leads (CRM)"
+        description={<>{leads?.length ?? 0} leads across all sources — track from first contact to a closed deal.</>}
+        actions={<>
         <Button className="gap-1.5">
           <PlusCircle className="size-4" />
           Add Lead
         </Button>
-      </div>
+        </>}
+      />
 
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-2.5">
@@ -173,7 +193,22 @@ export default function CrmPage() {
               </div>
             ))
           : columns.map((col) => (
-              <div key={col.id} className="w-72 shrink-0">
+              <div
+                key={col.id}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (overCol !== col.id) setOverCol(col.id);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null);
+                }}
+                onDrop={() => handleDrop(col.id)}
+                className={cn(
+                  "w-72 shrink-0 rounded-2xl bg-gradient-to-b to-transparent p-2 transition-all duration-200",
+                  STAGE_TINT[col.id],
+                  overCol === col.id && dragId && "scale-[1.01] ring-2 ring-gold/60 ring-offset-2 ring-offset-background",
+                )}
+              >
                 <div className="mb-3 flex items-center gap-2 px-1">
                   <span className={cn("size-2 rounded-full", STAGE_DOT[col.id])} />
                   <h3 className="font-heading text-sm font-semibold">{col.label}</h3>
@@ -184,7 +219,7 @@ export default function CrmPage() {
                 <div className="space-y-3">
                   {col.leads.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                      No leads here
+                      {dragId ? "Drop here" : "No leads here"}
                     </div>
                   )}
                   {col.leads.map((lead, i) => (
@@ -193,6 +228,12 @@ export default function CrmPage() {
                       lead={lead}
                       status={col.id}
                       index={i}
+                      dragging={dragId === lead.id}
+                      onDragStart={() => setDragId(lead.id)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setOverCol(null);
+                      }}
                       onMove={(next) => moveLead(lead, next)}
                     />
                   ))}
@@ -208,11 +249,17 @@ function LeadCard({
   lead,
   status,
   index,
+  dragging,
+  onDragStart,
+  onDragEnd,
   onMove,
 }: {
   lead: Lead;
   status: LeadStatus;
   index: number;
+  dragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
   onMove: (next: LeadStatus) => void;
 }) {
   const followUp = followUpMeta(lead.nextFollowUp);
@@ -224,7 +271,18 @@ function LeadCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index, 6) * 0.04 }}
     >
-      <Card className="group p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+      <Card
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          onDragStart();
+        }}
+        onDragEnd={onDragEnd}
+        className={cn(
+          "group cursor-grab p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold/40 active:cursor-grabbing",
+          dragging && "rotate-2 scale-95 opacity-40",
+        )}
+      >
         <div className="flex items-start justify-between gap-2">
           <p className="font-medium leading-tight">{lead.name}</p>
           <DropdownMenu>

@@ -1,5 +1,8 @@
 "use client";
 
+import { Landmark as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { AnimatedNumber } from "@/components/animated-number";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { ArrowLeftRight, CheckCircle2, Landmark, Wallet, X } from "lucide-react";
@@ -29,16 +32,18 @@ export default function AccountsPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold">Accounts</h1>
-          <p className="text-sm text-muted-foreground">Cash, bank and petty cash books</p>
-        </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Finance"
+        title="Accounts"
+        description="Cash, bank and petty cash books"
+        actions={<>
         <Button variant="outline" className="gap-1.5" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="size-4" />
           Transfer Payment
         </Button>
-      </div>
+        </>}
+      />
 
       <Tabs defaultValue="cashbank">
         <TabsList>
@@ -62,23 +67,34 @@ export default function AccountsPage() {
                       transition={{ delay: i * 0.06, duration: 0.4 }}
                       className="text-left"
                     >
-                      <Card
+                      <div
                         className={cn(
-                          "group p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/[0.06]",
-                          active && "border-primary/60 ring-1 ring-primary/30",
+                          "group relative isolate h-40 overflow-hidden rounded-2xl p-5 text-white shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl",
+                          acc.type === "bank"
+                            ? "bg-[linear-gradient(135deg,oklch(0.3_0.06_162),oklch(0.18_0.03_158))] shadow-primary/25"
+                            : "bg-[linear-gradient(135deg,oklch(0.55_0.12_78),oklch(0.34_0.07_70))] shadow-gold/25",
+                          active && "ring-2 ring-gold ring-offset-2 ring-offset-background",
                         )}
                       >
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                            {acc.type === "bank" ? <Landmark className="size-3.5" /> : <Wallet className="size-3.5" />}
+                        <div className="pointer-events-none absolute -right-10 -top-12 size-44 rounded-full border-[18px] border-white/[0.06] transition-transform duration-500 group-hover:scale-110" />
+                        <div className="pointer-events-none absolute -bottom-16 right-6 size-40 rounded-full bg-white/[0.06]" />
+                        <div className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/15 to-transparent transition-all duration-700 group-hover:left-[130%]" />
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex h-7 w-10 items-center justify-center rounded-md bg-gradient-to-br from-[oklch(0.9_0.1_88)] to-[oklch(0.7_0.12_75)] shadow-inner">
+                            {acc.type === "bank" ? <Landmark className="size-3.5 text-[oklch(0.35_0.06_75)]" /> : <Wallet className="size-3.5 text-[oklch(0.35_0.06_75)]" />}
                           </div>
-                          <span className="text-xs font-medium">{acc.code}</span>
+                          <span className="font-mono text-[11px] tracking-widest text-white/60">{acc.code}</span>
                         </div>
-                        <p className="mt-2.5 font-heading text-lg font-semibold">{acc.title}</p>
-                        <p className="mt-1 tabular-nums text-xl font-semibold text-primary">
-                          {formatPkr(acc.balance)}
+                        <p className="relative mt-4 text-xs text-white/65">{acc.title}</p>
+                        <AnimatedNumber
+                          value={acc.balance}
+                          format={(n) => formatPkr(n)}
+                          className="relative mt-0.5 block font-heading text-2xl font-semibold tabular-nums"
+                        />
+                        <p className="relative mt-1.5 text-[10px] uppercase tracking-[0.18em] text-white/45">
+                          {active ? "Filtering transactions" : "Click to filter"}
                         </p>
-                      </Card>
+                      </div>
                     </motion.button>
                   );
                 })}

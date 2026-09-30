@@ -1,5 +1,7 @@
 "use client";
 
+import { ClipboardList as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import { Building2, ImageUp, Languages, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -29,12 +31,12 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold">Company Profile</h1>
-        <p className="text-sm text-muted-foreground">
-          How your business appears across vouchers, contracts and exported reports
-        </p>
-      </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Administration"
+        title="Company Profile"
+        description="How your business appears across vouchers, contracts and exported reports"
+      />
 
       <Card className="p-6">
         <div className="mb-5 flex items-center gap-2">

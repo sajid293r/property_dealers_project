@@ -1,5 +1,7 @@
 "use client";
 
+import { Settings as HeaderIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, CreditCard, UserCog, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,10 +13,12 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground">Account, billing and administration shortcuts</p>
-      </div>
+      <PageHeader
+        icon={HeaderIcon}
+        eyebrow="Configuration"
+        title="Settings"
+        description="Account, billing and administration shortcuts"
+      />
 
       <SettingsLink
         href="/dashboard/administration/company-profile"
@@ -38,7 +42,7 @@ export default function SettingsPage() {
       />
 
       <Link href="/dashboard/settings/billing" className="group block">
-        <Card className="flex items-center justify-between p-5 shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-gold/[0.08]">
+        <Card className="flex-row items-center justify-between p-5 shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-gold/[0.08] group-hover:ring-gold/40">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-lg bg-gold/15 text-gold transition-colors duration-300 group-hover:bg-gold group-hover:text-gold-foreground">
               <CreditCard className="size-4.5" />
@@ -70,7 +74,7 @@ function SettingsLink({
 }) {
   return (
     <Link href={href} className="group block">
-      <Card className="flex items-center justify-between p-5 shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-primary/[0.06]">
+      <Card className="flex-row items-center justify-between p-5 shadow-sm transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:shadow-primary/[0.08] group-hover:ring-gold/40">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
             <Icon className="size-4.5" />
