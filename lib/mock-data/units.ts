@@ -25,7 +25,7 @@ export const units: Unit[] = range(42).map((i) => {
   const price = Math.round((sizeMarla * pricePerMarla) / 10000) * 10000;
   return {
     id: `unit-${i + 1}`,
-    code: `UNT-${(1000 + i).toString()}`,
+    code: `PRP-${(1000 + i).toString()}`,
     title: `Plot ${i + 1}`,
     project: pick(rand, PROJECTS),
     category: pick(rand, CATEGORIES),

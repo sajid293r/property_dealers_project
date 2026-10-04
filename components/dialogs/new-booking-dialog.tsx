@@ -91,7 +91,7 @@ export function NewBookingDialog({
       onOpenChange={handleOpenChange}
       icon={Handshake}
       title="New Booking"
-      description="Reserve a unit and record the advance payment."
+      description="Reserve a property and record the advance payment."
       submitLabel="Create Booking"
       submitDisabled={!customerId || !unitId || !advance}
       onSubmit={handleSubmit}
@@ -107,9 +107,9 @@ export function NewBookingDialog({
         </Select>
       </Field>
 
-      <Field label="Unit">
+      <Field label="Property">
         <Select value={unitId} onValueChange={handleUnitChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available unit" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available property" /></SelectTrigger>
           <SelectContent>
             {availableUnits.map((u) => (
               <SelectItem key={u.id} value={u.id}>

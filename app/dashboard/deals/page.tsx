@@ -83,7 +83,7 @@ export default function DealsPage() {
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search voucher, customer, unit..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder="Search voucher, customer, property..." />
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger size="sm" className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
@@ -102,7 +102,7 @@ export default function DealsPage() {
               <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Voucher</th>
                 <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Unit</th>
+                <th className="pb-2.5 font-medium">Property</th>
                 <th className="pb-2.5 font-medium">Progress</th>
                 <th className="pb-2.5 font-medium">Total</th>
                 <th className="pb-2.5 font-medium">Status</th>

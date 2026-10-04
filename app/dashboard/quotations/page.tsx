@@ -87,7 +87,7 @@ export default function QuotationsPage() {
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, customer, unit..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, customer, property..." />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -95,7 +95,7 @@ export default function QuotationsPage() {
               <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Quotation</th>
                 <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Unit</th>
+                <th className="pb-2.5 font-medium">Property</th>
                 <th className="pb-2.5 font-medium">Price</th>
                 <th className="pb-2.5 font-medium">Valid until</th>
                 <th className="pb-2.5 font-medium">Status</th>

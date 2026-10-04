@@ -115,7 +115,7 @@ export function NewSalesInvoiceDialog({
       </FieldRow>
 
       <Field label="Description">
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Installment #4 — Plot UNT-1042" />
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Installment #4 — Plot PRP-1042" />
       </Field>
 
       <FieldRow>

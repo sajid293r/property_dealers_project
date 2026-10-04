@@ -182,10 +182,10 @@ export default function ProjectDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">Inventory</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">Properties</h3>
           <UnitStatusDonut units={projectUnits} />
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-sm">
-            <span className="text-muted-foreground">Inventory value</span>
+            <span className="text-muted-foreground">Portfolio value</span>
             <span className="font-medium tabular-nums">{formatPkr(unitStats?.inventoryValue ?? 0, { compact: true })}</span>
           </div>
         </Card>

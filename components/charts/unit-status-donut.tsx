@@ -51,7 +51,7 @@ export function UnitStatusDonut({ units }: { units: Unit[] }) {
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-heading text-2xl font-semibold">{total}</span>
-        <span className="text-[11px] text-muted-foreground">Total units</span>
+        <span className="text-[11px] text-muted-foreground">Total properties</span>
       </div>
       <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1.5">
         {data.map((d) => (

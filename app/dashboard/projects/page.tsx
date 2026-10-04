@@ -52,7 +52,7 @@ export default function ProjectsPage() {
         <StatTile icon={FolderKanban} label="Total projects" value={stats.total} />
         <StatTile icon={Layers} label="Active" value={stats.active} accent="success" />
         <StatTile icon={Banknote} label="Total budget" value={formatPkr(stats.totalBudget, { compact: true })} accent="gold" />
-        <StatTile icon={Wallet} label="Units across schemes" value={stats.totalUnits} />
+        <StatTile icon={Wallet} label="Properties across schemes" value={stats.totalUnits} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

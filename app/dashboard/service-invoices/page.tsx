@@ -88,7 +88,7 @@ export default function ServiceInvoicesPage() {
             <thead>
               <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Invoice</th>
-                <th className="pb-2.5 font-medium">Customer / Unit</th>
+                <th className="pb-2.5 font-medium">Customer / Property</th>
                 <th className="pb-2.5 font-medium">Type</th>
                 <th className="pb-2.5 font-medium">Period</th>
                 <th className="pb-2.5 font-medium">Amount</th>

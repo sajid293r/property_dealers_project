@@ -3,7 +3,7 @@
 import { ClipboardList as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
-import { Building2, ImageUp, Languages, MapPin } from "lucide-react";
+import { ImageUp, Languages, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,11 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useCompany } from "@/lib/providers/company-provider";
+import { CompanyAvatar } from "@/components/company-avatar";
 
 const PROVINCES = ["Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan", "Islamabad Capital Territory"] as const;
 const BUSINESS_TYPES = ["Independent dealer", "Agency", "Developer / housing scheme", "Dealer network"] as const;
 
 export default function CompanyProfilePage() {
+  const { company } = useCompany();
   const [bilingual, setBilingual] = React.useState(false);
   const [whatsappFirst, setWhatsappFirst] = React.useState(true);
 
@@ -46,9 +49,7 @@ export default function CompanyProfilePage() {
           <h3 className="font-heading text-base font-semibold">Branding</h3>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 text-muted-foreground">
-            <Building2 className="size-6" />
-          </div>
+          <CompanyAvatar company={company} className="size-16 rounded-2xl text-xl" />
           <div className="flex-1">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Logo upload is mocked in this prototype")}>
               <ImageUp className="size-3.5" />
@@ -62,8 +63,8 @@ export default function CompanyProfilePage() {
       <Card className="space-y-5 p-6">
         <h3 className="font-heading text-base font-semibold">Business details</h3>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Legal company name" defaultValue="Al-Noor Estate Advisors" />
-          <Field label="Display name" defaultValue="Al-Noor Estates" />
+          <Field label="Legal company name" defaultValue={company.name} />
+          <Field label="Display name" defaultValue={company.shortName} />
           <div>
             <Label className="mb-2 text-xs font-medium text-muted-foreground">Business type</Label>
             <Select defaultValue={BUSINESS_TYPES[1]}>
@@ -75,10 +76,10 @@ export default function CompanyProfilePage() {
               </SelectContent>
             </Select>
           </div>
-          <Field label="NTN" defaultValue="1234567-8" />
-          <Field label="Phone" defaultValue="042-111-000-999" />
-          <Field label="Email" defaultValue="info@alnoorestates.pk" type="email" />
-          <Field label="Website" defaultValue="alnoorestates.pk" className="sm:col-span-2" />
+          <Field label="NTN" defaultValue={company.ntn} />
+          <Field label="Phone" defaultValue={company.phone} />
+          <Field label="Email" defaultValue={company.email} type="email" />
+          <Field label="Website" defaultValue={company.email.split("@")[1] ?? ""} className="sm:col-span-2" />
         </div>
       </Card>
 
@@ -91,7 +92,7 @@ export default function CompanyProfilePage() {
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Field label="Address" defaultValue="Plot 12, MM Alam Road" className="sm:col-span-2" />
-          <Field label="City" defaultValue="Lahore" />
+          <Field label="City" defaultValue={company.city} />
           <div>
             <Label className="mb-2 text-xs font-medium text-muted-foreground">Province</Label>
             <Select defaultValue={PROVINCES[0]}>

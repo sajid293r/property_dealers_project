@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Bell, ChevronDown, Search, Wallet } from "lucide-react";
+import { CompanyAvatar } from "@/components/company-avatar";
+import { useCompany } from "@/lib/providers/company-provider";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function AppTopbar() {
   const { data: accounts, isLoading } = useAccounts();
   const totalCash = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
+  const { company } = useCompany();
   const [paletteOpen, setPaletteOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -40,6 +43,11 @@ export function AppTopbar() {
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b border-border/70 bg-background/80 px-4 backdrop-blur-md">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-1 h-5" />
+
+      <div className="hidden items-center gap-2 rounded-full border border-border/70 bg-secondary/40 py-1 pl-1 pr-3 xl:flex">
+        <CompanyAvatar company={company} className="size-7 rounded-full text-[10px]" />
+        <span className="max-w-40 truncate text-sm font-medium">{company.shortName}</span>
+      </div>
 
       <Popover>
         <PopoverTrigger asChild>
@@ -122,7 +130,7 @@ export function AppTopbar() {
             <div className="space-y-2">
               <NotificationRow
                 title="Installment due tomorrow"
-                detail="Ahmed Khan — Plot UNT-1042"
+                detail="Ahmed Khan — Plot PRP-1042"
               />
               <NotificationRow
                 title="New lead assigned"

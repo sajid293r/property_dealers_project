@@ -59,7 +59,7 @@ export const COA_TREE: LedgerAccountNode[] = [
   { id: "03.01.02.0001", code: "03.01.02.0001", name: "Trade Receivables — Customers", accountClass: "asset", category: "asset_receivable", parentId: "03.01.02" },
   { id: "03.01.02.0002", code: "03.01.02.0002", name: "Staff Advances Receivable", accountClass: "asset", category: "asset_receivable", parentId: "03.01.02" },
   { id: "03.01.03", code: "03.01.03", name: "Stock In Hand", accountClass: "asset", category: "asset_current", parentId: "03.01", isGroup: true },
-  { id: "03.01.03.0001", code: "03.01.03.0001", name: "Unsold Units Inventory", accountClass: "asset", category: "asset_current", parentId: "03.01.03" },
+  { id: "03.01.03.0001", code: "03.01.03.0001", name: "Unsold Properties Inventory", accountClass: "asset", category: "asset_current", parentId: "03.01.03" },
   { id: "03.01.04", code: "03.01.04", name: "Prepayments", accountClass: "asset", category: "asset_prepayments", parentId: "03.01", isGroup: true },
   { id: "03.01.04.0001", code: "03.01.04.0001", name: "Prepaid Rent", accountClass: "asset", category: "asset_prepayments", parentId: "03.01.04" },
   { id: "03.02", code: "03.02", name: "Fixed Assets", accountClass: "asset", category: "asset_fixed", parentId: "03", isGroup: true },

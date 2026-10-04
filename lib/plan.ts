@@ -23,6 +23,7 @@ import {
   Palmtree,
   FolderKanban,
   HardHat,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,6 +49,7 @@ export function tierMeets(current: PlanTier, minimum: PlanTier) {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minTier: "basic", section: "Overview" },
+  { href: "/dashboard/companies", label: "Group Overview", icon: Network, minTier: "basic", section: "Overview" },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban, minTier: "moderate", section: "Projects" },
   { href: "/dashboard/contractors", label: "Contractors", icon: HardHat, minTier: "moderate", section: "Projects" },
   { href: "/dashboard/crm", label: "Leads (CRM)", icon: Users2, minTier: "moderate", section: "Sales & CRM" },
@@ -57,8 +59,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/cheques", label: "Post-Dated Cheques", icon: CalendarClock, minTier: "moderate", section: "Sales & CRM" },
   { href: "/dashboard/service-invoices", label: "Service Invoices", icon: Wrench, minTier: "moderate", section: "Sales & CRM" },
   { href: "/dashboard/contracts", label: "Contracts", icon: FileSignature, minTier: "moderate", section: "Sales & CRM" },
-  { href: "/dashboard/inventory", label: "Inventory / Units", icon: Building2, minTier: "basic", section: "Inventory" },
-  { href: "/dashboard/plot-map", label: "Plot Map", icon: MapPinned, minTier: "premium", section: "Inventory" },
+  { href: "/dashboard/properties", label: "Properties", icon: Building2, minTier: "basic", section: "Portfolio" },
+  { href: "/dashboard/plot-map", label: "Plot Map", icon: MapPinned, minTier: "premium", section: "Portfolio" },
   { href: "/dashboard/accounts", label: "Accounts", icon: Landmark, minTier: "basic", section: "Finance" },
   { href: "/dashboard/vouchers", label: "Vouchers", icon: ScrollText, minTier: "basic", section: "Finance" },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt, minTier: "basic", section: "Finance" },
@@ -112,7 +114,7 @@ export const PRICING: PricingTier[] = [
     tagline: "For independent dealers getting organized.",
     seats: "Up to 2 staff seats",
     features: [
-      "Unit / plot catalogue",
+      "Property / plot catalogue",
       "Bookings & simple installment sales",
       "Single cash account ledger",
       "Expense vouchers",

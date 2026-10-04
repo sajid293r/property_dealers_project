@@ -55,11 +55,11 @@ export function NewUnitDialog({
   }
 
   function handleSubmit() {
-    const code = `UNT-${Math.floor(1000 + Math.random() * 8999)}`;
+    const code = `PRP-${Math.floor(1000 + Math.random() * 8999)}`;
     const newUnit: Unit = {
       id: `unit-${Date.now()}`,
       code,
-      title: title || `Plot ${code.replace("UNT-", "")}`,
+      title: title || `Plot ${code.replace("PRP-", "")}`,
       project,
       category,
       sizeMarla: Number(sizeMarla) || 0,
@@ -72,7 +72,7 @@ export function NewUnitDialog({
     };
 
     queryClient.setQueryData<Unit[]>(["units"], (old = []) => [newUnit, ...old]);
-    toast.success(`Unit ${code} added`, { description: `${newUnit.title} · ${project}` });
+    toast.success(`Property ${code} added`, { description: `${newUnit.title} · ${project}` });
   }
 
   return (
@@ -80,9 +80,9 @@ export function NewUnitDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Building2}
-      title="Add Unit"
-      description="List a new plot or property in your inventory."
-      submitLabel="Add Unit"
+      title="Add Property"
+      description="List a new plot or property in your portfolio."
+      submitLabel="Add Property"
       submitDisabled={!project || !category || !sizeMarla || !price}
       onSubmit={handleSubmit}
     >

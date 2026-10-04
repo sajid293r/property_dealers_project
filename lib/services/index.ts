@@ -1,110 +1,89 @@
-import {
-  units,
-  customers,
-  deals,
-  leads,
-  staff,
-  accounts,
-  transactions,
-  expenses,
-  roles,
-  systemUsers,
-  vouchers,
-  quotations,
-  salesInvoices,
-  postDatedCheques,
-  serviceInvoices,
-  payrollAdjustments,
-  leaveRequests,
-  projects,
-  contractors,
-  constructionContracts,
-} from "@/lib/mock-data";
-import { contracts } from "@/lib/mock-data/expenses";
+import { getDataset } from "@/lib/mock-data/company-data";
 
 // Simulated latency so loading/skeleton states feel real even with mock data.
 // This is the seam where real fetch()/server-action calls replace the in-memory reads.
+// Every service takes the active company id: data is always read per company.
 function withLatency<T>(data: T, ms = 350): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
 export const unitsService = {
-  list: () => withLatency(units),
+  list: (companyId: string) => withLatency(getDataset(companyId).units),
 };
 
 export const customersService = {
-  list: () => withLatency(customers),
+  list: (companyId: string) => withLatency(getDataset(companyId).customers),
 };
 
 export const dealsService = {
-  list: () => withLatency(deals),
+  list: (companyId: string) => withLatency(getDataset(companyId).deals),
 };
 
 export const leadsService = {
-  list: () => withLatency(leads),
+  list: (companyId: string) => withLatency(getDataset(companyId).leads),
 };
 
 export const staffService = {
-  list: () => withLatency(staff),
-};
-
-export const accountsService = {
-  list: () => withLatency(accounts),
-  transactions: () => withLatency(transactions),
+  list: (companyId: string) => withLatency(getDataset(companyId).staff),
 };
 
 export const expensesService = {
-  list: () => withLatency(expenses),
+  list: (companyId: string) => withLatency(getDataset(companyId).expenses),
 };
 
 export const contractsService = {
-  list: () => withLatency(contracts),
+  list: (companyId: string) => withLatency(getDataset(companyId).contracts),
 };
 
 export const rolesService = {
-  list: () => withLatency(roles),
+  list: (companyId: string) => withLatency(getDataset(companyId).roles),
 };
 
 export const systemUsersService = {
-  list: () => withLatency(systemUsers),
+  list: (companyId: string) => withLatency(getDataset(companyId).systemUsers),
 };
 
 export const vouchersService = {
-  list: () => withLatency(vouchers),
+  list: (companyId: string) => withLatency(getDataset(companyId).vouchers),
 };
 
 export const quotationsService = {
-  list: () => withLatency(quotations),
+  list: (companyId: string) => withLatency(getDataset(companyId).quotations),
 };
 
 export const salesInvoicesService = {
-  list: () => withLatency(salesInvoices),
+  list: (companyId: string) => withLatency(getDataset(companyId).salesInvoices),
 };
 
 export const postDatedChequesService = {
-  list: () => withLatency(postDatedCheques),
+  list: (companyId: string) => withLatency(getDataset(companyId).postDatedCheques),
 };
 
 export const serviceInvoicesService = {
-  list: () => withLatency(serviceInvoices),
+  list: (companyId: string) => withLatency(getDataset(companyId).serviceInvoices),
 };
 
 export const payrollAdjustmentsService = {
-  list: () => withLatency(payrollAdjustments),
+  list: (companyId: string) => withLatency(getDataset(companyId).payrollAdjustments),
 };
 
 export const leaveRequestsService = {
-  list: () => withLatency(leaveRequests),
+  list: (companyId: string) => withLatency(getDataset(companyId).leaveRequests),
 };
 
 export const projectsService = {
-  list: () => withLatency(projects),
+  list: (companyId: string) => withLatency(getDataset(companyId).projects),
 };
 
 export const contractorsService = {
-  list: () => withLatency(contractors),
+  list: (companyId: string) => withLatency(getDataset(companyId).contractors),
 };
 
 export const constructionContractsService = {
-  list: () => withLatency(constructionContracts),
+  list: (companyId: string) => withLatency(getDataset(companyId).constructionContracts),
+};
+
+export const accountsService = {
+  list: (companyId: string) => withLatency(getDataset(companyId).accounts),
+  transactions: (companyId: string) => withLatency(getDataset(companyId).transactions),
 };

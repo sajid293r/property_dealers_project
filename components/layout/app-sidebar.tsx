@@ -24,6 +24,7 @@ import {
 import { NAV_ITEMS, PLAN_LABEL, tierMeets } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { CompanySwitcher } from "@/components/layout/company-switcher";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,9 @@ export function AppSidebar() {
             </span>
           </div>
         </Link>
+        <div className="mt-3">
+          <CompanySwitcher />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

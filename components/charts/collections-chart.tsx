@@ -15,7 +15,8 @@ import {
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPkr } from "@/lib/format";
-import { monthlyCollections, weeklyCollections } from "@/lib/mock-data/trends";
+import { getTrends } from "@/lib/mock-data/company-data";
+import { useCompany } from "@/lib/providers/company-provider";
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;
@@ -32,13 +33,15 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType,
 }
 
 export function CollectionsChart() {
+  const { company } = useCompany();
+  const { monthly: monthlyCollections, weekly: weeklyCollections } = React.useMemo(() => getTrends(company.id), [company.id]);
   const [range, setRange] = React.useState<"weekly" | "monthly">("monthly");
   const data = React.useMemo(
     () =>
       range === "monthly"
         ? monthlyCollections.map((d) => ({ label: d.month, collections: d.collections, target: d.target as number | null }))
         : weeklyCollections.map((d) => ({ label: d.week, collections: d.collections, target: null as number | null })),
-    [range],
+    [range, monthlyCollections, weeklyCollections],
   );
   const xKey = "label";
 

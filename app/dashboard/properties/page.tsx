@@ -34,7 +34,7 @@ const STATUS_STYLES: Record<UnitStatus, string> = {
   sold: "bg-muted text-muted-foreground border-border",
 };
 
-export default function InventoryPage() {
+export default function PropertiesPage() {
   const { data: units, isLoading } = useUnits();
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"all" | UnitStatus>("all");
@@ -79,19 +79,19 @@ export default function InventoryPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Inventory"
-        title="Inventory / Units"
-        description={<>{units?.length ?? 0} units across all active projects</>}
+        eyebrow="Portfolio"
+        title="Properties"
+        description={<>{units?.length ?? 0} properties across all active projects</>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setAddOpen(true)}>
           <PlusCircle className="size-4" />
-          Add Unit
+          Add Property
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total units" value={units?.length ?? 0} format={(n) => n.toString()} icon={KpiBuilding2} index={0} />
+        <KpiCard label="Total properties" value={units?.length ?? 0} format={(n) => n.toString()} icon={KpiBuilding2} index={0} />
         <KpiCard label="Available" value={availableCount} format={(n) => n.toString()} icon={KpiCircleCheck} index={1} />
         <KpiCard label="Reserved" value={reservedCount} format={(n) => n.toString()} icon={KpiHourglass} accent="gold" index={2} />
         <KpiCard label="Available stock value" value={availableValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={3} />
@@ -126,7 +126,7 @@ export default function InventoryPage() {
                 size="sm"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => toast.success(`Bulk price update queued for ${selected.size} units`)}
+                onClick={() => toast.success(`Bulk price update queued for ${selected.size} properties`)}
               >
                 <Tag className="size-3.5" />
                 Update Price
@@ -136,7 +136,7 @@ export default function InventoryPage() {
                 variant="outline"
                 className="gap-1.5 text-destructive hover:text-destructive"
                 onClick={() => {
-                  toast.success(`${selected.size} units archived`);
+                  toast.success(`${selected.size} properties archived`);
                   setSelected(new Set());
                 }}
               >
@@ -154,7 +154,7 @@ export default function InventoryPage() {
                 <th className="w-9 pb-2.5">
                   <Checkbox checked={allChecked} onCheckedChange={(c) => toggleAll(!!c)} />
                 </th>
-                <th className="pb-2.5 font-medium">Unit</th>
+                <th className="pb-2.5 font-medium">Property</th>
                 <th className="pb-2.5 font-medium">Category</th>
                 <th className="pb-2.5 font-medium">Size</th>
                 <th className="pb-2.5 font-medium">Price</th>
@@ -181,7 +181,7 @@ export default function InventoryPage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    No units match these filters.
+                    No properties match these filters.
                   </td>
                 </tr>
               )}

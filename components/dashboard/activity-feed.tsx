@@ -27,7 +27,7 @@ const TONE: Record<FeedItem["tone"], string> = {
 };
 
 const ITEMS: FeedItem[] = [
-  { icon: HandCoins, tone: "success", title: "Installment received", detail: "Ahmed Khan paid Rs 450K · UNT-1042", time: "12 min ago" },
+  { icon: HandCoins, tone: "success", title: "Installment received", detail: "Ahmed Khan paid Rs 450K · PRP-1042", time: "12 min ago" },
   { icon: Handshake, tone: "gold", title: "Booking confirmed", detail: "Plot B-14 · Emerald Gardens", time: "1 hr ago" },
   { icon: UserPlus, tone: "primary", title: "New lead assigned", detail: "Sana Qureshi via WhatsApp", time: "2 hr ago" },
   { icon: CalendarClock, tone: "warning", title: "Cheque due tomorrow", detail: "HBL · Rs 1.2M · Bilal Traders", time: "3 hr ago" },

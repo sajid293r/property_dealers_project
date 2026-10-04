@@ -31,7 +31,7 @@ const SEEDS: Seed[] = [
 
   // Emerald Gardens (completed scheme)
   { projectId: "proj-4", contractorId: "ctr-9", scopeOfWork: "Main civil & structural works", contractValue: 95_000_000, paidRatio: 1, retentionPercent: 10, startOffset: -880, endOffset: -150, status: "completed", progressPercent: 100 },
-  { projectId: "proj-4", contractorId: "ctr-7", scopeOfWork: "Interior finishing — show units & clubhouse", contractValue: 21_000_000, paidRatio: 1, retentionPercent: 5, startOffset: -300, endOffset: -110, status: "completed", progressPercent: 100 },
+  { projectId: "proj-4", contractorId: "ctr-7", scopeOfWork: "Interior finishing — show properties & clubhouse", contractValue: 21_000_000, paidRatio: 1, retentionPercent: 5, startOffset: -300, endOffset: -110, status: "completed", progressPercent: 100 },
   { projectId: "proj-4", contractorId: "ctr-6", scopeOfWork: "Internal roads & drainage (original contractor)", contractValue: 30_000_000, paidRatio: 0.4, retentionPercent: 10, startOffset: -700, endOffset: -400, status: "terminated", progressPercent: 40 },
 ];
 

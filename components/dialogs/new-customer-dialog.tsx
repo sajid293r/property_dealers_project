@@ -65,7 +65,7 @@ export function NewCustomerDialog({
       onOpenChange={handleOpenChange}
       icon={Users2}
       title="Add Customer"
-      description="Create a client record to book units against."
+      description="Create a client record to book properties against."
       submitLabel="Add Customer"
       submitDisabled={!name || !phone || !city}
       onSubmit={handleSubmit}

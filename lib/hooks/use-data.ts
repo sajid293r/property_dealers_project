@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useCompany } from "@/lib/providers/company-provider";
 import {
   unitsService,
   customersService,
@@ -24,30 +25,33 @@ import {
   constructionContractsService,
 } from "@/lib/services";
 
-export const useUnits = () => useQuery({ queryKey: ["units"], queryFn: unitsService.list });
-export const useCustomers = () => useQuery({ queryKey: ["customers"], queryFn: customersService.list });
-export const useDeals = () => useQuery({ queryKey: ["deals"], queryFn: dealsService.list });
-export const useLeads = () => useQuery({ queryKey: ["leads"], queryFn: leadsService.list });
-export const useStaff = () => useQuery({ queryKey: ["staff"], queryFn: staffService.list });
-export const useAccounts = () => useQuery({ queryKey: ["accounts"], queryFn: accountsService.list });
-export const useTransactions = () =>
-  useQuery({ queryKey: ["transactions"], queryFn: accountsService.transactions });
-export const useExpenses = () => useQuery({ queryKey: ["expenses"], queryFn: expensesService.list });
-export const useContracts = () => useQuery({ queryKey: ["contracts"], queryFn: contractsService.list });
-export const useRoles = () => useQuery({ queryKey: ["roles"], queryFn: rolesService.list });
-export const useSystemUsers = () => useQuery({ queryKey: ["systemUsers"], queryFn: systemUsersService.list });
-export const useVouchers = () => useQuery({ queryKey: ["vouchers"], queryFn: vouchersService.list });
-export const useQuotations = () => useQuery({ queryKey: ["quotations"], queryFn: quotationsService.list });
-export const useSalesInvoices = () => useQuery({ queryKey: ["salesInvoices"], queryFn: salesInvoicesService.list });
-export const usePostDatedCheques = () =>
-  useQuery({ queryKey: ["postDatedCheques"], queryFn: postDatedChequesService.list });
-export const useServiceInvoices = () =>
-  useQuery({ queryKey: ["serviceInvoices"], queryFn: serviceInvoicesService.list });
-export const usePayrollAdjustments = () =>
-  useQuery({ queryKey: ["payrollAdjustments"], queryFn: payrollAdjustmentsService.list });
-export const useLeaveRequests = () =>
-  useQuery({ queryKey: ["leaveRequests"], queryFn: leaveRequestsService.list });
-export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: projectsService.list });
-export const useContractors = () => useQuery({ queryKey: ["contractors"], queryFn: contractorsService.list });
-export const useConstructionContracts = () =>
-  useQuery({ queryKey: ["constructionContracts"], queryFn: constructionContractsService.list });
+/**
+ * Reads a collection for the active company. Each company has its own query
+ * cache (see QueryProvider), so the key stays a plain collection name.
+ */
+function useCompanyQuery<T>(key: string, fetcher: (companyId: string) => Promise<T>) {
+  const { company } = useCompany();
+  return useQuery({ queryKey: [key], queryFn: () => fetcher(company.id) });
+}
+
+export const useUnits = () => useCompanyQuery("units", unitsService.list);
+export const useCustomers = () => useCompanyQuery("customers", customersService.list);
+export const useDeals = () => useCompanyQuery("deals", dealsService.list);
+export const useLeads = () => useCompanyQuery("leads", leadsService.list);
+export const useStaff = () => useCompanyQuery("staff", staffService.list);
+export const useAccounts = () => useCompanyQuery("accounts", accountsService.list);
+export const useTransactions = () => useCompanyQuery("transactions", accountsService.transactions);
+export const useExpenses = () => useCompanyQuery("expenses", expensesService.list);
+export const useContracts = () => useCompanyQuery("contracts", contractsService.list);
+export const useRoles = () => useCompanyQuery("roles", rolesService.list);
+export const useSystemUsers = () => useCompanyQuery("systemUsers", systemUsersService.list);
+export const useVouchers = () => useCompanyQuery("vouchers", vouchersService.list);
+export const useQuotations = () => useCompanyQuery("quotations", quotationsService.list);
+export const useSalesInvoices = () => useCompanyQuery("salesInvoices", salesInvoicesService.list);
+export const usePostDatedCheques = () => useCompanyQuery("postDatedCheques", postDatedChequesService.list);
+export const useServiceInvoices = () => useCompanyQuery("serviceInvoices", serviceInvoicesService.list);
+export const usePayrollAdjustments = () => useCompanyQuery("payrollAdjustments", payrollAdjustmentsService.list);
+export const useLeaveRequests = () => useCompanyQuery("leaveRequests", leaveRequestsService.list);
+export const useProjects = () => useCompanyQuery("projects", projectsService.list);
+export const useContractors = () => useCompanyQuery("contractors", contractorsService.list);
+export const useConstructionContracts = () => useCompanyQuery("constructionContracts", constructionContractsService.list);

@@ -121,7 +121,7 @@ export default function PlotMapPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={MapPinned}
-        eyebrow="Inventory"
+        eyebrow="Portfolio"
         title="Plot Map"
         badge={
           <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/10 text-gold">
@@ -129,7 +129,7 @@ export default function PlotMapPage() {
             Premium
           </Badge>
         }
-        description="Pick a plot visually — click any unit to see pricing and booking status."
+        description="Pick a plot visually — click any property to see pricing and booking status."
       />
 
       <Card className="p-4">
@@ -319,7 +319,7 @@ export default function PlotMapPage() {
                                 isSelected && "z-10 scale-110 shadow-lg ring-2 ring-primary ring-offset-2 ring-offset-background",
                               )}
                             >
-                              <span className="leading-none">{unit.code.replace("UNT-", "")}</span>
+                              <span className="leading-none">{unit.code.replace("PRP-", "")}</span>
                               <span className="text-[8px] font-normal opacity-80">{unit.block}</span>
                             </motion.button>
                           </TooltipTrigger>
@@ -385,11 +385,11 @@ export default function PlotMapPage() {
                     disabled={selectedUnit.status !== "available"}
                     onClick={() => toast.success(`Booking started for ${selectedUnit.code}`)}
                   >
-                    {selectedUnit.status === "available" ? "Book this unit" : "Not available"}
+                    {selectedUnit.status === "available" ? "Book this property" : "Not available"}
                   </Button>
                   <Button variant="outline" asChild>
-                    <Link href="/dashboard/inventory">
-                      View in inventory
+                    <Link href="/dashboard/properties">
+                      View in properties
                       <ArrowRight className="size-3.5" />
                     </Link>
                   </Button>
@@ -419,7 +419,7 @@ export default function PlotMapPage() {
                     </div>
                     <div className="mt-4 space-y-2 border-t border-border/60 pt-4 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total inventory value</span>
+                        <span className="text-muted-foreground">Total portfolio value</span>
                         <span className="tabular-nums font-medium">
                           {formatPkr(projectUnits.reduce((s, u) => s + u.price, 0), { compact: true })}
                         </span>

@@ -18,16 +18,19 @@ import { CollectionsChart } from "@/components/charts/collections-chart";
 import { UnitStatusDonut } from "@/components/charts/unit-status-donut";
 import { NewBookingDialog } from "@/components/dialogs/new-booking-dialog";
 import { useUnits, useDeals, useCustomers, useLeads } from "@/lib/hooks/use-data";
-import { monthlyCollections } from "@/lib/mock-data/trends";
+import { getTrends } from "@/lib/mock-data/company-data";
+import { useCompany } from "@/lib/providers/company-provider";
 import { formatPkr, formatDate } from "@/lib/format";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { cn } from "@/lib/utils";
 
-const TREND_COLLECTIONS = monthlyCollections.map((m) => m.collections);
-const ANNUAL_TARGET_PCT_BASE = monthlyCollections.reduce((s, m) => s + m.target, 0);
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { company } = useCompany();
+  const { monthly } = React.useMemo(() => getTrends(company.id), [company.id]);
+  const TREND_COLLECTIONS = monthly.map((m) => m.collections);
+  const ANNUAL_TARGET_PCT_BASE = monthly.reduce((s, m) => s + m.target, 0);
   const { data: units, isLoading: unitsLoading } = useUnits();
   const { data: deals, isLoading: dealsLoading } = useDeals();
   const { data: customers } = useCustomers();
@@ -58,6 +61,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <HeroBanner
+        companyName={company.name}
         collected={totalCollections}
         target={ANNUAL_TARGET_PCT_BASE}
         onNewBooking={() => setBookingOpen(true)}
@@ -67,13 +71,13 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Available Units"
+          label="Available Properties"
           value={availableUnits}
           format={(n) => n.toString()}
           icon={Building2}
           delta={4.2}
           index={0}
-          href="/dashboard/inventory"
+          href="/dashboard/properties"
           trend={[12, 14, 13, 16, 15, 18, 17, 20, 19, 22]}
         />
         <KpiCard
@@ -115,7 +119,7 @@ export default function DashboardPage() {
           <CollectionsChart />
         </SpotlightCard>
         <SpotlightCard className="p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">Inventory status</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">Property status</h3>
           {isLoading ? (
             <Skeleton className="h-52 w-full" />
           ) : (
@@ -152,7 +156,7 @@ export default function DashboardPage() {
               <tr className="border-b border-border/70 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
                 <th className="pb-2.5 font-medium">Voucher</th>
                 <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Unit</th>
+                <th className="pb-2.5 font-medium">Property</th>
                 <th className="pb-2.5 font-medium">Amount</th>
                 <th className="pb-2.5 font-medium">Status</th>
                 <th className="pb-2.5 font-medium">Date</th>

@@ -84,7 +84,7 @@ export function NewProjectDialog({
     };
 
     queryClient.setQueryData<Project[]>(["projects"], (old = []) => [newProject, ...old]);
-    toast.success(`${code} — ${name} created`, { description: "Add units to it from Inventory once approvals are through." });
+    toast.success(`${code} — ${name} created`, { description: "Add properties to it from Properties once approvals are through." });
   }
 
   return (
@@ -93,7 +93,7 @@ export function NewProjectDialog({
       onOpenChange={handleOpenChange}
       icon={FolderKanban}
       title="New Project"
-      description="Open a new development scheme — units and contractors attach to it once it's live."
+      description="Open a new development scheme — properties and contractors attach to it once it's live."
       submitLabel="Create Project"
       submitDisabled={!name || !address || !landAreaMarla || !projectManagerId || !budget}
       onSubmit={handleSubmit}

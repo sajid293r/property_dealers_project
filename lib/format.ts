@@ -1,14 +1,14 @@
 export function formatPkr(amount: number, options?: { compact?: boolean }) {
   if (options?.compact) {
-    // Node's ICU and browser ICU format 0 in compact notation differently
-    // ("Rs 0" vs "Rs 0.0"), which causes an SSR/client hydration mismatch — special-case it.
-    if (amount === 0) return "Rs 0";
-    return new Intl.NumberFormat("en-PK", {
-      style: "currency",
-      currency: "PKR",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount);
+    // Hand-rolled instead of Intl compact notation: Node and browser ICU disagree on
+    // trailing zeros ("Rs 357M" vs "Rs 357.0M"), which causes SSR/client hydration mismatches.
+    const abs = Math.abs(amount);
+    const sign = amount < 0 ? "-" : "";
+    const steps: [number, string][] = [[1e9, "B"], [1e6, "M"], [1e3, "K"]];
+    for (const [size, suffix] of steps) {
+      if (abs >= size) return `${sign}Rs ${Number((abs / size).toFixed(1))}${suffix}`;
+    }
+    return `${sign}Rs ${Math.round(abs)}`;
   }
   return new Intl.NumberFormat("en-PK", {
     style: "currency",

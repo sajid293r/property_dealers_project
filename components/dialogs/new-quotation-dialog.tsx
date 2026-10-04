@@ -94,7 +94,7 @@ export function NewQuotationDialog({
       onOpenChange={handleOpenChange}
       icon={FileStack}
       title="New Quotation"
-      description="Quote a unit's price to a prospect before they book."
+      description="Quote a property's price to a prospect before they book."
       submitLabel="Create Quotation"
       submitDisabled={!customerId || !unitId || !salesPerson || !price}
       onSubmit={handleSubmit}
@@ -122,9 +122,9 @@ export function NewQuotationDialog({
         </Field>
       </FieldRow>
 
-      <Field label="Unit">
+      <Field label="Property">
         <Select value={unitId} onValueChange={handleUnitChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available unit" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available property" /></SelectTrigger>
           <SelectContent>
             {availableUnits.map((u) => (
               <SelectItem key={u.id} value={u.id}>

@@ -25,7 +25,7 @@ export const PERMISSION_MODULES = [
   { key: "crm", label: "CRM & Leads", icon: Users2 },
   { key: "deals", label: "Deals & Bookings", icon: Handshake },
   { key: "contracts", label: "Contracts", icon: FileSignature },
-  { key: "inventory", label: "Inventory / Units", icon: Building2 },
+  { key: "inventory", label: "Properties", icon: Building2 },
   { key: "plotMap", label: "Plot Map", icon: MapPinned },
   { key: "accounts", label: "Accounts", icon: Landmark },
   { key: "expenses", label: "Expenses", icon: Receipt },

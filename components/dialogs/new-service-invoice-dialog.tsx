@@ -78,7 +78,7 @@ export function NewServiceInvoiceDialog({
       onOpenChange={handleOpenChange}
       icon={Wrench}
       title="New Service Invoice"
-      description="Bill a unit owner for maintenance, security or development charges."
+      description="Bill a property owner for maintenance, security or development charges."
       submitLabel="Create Invoice"
       submitDisabled={!customerId || !period || !amount}
       onSubmit={handleSubmit}
@@ -94,7 +94,7 @@ export function NewServiceInvoiceDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Unit (optional)">
+        <Field label="Property (optional)">
           <Select value={unitId} onValueChange={setUnitId}>
             <SelectTrigger className="w-full"><SelectValue placeholder="None" /></SelectTrigger>
             <SelectContent>

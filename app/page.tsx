@@ -58,8 +58,8 @@ const FEATURES: {
 }[] = [
   {
     icon: Building2,
-    title: "Inventory & Bookings",
-    desc: "Plot/unit catalogue with per-Marla pricing, bulk updates, and a full booking-to-installment flow.",
+    title: "Properties & Bookings",
+    desc: "Plot / property catalogue with per-Marla pricing, bulk updates, and a full booking-to-installment flow.",
     tier: "basic",
     big: true,
   },
@@ -99,8 +99,8 @@ const FEATURES: {
 const STEPS = [
   {
     icon: ListChecks,
-    title: "Set up your inventory",
-    desc: "Add projects, blocks and units with per-Marla or per-sqft pricing in minutes — bulk-import if you're migrating from a register.",
+    title: "Set up your properties",
+    desc: "Add projects, blocks and properties with per-Marla or per-sqft pricing in minutes — bulk-import if you're migrating from a register.",
   },
   {
     icon: HandCoins,
@@ -110,7 +110,7 @@ const STEPS = [
   {
     icon: LineChart,
     title: "Grow with insight",
-    desc: "Bring on staff, run leads through the CRM pipeline, and watch collections and inventory health on one dashboard.",
+    desc: "Bring on staff, run leads through the CRM pipeline, and watch collections and portfolio health on one dashboard.",
   },
 ];
 
@@ -371,7 +371,7 @@ function Hero() {
             </span>
             <div className="text-left">
               <p className="text-xs font-semibold">Installment received</p>
-              <p className="text-[11px] text-muted-foreground">Rs 450,000 · UNT-1042</p>
+              <p className="text-[11px] text-muted-foreground">Rs 450,000 · PRP-1042</p>
             </div>
           </div>
         </motion.div>
@@ -455,7 +455,7 @@ function Hero() {
 }
 
 const MARQUEE_ITEMS = [
-  "Inventory & Bookings", "CRM Pipeline", "Double-entry Accounts", "Plot Map", "Payroll & Leave",
+  "Properties & Bookings", "CRM Pipeline", "Double-entry Accounts", "Plot Map", "Payroll & Leave",
   "Post-Dated Cheques", "Quotations", "Sales Invoices", "Vouchers", "Contracts", "Project Budgets", "Financial Reports",
 ];
 
@@ -544,14 +544,14 @@ function FeaturesSection() {
             <h3 className="relative mt-4 font-heading text-base font-semibold">{f.title}</h3>
             <p className="relative mt-1.5 max-w-md text-sm text-muted-foreground">{f.desc}</p>
 
-            {f.title === "Inventory & Bookings" && (
+            {f.title === "Properties & Bookings" && (
               <div className="relative mt-5 flex h-2 overflow-hidden rounded-full">
                 <div className="h-full bg-[var(--chart-1)]" style={{ width: "60%" }} />
                 <div className="h-full bg-[var(--gold)]" style={{ width: "15%" }} />
                 <div className="h-full bg-[var(--chart-4)]" style={{ width: "25%" }} />
               </div>
             )}
-            {f.title === "Inventory & Bookings" && (
+            {f.title === "Properties & Bookings" && (
               <div className="relative mt-2 flex gap-4 text-[11px] text-muted-foreground">
                 <span>Available 60%</span>
                 <span>Reserved 15%</span>

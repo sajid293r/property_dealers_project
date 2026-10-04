@@ -193,8 +193,8 @@ function StockTab() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <KpiCard label="Total Units" value={totalUnits} format={(n) => n.toString()} icon={Building2} index={0} />
-            <KpiCard label="Total Inventory Value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Landmark} index={1} />
+            <KpiCard label="Total Properties" value={totalUnits} format={(n) => n.toString()} icon={Building2} index={0} />
+            <KpiCard label="Total Portfolio Value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Landmark} index={1} />
             <KpiCard label="Sold Value" value={soldValue} format={(n) => formatPkr(n, { compact: true })} icon={CheckCircle2} index={2} accent="gold" />
           </div>
           <Card className="p-5">
