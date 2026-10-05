@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PropIQ Data Model</title>
+<style>
+  :root {
+    --bg: #faf8f3; --surface: #ffffff; --surface-2: #f3f0e8; --ink: #1a2a22; --muted: #5c6b63;
+    --line: #e2ddd0; --brand: #1f5c46; --brand-ink: #ffffff; --gold: #c99a2e; --focus: #c99a2e;
+    --canvas: #fdfcf9; --pk: #b45309; --fk: #1d4ed8; --uk: #7c3aed;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1713; --surface: #16221c; --surface-2: #1d2b24; --ink: #eef2ee; --muted: #9db0a6;
+      --line: #2a3b32; --brand: #6fcfa6; --brand-ink: #0b1510; --gold: #e0b44a; --focus: #e0b44a;
+      --canvas: #101b16; --pk: #f0b35a; --fk: #7fa8ff; --uk: #b79cff; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1713; --surface: #16221c; --surface-2: #1d2b24; --ink: #eef2ee; --muted: #9db0a6;
+    --line: #2a3b32; --brand: #6fcfa6; --brand-ink: #0b1510; --gold: #e0b44a; --focus: #e0b44a;
+    --canvas: #101b16; --pk: #f0b35a; --fk: #7fa8ff; --uk: #b79cff; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { min-height: 100vh; }
+  header { padding: 20px 16px 0; max-width: 1600px; margin: 0 auto; }
+  .top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
+  h1 { margin: 0; font: 600 28px/1.15 "Fraunces", Georgia, serif; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; text-align: center; min-width: 96px; }
+  .chip b { display: block; font: 600 22px/1.1 "Fraunces", Georgia, serif; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .chip span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin: 16px 0 8px; position: relative; }
+  .search { flex: 1; max-width: 420px; position: relative; }
+  .search input { width: 100%; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 12px 0 34px; font: inherit; }
+  .search input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .search svg { position: absolute; left: 11px; top: 11px; width: 16px; height: 16px; color: var(--muted); }
+  .results { position: absolute; z-index: 20; left: 0; right: 0; top: 42px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgb(0 0 0 / .15); max-height: 320px; overflow: auto; display: none; }
+  .results button { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .results button:hover, .results button:focus-visible { background: var(--surface-2); outline: none; }
+  .results small { color: var(--muted); }
+  .theme { margin-left: auto; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+  nav.tabs { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 12px; scrollbar-width: thin; }
+  nav.tabs button { flex: none; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 14px; cursor: pointer; font: inherit; font-weight: 500; transition: transform .15s, box-shadow .15s; }
+  nav.tabs button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .08); }
+  nav.tabs button[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+  nav.tabs i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  nav.tabs em { font-style: normal; opacity: .7; font-size: 12px; font-variant-numeric: tabular-nums; }
+  main { max-width: 1600px; margin: 0 auto; padding: 0 16px 40px; }
+  .layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr) 360px; } }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .panel-head { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .panel-head h2 { margin: 0; font: 600 18px/1.2 "Fraunces", Georgia, serif; }
+  .panel-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .groups { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .groups button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .groups button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .groups em { font-style: normal; opacity: .65; margin-left: 4px; font-size: 12px; }
+  .viewport { position: relative; height: 74vh; min-height: 460px; background: var(--canvas); overflow: hidden; cursor: grab; touch-action: none;
+    background-image: radial-gradient(color-mix(in oklab, var(--ink) 12%, transparent) 1px, transparent 1px); background-size: 22px 22px; }
+  .viewport.dragging { cursor: grabbing; }
+  .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .controls { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+  .controls button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: 600 16px/1 inherit; box-shadow: 0 2px 8px rgb(0 0 0 / .08); }
+  .controls button:hover { border-color: var(--gold); }
+  .hint { position: absolute; left: 12px; bottom: 10px; color: var(--muted); font-size: 12px; background: color-mix(in oklab, var(--surface) 85%, transparent); padding: 3px 8px; border-radius: 8px; z-index: 5; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 10px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  .tag { display: inline-block; font: 600 10px/1 ui-monospace, Menlo, monospace; padding: 3px 5px; border-radius: 5px; border: 1px solid currentColor; margin-right: 4px; }
+  .tag.pk { color: var(--pk); } .tag.fk { color: var(--fk); } .tag.uk { color: var(--uk); }
+  .loading, .error { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); padding: 24px; text-align: center; }
+  .error { color: #b91c1c; white-space: pre-wrap; text-align: left; place-items: start; overflow: auto; font: 12px/1.5 ui-monospace, monospace; }
+  .side { display: flex; flex-direction: column; max-height: calc(68vh + 100px); }
+  .side .list { overflow: auto; flex: 1; }
+  .tbl { border-bottom: 1px solid var(--line); }
+  .tbl > button { display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 8px; border: 0; background: none; padding: 10px 16px; cursor: pointer; color: inherit; font: inherit; text-align: left; }
+  .tbl > button:hover { background: var(--surface-2); }
+  .tbl code { font: 600 13px ui-monospace, Menlo, monospace; }
+  .tbl .n { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tbl .desc { padding: 0 16px 8px; color: var(--muted); font-size: 12.5px; margin-top: -4px; }
+  .cols { display: none; padding: 0 16px 12px; }
+  .tbl.open .cols { display: block; }
+  .cols table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cols td { padding: 3px 0; border-top: 1px dashed var(--line); vertical-align: top; }
+  .cols td:first-child { font-family: ui-monospace, Menlo, monospace; }
+  .cols td.t { color: var(--muted); padding-left: 8px; }
+  .cols a { color: var(--fk); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .rel { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .rel a { color: var(--fk); cursor: pointer; margin-right: 6px; }
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); padding: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: var(--surface); cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; text-align: left; font: inherit; color: inherit; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgb(0 0 0 / .1); border-color: var(--gold); }
+  .card h3 { margin: 0; font: 600 16px/1.25 "Fraunces", Georgia, serif; display: flex; align-items: center; gap: 8px; }
+  .card h3 i { width: 10px; height: 10px; border-radius: 3px; }
+  .card h3 b { margin-left: auto; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .card p { margin: 6px 0 10px; color: var(--muted); font-size: 13px; }
+  .card .names { display: flex; flex-wrap: wrap; gap: 4px; }
+  .card .names span { font: 11px ui-monospace, Menlo, monospace; background: var(--surface-2); border-radius: 6px; padding: 2px 6px; }
+  /* make mermaid text readable and highlight search hits */
+  .canvas svg { display: block; max-width: none !important; }
+  .hit rect, .hit path { stroke: var(--focus) !important; stroke-width: 3px !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1>PropIQ Data Model</h1>
+      <p class="sub">Every table, its key attributes, and how it links to the others — grouped by feature. Click a feature tab, drag to pan, scroll to zoom, click a table on the right to jump to it.</p>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Find a table (e.g. receipts, installments, payslips)…" autocomplete="off" aria-label="Find a table">
+      <div class="results" id="results" role="listbox"></div>
+    </div>
+    <button class="theme" id="theme" type="button" aria-label="Toggle light/dark">◐ Theme</button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Feature areas"></nav>
+</header>
+<main id="main"></main>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+const DATA = /*__DATA__*/null;
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v; else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else if (v !== false && v != null) n.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) n.append(k instanceof Node ? k : document.createTextNode(k));
+  return n;
+};
+const tableIndex = new Map(); // name -> { mod, table }
+DATA.modules.forEach((m) => m.tables.forEach((t) => tableIndex.set(t.name, { mod: m, table: t })));
+
+// ─────────────────────────────────────────── chips + tabs
+$("#chips").append(
+  ...[["tables", DATA.stats.tables], ["attributes", DATA.stats.columns], ["relationships", DATA.stats.relationships], ["feature areas", DATA.stats.modules]]
+    .map(([l, n]) => el("div", { class: "chip" }, el("b", {}, String(n)), el("span", {}, l))),
+);
+const tabs = [{ key: "overview", title: "Overview", color: "var(--gold)" }, ...DATA.modules.map((m) => ({ key: m.key, title: m.title, color: m.color, count: m.count }))];
+const tabsEl = $("#tabs");
+tabs.forEach((t) => tabsEl.append(el("button", { role: "tab", id: "tab-" + t.key, "data-key": t.key, onclick: () => select(t.key) },
+  el("i", { style: `background:${t.color}` }), t.title, t.count ? el("em", {}, String(t.count)) : "")));
+
+// ─────────────────────────────────────────── mermaid setup (re-initialised on theme change)
+const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+function initMermaid() {
+  const d = isDark();
+  mermaid.initialize({
+    startOnLoad: false, securityLevel: "loose", maxTextSize: 1000000, maxEdges: 2000,
+    theme: "base",
+    themeVariables: d
+      ? { background: "#101b16", primaryColor: "#1f3a2e", primaryTextColor: "#eef2ee", primaryBorderColor: "#6fcfa6", lineColor: "#9db0a6", secondaryColor: "#1d2b24", tertiaryColor: "#16221c", attributeBackgroundColorOdd: "#16221c", attributeBackgroundColorEven: "#1b2a22", fontFamily: "Plus Jakarta Sans, system-ui, sans-serif" }
+      : { background: "#fdfcf9", primaryColor: "#e6f1ea", primaryTextColor: "#1a2a22", primaryBorderColor: "#1f5c46", lineColor: "#5c6b63", secondaryColor: "#f3f0e8", tertiaryColor: "#ffffff", attributeBackgroundColorOdd: "#ffffff", attributeBackgroundColorEven: "#f7f5ee", fontFamily: "Plus Jakarta Sans, system-ui, sans-serif" },
+    er: { useMaxWidth: false, layoutDirection: "TB", entityPadding: 14, minEntityWidth: 150, minEntityHeight: 60, fontSize: 13 },
+    flowchart: { useMaxWidth: false, curve: "basis", htmlLabels: true, nodeSpacing: 60, rankSpacing: 90 },
+  });
+}
+initMermaid();
+
+// ─────────────────────────────────────────── pan / zoom viewer
+class Viewer {
+  constructor(vp, canvas) {
+    this.vp = vp; this.canvas = canvas; this.x = 0; this.y = 0; this.k = 1; this.w = 1; this.h = 1;
+    let drag = null;
+    vp.addEventListener("pointerdown", (e) => { if (e.target.closest(".controls")) return; drag = { x: e.clientX - this.x, y: e.clientY - this.y }; vp.setPointerCapture(e.pointerId); vp.classList.add("dragging"); });
+    vp.addEventListener("pointermove", (e) => { if (!drag) return; this.x = e.clientX - drag.x; this.y = e.clientY - drag.y; this.apply(); });
+    const end = () => { drag = null; vp.classList.remove("dragging"); };
+    vp.addEventListener("pointerup", end); vp.addEventListener("pointercancel", end);
+    vp.addEventListener("wheel", (e) => { e.preventDefault(); this.zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+  }
+  apply() { this.canvas.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.k})`; }
+  zoomAt(cx, cy, f) {
+    const r = this.vp.getBoundingClientRect(); const px = cx - r.left, py = cy - r.top;
+    const k = Math.min(3, Math.max(0.08, this.k * f)); const s = k / this.k;
+    this.x = px - (px - this.x) * s; this.y = py - (py - this.y) * s; this.k = k; this.apply();
+  }
+  zoomCenter(f) { const r = this.vp.getBoundingClientRect(); this.zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); }
+  fit(whole = false) {
+    const r = this.vp.getBoundingClientRect();
+    const fitK = Math.min(r.width / this.w, r.height / this.h, 1.4) * 0.96;
+    const k = whole ? fitK : Math.max(fitK, 0.62); // never shrink below a readable size; pan for the rest
+    this.k = k; this.x = Math.max(8, (r.width - this.w * k) / 2); this.y = this.h * k < r.height ? (r.height - this.h * k) / 2 : 12; this.apply();
+  }
+  actual() { const r = this.vp.getBoundingClientRect(); this.k = 1; this.x = 24; this.y = 24; this.apply(); }
+  focus(node) {
+    const nr = node.getBoundingClientRect(); const vr = this.vp.getBoundingClientRect();
+    const k = Math.max(this.k, 0.8); const s = k / this.k;
+    const cx = nr.left + nr.width / 2, cy = nr.top + nr.height / 2;
+    // zoom about the node, then centre it
+    this.x = (cx - vr.left) - ((cx - vr.left) - this.x) * s; this.y = (cy - vr.top) - ((cy - vr.top) - this.y) * s; this.k = k; this.apply();
+    const n2 = node.getBoundingClientRect();
+    this.x += vr.left + vr.width / 2 - (n2.left + n2.width / 2); this.y += vr.top + vr.height / 2 - (n2.top + n2.height / 2); this.apply();
+  }
+}
+
+// ─────────────────────────────────────────── views
+const main = $("#main");
+let current = null, currentGroup = 0, viewer = null, renderSeq = 0;
+const svgCache = new Map();
+
+async function renderSvg(key, code) {
+  const ck = key + (isDark() ? ":d" : ":l");
+  if (svgCache.has(ck)) return svgCache.get(ck);
+  const { svg } = await mermaid.render("m_" + key.replace(/[^a-zA-Z0-9]/g, "_") + "_" + ++renderSeq, code);
+  svgCache.set(ck, svg);
+  return svg;
+}
+
+function diagramPanel(title, blurb, bar) {
+  const vp = el("div", { class: "viewport", tabindex: "0", "aria-label": title + " diagram" });
+  const canvas = el("div", { class: "canvas" });
+  const loading = el("div", { class: "loading" }, "Drawing diagram…");
+  vp.append(canvas, loading,
+    el("div", { class: "controls" },
+      el("button", { title: "Zoom in", "aria-label": "Zoom in", onclick: () => viewer?.zoomCenter(1.25) }, "+"),
+      el("button", { title: "Zoom out", "aria-label": "Zoom out", onclick: () => viewer?.zoomCenter(0.8) }, "−"),
+      el("button", { title: "Fit to screen", "aria-label": "Fit to screen", onclick: () => viewer?.fit(true) }, "⤢"),
+      el("button", { title: "Actual size", "aria-label": "Actual size", onclick: () => viewer?.actual() }, "1:1")),
+    el("div", { class: "hint" }, "Drag to pan · scroll to zoom · ⤢ shows the whole diagram"));
+  const legend = el("div", { class: "legend" },
+    el("span", {}, el("span", { class: "tag pk" }, "PK"), "primary key"),
+    el("span", {}, el("span", { class: "tag fk" }, "FK"), "foreign key (link to another table)"),
+    el("span", {}, el("span", { class: "tag uk" }, "UK"), "unique"),
+    el("span", {}, "‖——o{  one parent → many children; ○ = optional"),
+    el("span", {}, "Boxes with only an id belong to another feature"));
+  const panel = el("section", { class: "panel" }, el("div", { class: "panel-head" }, el("div", {}, el("h2", {}, title), el("p", {}, blurb))), bar || "", vp, legend);
+  return { panel, vp, canvas, loading };
+}
+
+async function mountDiagram(parts, key, code) {
+  const mySeq = ++mountSeq;
+  try {
+    const svg = await renderSvg(key, code);
+    if (mySeq !== mountSeq) return;
+    parts.canvas.innerHTML = svg;
+    const s = parts.canvas.querySelector("svg");
+    const vb = s.viewBox.baseVal; const w = vb && vb.width ? vb.width : s.getBoundingClientRect().width; const h = vb && vb.height ? vb.height : s.getBoundingClientRect().height;
+    s.setAttribute("width", w); s.setAttribute("height", h); s.style.maxWidth = "none";
+    parts.loading.remove();
+    viewer = new Viewer(parts.vp, parts.canvas); viewer.w = w; viewer.h = h; viewer.fit(key === "overview");
+    return true;
+  } catch (err) {
+    parts.loading.className = "error"; parts.loading.textContent = "Could not draw this diagram.\n\n" + (err?.message || err);
+  }
+}
+let mountSeq = 0;
+
+function tableList(mod, names) {
+  const list = el("div", { class: "list" });
+  mod.tables.filter((t) => names.includes(t.name)).forEach((t) => {
+    const row = el("div", { class: "tbl", id: "row-" + t.name },
+      el("button", { onclick: () => { row.classList.toggle("open"); focusTable(t.name, false); } }, el("code", {}, t.name), el("span", { class: "n" }, t.columns.length + " attrs")),
+      el("div", { class: "desc" }, t.desc),
+      el("div", { class: "cols" },
+        el("table", {}, ...t.columns.map((c) => el("tr", {},
+          el("td", {}, c.n, " ", c.pk ? el("span", { class: "tag pk" }, "PK") : "", c.fk ? el("span", { class: "tag fk" }, "FK") : "", c.uq ? el("span", { class: "tag uk" }, "UK") : ""),
+          el("td", { class: "t" }, c.t + (c.nl ? "?" : "")),
+          el("td", { class: "t" }, c.fk ? el("a", { onclick: () => focusTable(c.fk, true) }, "→ " + c.fk) : (c.note || "")))
+        )),
+        t.usedBy.length ? el("div", { class: "rel" }, "Used by: ", ...[...new Set(t.usedBy)].map((n) => el("a", { onclick: () => focusTable(n, true) }, n))) : ""));
+    list.append(row);
+  });
+  return list;
+}
+
+function select(key, after, gi = 0) {
+  current = key; currentGroup = gi;
+  tabsEl.querySelectorAll("button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.key === key)));
+  history.replaceState(null, "", "#" + key + (gi ? "/" + gi : ""));
+  main.innerHTML = "";
+  if (key === "overview") return renderOverview();
+  const mod = DATA.modules.find((m) => m.key === key);
+  const group = mod.groups[gi] || mod.groups[0];
+  const bar = mod.groups.length > 1
+    ? el("div", { class: "groups", role: "group", "aria-label": "Diagrams in " + mod.title },
+        ...mod.groups.map((g, i) => el("button", { "aria-pressed": String(i === gi), onclick: () => select(key, null, i) }, g.title, el("em", {}, String(g.count)))))
+    : "";
+  const parts = diagramPanel(mod.title + " — " + group.title, mod.blurb + " (" + mod.count + " tables in this area)", bar);
+  const side = el("aside", { class: "panel side" }, el("div", { class: "panel-head" }, el("div", {}, el("h2", {}, "Tables in this diagram"), el("p", {}, "Click one to see its attributes and jump to it."))), tableList(mod, group.names));
+  main.append(el("div", { class: "layout" }, parts.panel, side));
+  mountDiagram(parts, key + ":" + gi, group.mermaid).then((ok) => { if (ok && after) after(); });
+}
+
+async function renderOverview() {
+  const parts = diagramPanel("How the feature areas connect", "Numbers on the arrows = foreign-key links between areas (shared basics like users/companies omitted).");
+  main.append(parts.panel);
+  const cards = el("div", { class: "cards" }, ...DATA.modules.map((m) => el("button", { class: "card", onclick: () => select(m.key) },
+    el("h3", {}, el("i", { style: `background:${m.color}` }), m.title, el("b", {}, m.count + " tables")),
+    el("p", {}, m.blurb),
+    el("div", { class: "names" }, ...m.tables.slice(0, 9).map((t) => el("span", {}, t.name)), m.tables.length > 9 ? el("span", {}, "+" + (m.tables.length - 9) + " more") : ""))));
+  main.append(el("section", { class: "panel", style: "margin-top:16px" }, el("div", { class: "panel-head" }, el("div", {}, el("h2", {}, "All feature areas"), el("p", {}, "Open one to see its tables, attributes and relationships."))), cards));
+  await mountDiagram(parts, "overview", DATA.overview);
+}
+
+function highlight(name) {
+  document.querySelectorAll(".hit").forEach((n) => n.classList.remove("hit"));
+  const node = main.querySelector(`[id^="entity-${name}-"], [id^="entity-${name}"]`);
+  if (node) { node.classList.add("hit"); viewer?.focus(node); }
+  return node;
+}
+function focusTable(name, openRow) {
+  const info = tableIndex.get(name); if (!info) return;
+  const gi = Math.max(0, info.mod.groups.findIndex((g) => g.names.includes(name)));
+  if (current !== info.mod.key || currentGroup !== gi) { select(info.mod.key, () => { highlight(name); openRowFor(name); }, gi); return; }
+  highlight(name);
+  if (openRow) openRowFor(name);
+}
+function openRowFor(name) { const r = $("#row-" + name); if (r) { r.classList.add("open"); r.scrollIntoView({ block: "nearest", behavior: "smooth" }); } }
+
+// ─────────────────────────────────────────── search
+const q = $("#q"), results = $("#results");
+q.addEventListener("input", () => {
+  const term = q.value.trim().toLowerCase(); results.innerHTML = "";
+  if (!term) { results.style.display = "none"; return; }
+  const hits = [...tableIndex.entries()].filter(([n, v]) => n.includes(term) || v.table.desc.toLowerCase().includes(term)).slice(0, 12);
+  hits.forEach(([n, v]) => results.append(el("button", { type: "button", onclick: () => { results.style.display = "none"; q.value = ""; focusTable(n, true); } }, el("span", {}, n), el("small", {}, v.mod.title))));
+  results.style.display = hits.length ? "block" : "none";
+});
+q.addEventListener("keydown", (e) => { if (e.key === "Escape") { results.style.display = "none"; q.blur(); } if (e.key === "Enter") results.querySelector("button")?.click(); });
+document.addEventListener("click", (e) => { if (!e.target.closest(".search")) results.style.display = "none"; });
+
+// ─────────────────────────────────────────── theme
+$("#theme").addEventListener("click", () => {
+  document.documentElement.dataset.theme = isDark() ? "light" : "dark";
+  svgCache.clear(); initMermaid(); select(current, null, currentGroup);
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (!document.documentElement.dataset.theme) { svgCache.clear(); initMermaid(); select(current, null, currentGroup); } });
+
+addEventListener("resize", () => viewer?.fit());
+{ const [hk, hg] = location.hash.slice(1).split("/"); select(tabs.some((t) => t.key === hk) ? hk : "overview", null, Number(hg) || 0); }
+window.__erdReady = true;
+</script>
+</body>
+</html>
