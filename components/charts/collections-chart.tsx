@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatPkr } from "@/lib/format";
+import { formatPkr, formatAxis } from "@/lib/format";
 import { getTrends } from "@/lib/mock-data/company-data";
 import { useCompany } from "@/lib/providers/company-provider";
 
@@ -86,7 +86,7 @@ export function CollectionsChart() {
             tickLine={false}
             width={56}
             tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-            tickFormatter={(v) => formatPkr(v, { compact: true })}
+            tickFormatter={formatAxis}
           />
           <Tooltip content={ChartTooltip} cursor={{ stroke: "var(--gold)", strokeWidth: 1.5, strokeDasharray: "4 4" }} />
           <Line

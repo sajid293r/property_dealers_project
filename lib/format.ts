@@ -31,3 +31,8 @@ export function dateOffsetFromToday(days: number) {
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
+/** Short money label for chart axes: "4.5M", "850K" — no currency prefix so it never wraps. */
+export function formatAxis(amount: number) {
+  return formatPkr(amount, { compact: true }).replace("Rs ", "");
+}

@@ -402,6 +402,27 @@ For each module: **what the prototype has → what production must record (new d
 - Ad-hoc/BI: point **Metabase** (open source) or Superset at a **read replica** with the `readonly_reports` role (RLS still applies per company).
 - Rule: no report may run against the primary for more than ~1 s; anything slower moves to the replica or a pre-aggregate.
 
+### 8.1 The dashboard's read models
+
+The dashboard is the first screen a customer sees, so it must open in well under a second even for a company with years of data. In the prototype every widget is computed in the browser by `lib/dashboard-insights.ts`; in production the same definitions move to the server so the page makes **one request** (`GET /api/v1/dashboard?period=30d`) and receives ready-made numbers. Each widget reads from the module that owns the truth, through a pre-aggregate where the raw tables would be too slow:
+
+| Widget | Source of truth | Served from |
+|---|---|---|
+| **Business health score** (collections · budget discipline · sales progress · liquidity) | installments, `v_budget_line_status`, properties, cash/bank balances, unpaid bills | computed from the four pre-aggregates below; the formula is versioned and shown to the user |
+| **Needs your attention** | installments (overdue), `cheques`, vouchers/payroll/leave/budget **approval requests**, contracts, quotations, `leads.next_follow_up`, `budget_alerts`, `vendor_bills` | one indexed count query per module (all partial indexes on "open" rows), cached 60 s |
+| **Key numbers** (collected, bookings, overdue, available stock, cash, receivable, payables, unsold value) | receipts + allocations, bookings, installments, properties, `account_balances`, `vendor_bills` | `company_kpi_snapshots` (daily) + live delta for today; period comparison is `snapshot[t] − snapshot[t−n]` |
+| **What the numbers are telling you** | the same aggregates | rule engine in the service layer (each rule has a stable id, severity and link), results cached with the snapshot |
+| **Collection schedule** | `installments` by due month (collected / overdue / expected) | materialized view `mv_collection_schedule(company, month)` refreshed on every receipt posting |
+| **Overdue receivables & who owes most** | `installments` + `bookings` + parties | `mv_receivable_aging(company, party, bucket)` — the same view feeds the customer statement |
+| **Cash position & weekly flow** | `account_balances` for cash/bank accounts, `journal_lines` on those accounts | balances from `account_balances`; weekly flow from a small rollup table updated by the ledger trigger |
+| **Running costs by category** | `journal_lines` on expense accounts by category | `account_balances` grouped by account category and period |
+| **Project portfolio** | properties by status, bookings, receipts, `v_budget_line_status` | `mv_project_performance(company, project)` |
+| **Sales team** | leads, bookings by agent | `mv_agent_performance(company, agent, month)` |
+| **Next 10 days / Recent activity** | installments, cheques, contracts, follow-ups, leave / `audit_log` + domain events | live queries over indexed date columns; activity from the event stream (`outbox_events`) |
+| **People** | employees, leave, payroll | live counts |
+
+**Rules.** (1) Every figure on the dashboard must be reproducible from a report the user can open — each tile links to its module. (2) Pre-aggregates are refreshed by the worker from the outbox after the posting transaction commits, so a receipt appears on the dashboard within seconds but never blocks the cashier. (3) Everything is per company (RLS applies to views through `security_invoker`); the Group Overview adds up `company_kpi_snapshots` across the organization. (4) A new company with no data shows a guided checklist, not zeros. (5) The health score and every "insight" rule is versioned so a number never silently changes meaning.
+
 ---
 
 ## 9. Data quality & integrity checklist (what keeps an ERP trustworthy)

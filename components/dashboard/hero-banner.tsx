@@ -29,20 +29,21 @@ function greeting(hour: number) {
 export function HeroBanner({
   companyName,
   collected,
-  target,
+  bookedValue,
   onNewBooking,
   onNewLead,
   onNewVoucher,
 }: {
   companyName: string;
   collected: number;
-  target: number;
+  /** Total value of all live bookings — what the collections are measured against. */
+  bookedValue: number;
   onNewBooking: () => void;
   onNewLead: () => void;
   onNewVoucher: () => void;
 }) {
   const now = React.useSyncExternalStore(subscribeNever, getNow, getNowServer);
-  const pct = Math.min(100, Math.round((collected / Math.max(target, 1)) * 100));
+  const pct = Math.min(100, Math.round((collected / Math.max(bookedValue, 1)) * 100));
   const circumference = 2 * Math.PI * 44;
 
   return (
@@ -93,7 +94,7 @@ export function HeroBanner({
               format={(n) => formatPkr(n, { compact: true })}
               className="font-semibold text-gold"
             />{" "}
-            so far — {pct}% of this year&apos;s target. Here&apos;s everything moving across your
+            so far — {pct}% of everything you&apos;ve booked. Here&apos;s everything moving across your
             projects today.
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
@@ -154,7 +155,7 @@ export function HeroBanner({
                 format={(n) => `${n}%`}
                 className="font-heading text-3xl font-semibold"
               />
-              <span className="text-[10px] uppercase tracking-[0.16em] text-white/60">of target</span>
+              <span className="text-[10px] uppercase tracking-[0.16em] text-white/60">collected</span>
             </div>
           </div>
 

@@ -56,7 +56,7 @@ import {
   sumLines,
   type BudgetHealth,
 } from "@/lib/budgets";
-import { formatPkr } from "@/lib/format";
+import { formatPkr, formatAxis } from "@/lib/format";
 import type { Budget, BudgetLine } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -393,7 +393,7 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
             </defs>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 8" />
             <XAxis dataKey="month" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} width={56} tickFormatter={(v) => formatPkr(v, { compact: true })} />
+            <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} width={48} tickFormatter={formatAxis} />
             <Tooltip
               cursor={{ fill: "var(--secondary)", opacity: 0.5 }}
               content={({ active, payload, label }) =>
