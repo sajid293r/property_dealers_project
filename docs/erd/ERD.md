@@ -1,7 +1,7 @@
 # PropIQ — Entity Relationship Diagrams
 
 > Generated from [`schema.mjs`](schema.mjs) by `node docs/erd/build.mjs` — **do not edit by hand**.
-> **216 tables · 1729 key attributes · 391 relationships · 14 feature areas.**
+> **227 tables · 1837 key attributes · 418 relationships · 15 feature areas.**
 > Open this file in VS Code (Markdown preview with a Mermaid extension) or on GitHub to see the diagrams.
 > For the interactive viewer open [`viewer.html`](viewer.html). To edit visually, import [`erd.dbml`](erd.dbml) into https://dbdiagram.io.
 
@@ -18,9 +18,10 @@ flowchart LR
   projects["<b>Projects & Properties</b><br/>35 tables"]
   crm["<b>CRM & Leads</b><br/>9 tables"]
   sales["<b>Sales & Collections</b><br/>22 tables"]
+  budget["<b>Budgeting & Control</b><br/>13 tables"]
   tax["<b>Tax Management</b><br/>11 tables"]
   invoicing["<b>Invoicing & Contracts</b><br/>8 tables"]
-  procurement["<b>Procurement & Stock</b><br/>15 tables"]
+  procurement["<b>Procurement & Stock</b><br/>13 tables"]
   construction["<b>Construction & Costing</b><br/>12 tables"]
   hr["<b>HR, Attendance & Payroll</b><br/>21 tables"]
   group["<b>Multi-Company & Consolidation</b><br/>10 tables"]
@@ -34,6 +35,10 @@ flowchart LR
   projects -->|1| sales
   projects -->|1| invoicing
   projects -->|1| tax
+  budget -->|6| accounting
+  budget -->|1| projects
+  budget -->|1| services
+  budget -->|1| platform
   tax -->|5| accounting
   tax -->|1| parties
   group -->|5| accounting
@@ -50,8 +55,8 @@ flowchart LR
   invoicing -->|2| accounting
   invoicing -->|1| tax
   invoicing -->|2| projects
-  procurement -->|8| accounting
-  procurement -->|6| projects
+  procurement -->|6| accounting
+  procurement -->|5| projects
   procurement -->|3| parties
   procurement -->|1| tax
   construction -->|1| projects
@@ -66,6 +71,7 @@ flowchart LR
   style projects fill:#15803d,stroke:#15803d,color:#fff
   style crm fill:#be185d,stroke:#be185d,color:#fff
   style sales fill:#1d4ed8,stroke:#1d4ed8,color:#fff
+  style budget fill:#047857,stroke:#047857,color:#fff
   style tax fill:#b91c1c,stroke:#b91c1c,color:#fff
   style invoicing fill:#c2410c,stroke:#c2410c,color:#fff
   style procurement fill:#0e7490,stroke:#0e7490,color:#fff
@@ -1942,6 +1948,223 @@ erDiagram
   vouchers |o--o{ commissions : "payment_voucher_id"
 ```
 
+## Budgeting & Control (13 tables)
+
+Plan spend per project and per year, phase it by month, approve and lock it, change it only through revisions, track commitments, and stop or warn on overruns.
+
+### Budget setup & phasing (6)
+
+```mermaid
+erDiagram
+  budget_templates {
+    uuid id PK
+    uuid company_id FK
+    text name UK
+    text kind "project|operating|capex"
+    text description
+    bool active
+  }
+  budget_template_lines {
+    uuid id PK
+    uuid company_id FK
+    uuid template_id FK
+    text cost_code
+    text category
+    uuid account_id FK "nullable"
+    numeric share_pct
+  }
+  budgets {
+    uuid id PK
+    uuid company_id FK
+    text budget_no UK
+    text name
+    text kind "project|operating|capex"
+    uuid project_id FK "required for project budgets"
+    uuid cost_center_id FK "nullable"
+    uuid fiscal_year_id FK "nullable"
+    date period_start "nullable"
+    date period_end "nullable"
+    text status "draft|submitted|approved|locked|closed"
+    text control_mode "none|warn|block"
+    int version_no
+    uuid parent_budget_id FK "copied / carried forward from"
+    uuid template_id FK "nullable"
+    numeric total_amount "rolls up from the lines"
+    text currency
+    uuid created_by FK
+    uuid approved_by FK "nullable"
+    timestamptz approved_at "nullable"
+    timestamptz locked_at "nullable"
+  }
+  budget_lines {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_id FK
+    int line_no
+    text cost_code
+    text category
+    text description
+    uuid account_id FK "the ledger account whose postings count as 'actual'"
+    uuid cost_center_id FK "nullable"
+    numeric budget_amount
+    text basis "manual|per_unit|pct_of_revenue"
+    text notes
+  }
+  budget_line_periods {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_line_id FK
+    uuid period_id FK
+    numeric amount
+  }
+  budget_snapshots {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_id FK
+    int version_no
+    text reason
+    jsonb data "all lines as approved"
+    timestamptz taken_at
+  }
+  gl_accounts {
+    uuid id PK "from Accounting & Ledger"
+  }
+  projects {
+    uuid id PK "from Projects & Properties"
+  }
+  cost_centers {
+    uuid id PK "from Accounting & Ledger"
+  }
+  fiscal_years {
+    uuid id PK "from Accounting & Ledger"
+  }
+  accounting_periods {
+    uuid id PK "from Accounting & Ledger"
+  }
+  budget_templates ||--o{ budget_template_lines : "template_id"
+  gl_accounts |o--o{ budget_template_lines : "account_id"
+  projects |o--o{ budgets : "project_id"
+  cost_centers |o--o{ budgets : "cost_center_id"
+  fiscal_years |o--o{ budgets : "fiscal_year_id"
+  budgets |o--o{ budgets : "parent_budget_id"
+  budget_templates |o--o{ budgets : "template_id"
+  budgets ||--o{ budget_lines : "budget_id"
+  gl_accounts ||--o{ budget_lines : "account_id"
+  cost_centers |o--o{ budget_lines : "cost_center_id"
+  budget_lines ||--o{ budget_line_periods : "budget_line_id"
+  accounting_periods ||--o{ budget_line_periods : "period_id"
+  budgets ||--o{ budget_snapshots : "budget_id"
+```
+
+### Revisions, commitments & control (7)
+
+```mermaid
+erDiagram
+  budget_revisions {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_id FK
+    int revision_no
+    text type "supplementary|reallocation|reforecast"
+    text reason
+    numeric delta_amount "net change to the budget total"
+    text status "pending|approved|rejected"
+    uuid requested_by FK
+    uuid approved_by FK "must differ from requested_by"
+    timestamptz approved_at "nullable"
+    uuid approval_request_id FK "nullable"
+  }
+  budget_revision_lines {
+    uuid id PK
+    uuid company_id FK
+    uuid revision_id FK
+    uuid budget_line_id FK
+    numeric delta_amount "+ adds, - takes away (a reallocation nets to zero)"
+  }
+  budget_commitments {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_line_id FK
+    text source_type "purchase_order|construction_contract|ipc|vendor_bill|payroll|manual"
+    uuid source_id "nullable"
+    numeric amount
+    text status "open|invoiced|released|cancelled"
+    date committed_on
+    text note
+  }
+  budget_exceptions {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_line_id FK
+    text doc_type "voucher|purchase_order|vendor_bill|ipc"
+    uuid doc_id "nullable"
+    numeric requested_amount
+    numeric over_by
+    text reason
+    text status "pending|approved|rejected"
+    uuid requested_by FK
+    uuid decided_by FK "must differ from requested_by"
+    timestamptz decided_at "nullable"
+  }
+  budget_alert_rules {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_id FK "null = applies to every budget"
+    numeric threshold_pct
+    text channel "in_app|email|whatsapp"
+    uuid notify_role_id FK "nullable"
+    bool active
+  }
+  budget_alerts {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_line_id FK
+    numeric threshold_pct
+    numeric utilization_pct
+    timestamptz triggered_at
+    uuid acknowledged_by FK "nullable"
+    timestamptz acknowledged_at "nullable"
+  }
+  budget_forecasts {
+    uuid id PK
+    uuid company_id FK
+    uuid budget_line_id FK
+    date as_of
+    text method "run_rate|percent_complete|manual"
+    numeric estimate_to_complete
+    numeric forecast_at_completion
+    text note
+    uuid created_by FK
+  }
+  budgets {
+    uuid id PK "from Budgeting & Control"
+  }
+  approval_requests {
+    uuid id PK "from Platform Services"
+  }
+  budget_lines {
+    uuid id PK "from Budgeting & Control"
+  }
+  users {
+    uuid id PK "from Platform & Tenancy"
+  }
+  roles {
+    uuid id PK "from Platform & Tenancy"
+  }
+  budgets ||--o{ budget_revisions : "budget_id"
+  approval_requests |o--o{ budget_revisions : "approval_request_id"
+  budget_revisions ||--o{ budget_revision_lines : "revision_id"
+  budget_lines ||--o{ budget_revision_lines : "budget_line_id"
+  budget_lines ||--o{ budget_commitments : "budget_line_id"
+  budget_lines ||--o{ budget_exceptions : "budget_line_id"
+  users |o--o{ budget_exceptions : "decided_by"
+  budgets |o--o{ budget_alert_rules : "budget_id"
+  roles |o--o{ budget_alert_rules : "notify_role_id"
+  budget_lines ||--o{ budget_alerts : "budget_line_id"
+  users |o--o{ budget_alerts : "acknowledged_by"
+  budget_lines ||--o{ budget_forecasts : "budget_line_id"
+```
+
 ## Tax Management (11 tables)
 
 Admin-configurable tax codes, effective-dated rates, bundles, assignment rules, exemptions, returns and payments.
@@ -2258,7 +2481,7 @@ erDiagram
   parties ||--o{ contract_parties : "party_id"
 ```
 
-## Procurement & Stock (15 tables)
+## Procurement & Stock (13 tables)
 
 Vendors' POs, goods receipts, bills, budgets, petty cash and material stock.
 
@@ -2408,26 +2631,10 @@ erDiagram
   expense_categories ||--o{ recurring_templates : "category_id"
 ```
 
-### Budgets, petty cash & stock (6)
+### Petty cash & stock (4)
 
 ```mermaid
 erDiagram
-  budgets {
-    uuid id PK
-    uuid company_id FK
-    uuid project_id FK
-    text name
-    uuid fiscal_year_id FK "nullable"
-    text status
-  }
-  budget_lines {
-    uuid id PK
-    uuid company_id FK
-    uuid budget_id FK
-    text cost_code
-    uuid account_id FK "nullable"
-    numeric amount
-  }
   petty_cash_floats {
     uuid id PK
     uuid company_id FK
@@ -2462,22 +2669,15 @@ erDiagram
     uuid ref_id "nullable"
     date moved_on
   }
-  projects {
-    uuid id PK "from Projects & Properties"
-  }
-  fiscal_years {
-    uuid id PK "from Accounting & Ledger"
+  users {
+    uuid id PK "from Platform & Tenancy"
   }
   gl_accounts {
     uuid id PK "from Accounting & Ledger"
   }
-  users {
-    uuid id PK "from Platform & Tenancy"
+  projects {
+    uuid id PK "from Projects & Properties"
   }
-  projects ||--o{ budgets : "project_id"
-  fiscal_years |o--o{ budgets : "fiscal_year_id"
-  budgets ||--o{ budget_lines : "budget_id"
-  gl_accounts |o--o{ budget_lines : "account_id"
   users ||--o{ petty_cash_floats : "custodian_id"
   gl_accounts ||--o{ petty_cash_floats : "account_id"
   projects |o--o{ warehouses : "project_id"

@@ -23,6 +23,7 @@ import {
   projectsService,
   contractorsService,
   constructionContractsService,
+  budgetsService,
 } from "@/lib/services";
 
 /**
@@ -55,3 +56,5 @@ export const useLeaveRequests = () => useCompanyQuery("leaveRequests", leaveRequ
 export const useProjects = () => useCompanyQuery("projects", projectsService.list);
 export const useContractors = () => useCompanyQuery("contractors", contractorsService.list);
 export const useConstructionContracts = () => useCompanyQuery("constructionContracts", constructionContractsService.list);
+export const useBudgets = () => useCompanyQuery("budgets", budgetsService.list);
+export const useBudgetLines = () => useCompanyQuery("budgetLines", budgetsService.lines);

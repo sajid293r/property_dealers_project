@@ -24,6 +24,7 @@ import {
   FolderKanban,
   HardHat,
   Network,
+  PiggyBank,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,6 +65,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/accounts", label: "Accounts", icon: Landmark, minTier: "basic", section: "Finance" },
   { href: "/dashboard/vouchers", label: "Vouchers", icon: ScrollText, minTier: "basic", section: "Finance" },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt, minTier: "basic", section: "Finance" },
+  { href: "/dashboard/budgets", label: "Budgets", icon: PiggyBank, minTier: "moderate", section: "Finance" },
   { href: "/dashboard/reports", label: "Reports", icon: FileText, minTier: "moderate", section: "Finance" },
   { href: "/dashboard/staff", label: "Staff", icon: UserSquare2, minTier: "basic", section: "People" },
   { href: "/dashboard/payroll", label: "Payroll", icon: Banknote, minTier: "moderate", section: "People" },

@@ -15,6 +15,7 @@ export const MODULES = [
   { key: "projects", title: "Projects & Properties", color: "#15803d", blurb: "Schemes, land and approvals, plus a deep property model: location, size, plot/building/commercial specs, amenities, utilities, legal & ownership chain, valuation, media, listings and charges." },
   { key: "crm", title: "CRM & Leads", color: "#be185d", blurb: "Leads, activities, site visits, campaigns, assignment and WhatsApp conversations." },
   { key: "sales", title: "Sales & Collections", color: "#1d4ed8", blurb: "Quotation → booking → installments → receipts, cheques, transfers, cancellations, commissions." },
+  { key: "budget", title: "Budgeting & Control", color: "#047857", blurb: "Plan spend per project and per year, phase it by month, approve and lock it, change it only through revisions, track commitments, and stop or warn on overruns." },
   { key: "tax", title: "Tax Management", color: "#b91c1c", blurb: "Admin-configurable tax codes, effective-dated rates, bundles, assignment rules, exemptions, returns and payments." },
   { key: "invoicing", title: "Invoicing & Contracts", color: "#c2410c", blurb: "Sales and service invoices, recurring billing, credit notes, agreement templates." },
   { key: "procurement", title: "Procurement & Stock", color: "#0e7490", blurb: "Vendors' POs, goods receipts, bills, budgets, petty cash and material stock." },
@@ -968,6 +969,140 @@ kind text
 file_id uuid fk=documents
 `);
 
+// ═══════════════════════════════════════════════ BUDGETING & CONTROL
+t("budget", "budget_templates", "Reusable category splits for new budgets", `
+name text uq
+kind text # project|operating|capex
+description text
+active bool
+`);
+
+t("budget", "budget_template_lines", "Categories and their share of the total", `
+template_id uuid fk=budget_templates
+cost_code text
+category text
+account_id uuid fk=gl_accounts null
+share_pct num
+`);
+
+t("budget", "budgets", "A planned limit on spend — per project, per fiscal year, or per capital item", `
+budget_no text uq
+name text
+kind text # project|operating|capex
+project_id uuid fk=projects null # required for project budgets
+cost_center_id uuid fk=cost_centers null
+fiscal_year_id uuid fk=fiscal_years null
+period_start date null
+period_end date null
+status text # draft|submitted|approved|locked|closed
+control_mode text # none|warn|block
+version_no int
+parent_budget_id uuid fk=budgets null # copied / carried forward from
+template_id uuid fk=budget_templates null
+total_amount num # rolls up from the lines
+currency text
+created_by uuid fk=users
+approved_by uuid fk=users null
+approved_at ts null
+locked_at ts null
+`);
+
+t("budget", "budget_lines", "One budgeted category, tied to a ledger account", `
+budget_id uuid fk=budgets
+line_no int
+cost_code text
+category text
+description text
+account_id uuid fk=gl_accounts # the ledger account whose postings count as "actual"
+cost_center_id uuid fk=cost_centers null
+budget_amount num
+basis text # manual|per_unit|pct_of_revenue
+notes text
+`);
+
+t("budget", "budget_line_periods", "Month-by-month phasing of a line (must add up to the line)", `
+budget_line_id uuid fk=budget_lines
+period_id uuid fk=accounting_periods
+amount num
+`);
+
+t("budget", "budget_snapshots", "Frozen copy of the budget at every approved version (audit trail)", `
+budget_id uuid fk=budgets
+version_no int
+reason text
+data jsonb # all lines as approved
+taken_at ts
+`);
+
+t("budget", "budget_revisions", "A formal request to change an approved budget", `
+budget_id uuid fk=budgets
+revision_no int
+type text # supplementary|reallocation|reforecast
+reason text
+delta_amount num # net change to the budget total
+status text # pending|approved|rejected
+requested_by uuid fk=users
+approved_by uuid fk=users null # must differ from requested_by
+approved_at ts null
+approval_request_id uuid fk=approval_requests null
+`);
+
+t("budget", "budget_revision_lines", "Which lines gain or lose money in a revision", `
+revision_id uuid fk=budget_revisions
+budget_line_id uuid fk=budget_lines
+delta_amount num # + adds, - takes away (a reallocation nets to zero)
+`);
+
+t("budget", "budget_commitments", "Money already spoken for but not yet paid (orders, contracts, running bills)", `
+budget_line_id uuid fk=budget_lines
+source_type text # purchase_order|construction_contract|ipc|vendor_bill|payroll|manual
+source_id uuid null
+amount num
+status text # open|invoiced|released|cancelled
+committed_on date
+note text
+`);
+
+t("budget", "budget_exceptions", "A request to go over budget when control mode is Block", `
+budget_line_id uuid fk=budget_lines
+doc_type text # voucher|purchase_order|vendor_bill|ipc
+doc_id uuid null
+requested_amount num
+over_by num
+reason text
+status text # pending|approved|rejected
+requested_by uuid fk=users
+decided_by uuid fk=users null # must differ from requested_by
+decided_at ts null
+`);
+
+t("budget", "budget_alert_rules", "Notify when a line reaches a threshold (e.g. 85%, 100%)", `
+budget_id uuid fk=budgets null # null = applies to every budget
+threshold_pct num
+channel text # in_app|email|whatsapp
+notify_role_id uuid fk=roles null
+active bool
+`);
+
+t("budget", "budget_alerts", "Alerts that have fired (one per line per threshold)", `
+budget_line_id uuid fk=budget_lines
+threshold_pct num
+utilization_pct num
+triggered_at ts
+acknowledged_by uuid fk=users null
+acknowledged_at ts null
+`);
+
+t("budget", "budget_forecasts", "Estimate at completion / full-year outlook per line", `
+budget_line_id uuid fk=budget_lines
+as_of date
+method text # run_rate|percent_complete|manual
+estimate_to_complete num
+forecast_at_completion num
+note text
+created_by uuid fk=users
+`);
+
 // ═══════════════════════════════════════════════ TAX MANAGEMENT (admin-configurable)
 t("tax", "tax_authorities", "FBR, provincial revenue authorities, local bodies", `
 name text
@@ -1609,20 +1744,6 @@ voucher_id uuid pk fk=vouchers
 amount num
 `, { noid: true });
 
-t("procurement", "budgets", "Approved budget per project", `
-project_id uuid fk=projects
-name text
-fiscal_year_id uuid fk=fiscal_years null
-status text
-`);
-
-t("procurement", "budget_lines", "Budget by cost code", `
-budget_id uuid fk=budgets
-cost_code text
-account_id uuid fk=gl_accounts null
-amount num
-`);
-
 t("procurement", "petty_cash_floats", "Imprest float and replenishment", `
 custodian_id uuid fk=users
 account_id uuid fk=gl_accounts
@@ -2063,7 +2184,7 @@ export const SUBGROUPS = {
   ],
   procurement: [
     ["Purchasing & vendor bills", ["expense_categories", "purchase_requests", "purchase_orders", "po_lines", "goods_receipts", "vendor_bills", "bill_lines", "bill_payments", "recurring_templates"]],
-    ["Budgets, petty cash & stock", ["budgets", "budget_lines", "petty_cash_floats", "warehouses", "stock_items", "stock_movements"]],
+    ["Petty cash & stock", ["petty_cash_floats", "warehouses", "stock_items", "stock_movements"]],
   ],
   construction: [
     ["Contracts & running bills", ["construction_contracts", "contract_items", "ipcs", "ipc_lines", "retention_ledger", "variation_orders"]],
@@ -2073,6 +2194,10 @@ export const SUBGROUPS = {
     ["Employees & salary structure", ["departments", "designations", "employees", "salary_components", "employee_salary_components", "salary_history"]],
     ["Attendance & leave", ["shifts", "attendance_logs", "attendance_daily", "holidays", "leave_types", "leave_policies", "leave_balances", "leave_requests"]],
     ["Payroll, loans & targets", ["payroll_runs", "payslips", "payslip_lines", "staff_loans", "loan_installments", "sales_targets", "incentive_rules"]],
+  ],
+  budget: [
+    ["Budget setup & phasing", ["budget_templates", "budget_template_lines", "budgets", "budget_lines", "budget_line_periods", "budget_snapshots"]],
+    ["Revisions, commitments & control", ["budget_revisions", "budget_revision_lines", "budget_commitments", "budget_exceptions", "budget_alert_rules", "budget_alerts", "budget_forecasts"]],
   ],
   tax: [
     ["Tax setup (codes, rates, bundles, rules)", ["tax_authorities", "tax_codes", "tax_rates", "tax_groups", "tax_group_items", "tax_assignments", "party_tax_exemptions"]],

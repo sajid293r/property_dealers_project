@@ -19,6 +19,8 @@ import {
   projects,
   contractors,
   constructionContracts,
+  budgets,
+  budgetLines,
 } from "@/lib/mock-data";
 import { contracts } from "@/lib/mock-data/expenses";
 import { monthlyCollections, weeklyCollections } from "@/lib/mock-data/trends";
@@ -54,6 +56,8 @@ const BASE = {
   projects,
   contractors,
   constructionContracts,
+  budgets,
+  budgetLines,
 };
 
 export type CompanyDataset = typeof BASE;
@@ -154,6 +158,7 @@ function cascade(ds: CompanyDataset): CompanyDataset {
     customerId: new Set(ds.customers.map((x) => x.id)),
     dealId: new Set(ds.deals.map((x) => x.id)),
     projectId: new Set(ds.projects.map((x) => x.id)),
+    budgetId: new Set(ds.budgets.map((x) => x.id)),
   };
   const out: Record<string, unknown> = { ...ds };
   for (let pass = 0; pass < 2; pass++) {
@@ -168,6 +173,7 @@ function cascade(ds: CompanyDataset): CompanyDataset {
     }
     refs.unitId = new Set((out.units as { id: string }[]).map((x) => x.id));
     refs.dealId = new Set((out.deals as { id: string }[]).map((x) => x.id));
+    refs.budgetId = new Set((out.budgets as { id: string }[]).map((x) => x.id));
   }
   return out as CompanyDataset;
 }
@@ -195,6 +201,8 @@ function emptyDataset(): CompanyDataset {
     projects: [],
     contractors: [],
     constructionContracts: [],
+    budgets: [],
+    budgetLines: [],
   };
 }
 

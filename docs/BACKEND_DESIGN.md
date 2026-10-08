@@ -1,8 +1,8 @@
 # PropIQ — Production Backend Design
 
 > Status: design proposal, prepared after auditing every screen, type and mock-data module of the prototype.
-> **Visual ERDs:** open [`erd/viewer.html`](erd/viewer.html) (interactive) or [`erd/ERD.md`](erd/ERD.md) — 216 tables across 14 feature areas, generated from [`erd/schema.mjs`](erd/schema.mjs). Import [`erd/erd.dbml`](erd/erd.dbml) into dbdiagram.io to edit visually.
-> Companion files: [`schema/core.sql`](schema/core.sql) (executable foundation schema) and [`schema/smoke-test.mjs`](schema/smoke-test.mjs) (64 checks that run the schema in a real Postgres engine; 77 of the tables are executable SQL — the foundation, the property model, tax, combined transactions and inter-company/consolidation).
+> **Visual ERDs:** open [`erd/viewer.html`](erd/viewer.html) (interactive) or [`erd/ERD.md`](erd/ERD.md) — 227 tables across 15 feature areas, generated from [`erd/schema.mjs`](erd/schema.mjs). Import [`erd/erd.dbml`](erd/erd.dbml) into dbdiagram.io to edit visually.
+> Companion files: [`schema/core.sql`](schema/core.sql) (executable foundation schema) and [`schema/smoke-test.mjs`](schema/smoke-test.mjs) (99 checks that run the schema in a real Postgres engine; about 90 of the tables are executable SQL — the foundation, the property model, tax, combined transactions, budgeting and inter-company/consolidation).
 > Items marked **(assumption)** or **(verify)** are things to confirm with the client / an accountant / the vendor's current pricing page before committing.
 
 ---
@@ -224,6 +224,43 @@ For an owner with several companies (the company switcher in the prototype):
 - **Consolidated statements.** Each company keeps its own chart of accounts, so a **group chart** (`group_accounts`) is defined and each company account is mapped to it (`group_account_map`). `app.run_consolidation(group, from, to)` sums every member's ledger through the map and writes **elimination entries** for inter-company balances so the group is not double-counted — verified: money moved between members nets to zero and inter-company receivable/payable eliminate to zero. Tables: `consolidation_groups`, `consolidation_members` (ownership %, method), `consolidation_runs`, `consolidated_balances`, `elimination_entries/lines`.
 - **Still separate by default.** Companies stay fully isolated; only these explicit, audited objects cross the boundary. Ownership-percentage (proportional/equity) accounting and currency translation are modelled (`ownership_pct`, `method`) but not yet computed — Phase 4.
 
+### 5.5 Budgeting & budget control
+
+A budget is a planned limit on spend, set **before** the money moves. The prototype now has a Budgets screen; this is the production design behind it (13 tables, ERD area "Budgeting & Control", all rules below are in `core.sql` and tested).
+
+**Kinds.** *Project* budgets cap a scheme's lifetime cost (one live budget per project — enforced by the database); *operating* budgets plan a fiscal year of running costs month by month; *capex* budgets cover one-off capital items. Revenue/sales targets are modelled the same way later (`kind`).
+
+**Structure.** `budgets` (header: kind, project, cost centre, fiscal year, period, status, **control mode**, version) → `budget_lines` (category, cost code, **the ledger account it watches**, amount) → `budget_line_periods` (monthly phasing; the months must add up to the line). `budget_templates` give new budgets a standard category split (the prototype's 9-category split: land development, civil & structural, roads, electrical, water & sewerage, landscaping, approvals & legal, marketing, contingency).
+
+**Actual and committed are never typed in.**
+
+| Number | Where it comes from |
+|---|---|
+| **Budget** | the approved lines (changed only by revisions) |
+| **Committed** | open `budget_commitments`: purchase orders, construction contracts, running bills (IPCs), vendor bills, payroll — money spoken for but not yet paid. Becomes *actual* when invoiced/paid |
+| **Actual** | read live from the ledger: `journal_lines` on the line's account, narrowed by the budget's project, the line's cost centre and the budget period. Vouchers, bills, payroll and IPCs all post there, so nothing is double-entered |
+| **Available** | budget − committed − actual |
+| **Utilization** | (committed + actual) ÷ budget |
+| **Forecast** | `budget_forecasts` — run-rate, percent-complete, or manual estimate-to-complete |
+
+A SQL view `v_budget_line_status` computes this per line (with the caller's tenant isolation applied), so the Budgets screen, dashboards and alerts all read one definition.
+
+**Lifecycle (maker-checker).** `draft → submitted → approved → locked → closed`; the database refuses skipped steps. The creator cannot approve their own budget; approval stores a **v1 snapshot** (`budget_snapshots`). After approval, **lines cannot be edited directly** — a change is a `budget_revisions` request: *supplementary* (adds money), *reallocation* (moves money between lines, must net to zero) or *reforecast*. A different user approves it; the lines update, monthly phasing is rescaled to match, the version number goes up and a new snapshot is stored — so any past version can be reproduced for an auditor. The revision also flows through the platform approval engine (§7).
+
+**Control — stopping overruns, not just reporting them.** Each budget has a control mode:
+
+| Mode | When a voucher / PO / bill would exceed a line |
+|---|---|
+| **None** | tracked only |
+| **Warn** | user sees the over-by amount and can continue |
+| **Block** | stopped; the user raises a `budget_exceptions` request (you cannot approve your own exception) or asks for a revision |
+
+The services call `app.check_budget(account, project, cost centre, date, amount)` before accepting a document; it returns `allow / warn / block` and the available amount from the most specific approved budget (no row = no budget covers it, nothing to enforce). **Alerts:** `budget_alert_rules` (e.g. 85 % and 100 %, per channel) and `app.evaluate_budget_alerts()` fire each threshold once per line into `budget_alerts` (acknowledgeable); a nightly job and each posting can call it safely.
+
+**Reports.** Budget vs actual vs committed by project/category/period; variance and run-rate forecast; revision history; project cost-to-complete; operating plan-to-date vs actual by month; exceptions and overrides log. Group-level roll-up across companies uses the consolidation module (§5.4).
+
+**Honest limits.** The "guard" that locks approved lines is a safety net against application bugs, not a defence against someone with direct database credentials. Revenue-side budgets, multi-currency budgets and automatic carry-forward of unspent balances are Phase 4.
+
 **Reports are queries over this model:** trial balance, P&L, balance sheet, cash-flow, general ledger, party ledger (customer/vendor/dealer/staff statements), project profitability, receivable ageing, installment due/overdue, commission statement, budget-vs-actual.
 
 ---
@@ -302,9 +339,9 @@ For each module: **what the prototype has → what production must record (new d
 
 ### 6.6 Procurement, expenses & payables\*
 - **Has:** Expenses (title, type, amount, paidVia, paid/unpaid, project).
-- **Record\*:** vendors (a party role) with payment terms; **purchase requests → purchase orders → goods receipt → vendor bill → payment**; bill lines with expense account/project/cost center/tax; attachments (invoice photo); recurring expenses; petty-cash float & replenishment; expense categories mapped to GL accounts; budget lines per project/cost code with commitments (PO) vs actual vs budget; approval thresholds.
+- **Record\*:** vendors (a party role) with payment terms; **purchase requests → purchase orders → goods receipt → vendor bill → payment**; bill lines with expense account/project/cost center/tax; attachments (invoice photo); recurring expenses; petty-cash float & replenishment; expense categories mapped to GL accounts; budget control at PO/bill entry (§5.5); approval thresholds.
 - **Rules:** three-way match optional (PO/GRN/bill); bill cannot exceed approved PO without re-approval; unpaid bills drive the "follow-up" flag; payment = voucher allocation against bills (partial payments allowed).
-- **Tables:** `vendors(party_role), purchase_requests, purchase_orders, po_lines, goods_receipts, vendor_bills, bill_lines, bill_payments, expense_categories, budgets, budget_lines, petty_cash_floats, recurring_templates`.
+- **Tables:** `vendors(party_role), purchase_requests, purchase_orders, po_lines, goods_receipts, vendor_bills, bill_lines, bill_payments, expense_categories, petty_cash_floats, recurring_templates`. **Budgets live in their own module (§5.5):** an approved purchase order becomes a *budget commitment*, a paid bill becomes *actual*, and `app.check_budget()` runs before a PO or bill is accepted.
 
 ### 6.7 Construction & project costing
 - **Has:** Contractors, construction contracts (value, paid ratio, retention, progress), assign contractor to project.
@@ -466,12 +503,13 @@ Relative effort, **assumption:** 2–3 engineers + 1 designer/QA.
 
 1. **Taxes — *answered:* an admin-facing tax section.** The admin defines tax codes, effective-dated rates, bundles and assignment rules for revenue and anything else (§5.2). *Still to confirm with the accountant:* the actual taxes/rates/bases to load, who files, and the **revenue-recognition policy** (on booking / full payment / possession) — a company setting that drives posting rules.
 2. **Multi-company & combined transactions — *answered:* "there should be the option of combined transactions".** Designed as (a) combined transactions inside a company (one event settling several documents, split tenders, contra) and (b) inter-company transactions with consolidated statements across the group (§5.3–5.4). *Please confirm that this matches what was meant* — if "combined" meant only one of the two, the other can be deferred. *Still open:* do companies share staff, customers or bank accounts, and is currency translation needed?
-3. **Who owns the data on exit?** Export format and retention policy for cancelled subscriptions.
-4. **Offline use:** do site agents need to work without internet? (Changes the client architecture — PWA + sync queue.)
-5. **Regulatory documents:** which approvals/registries must be tracked per project (NOC, layout approval, registry/transfer paperwork), and are digital signatures or e-stamping required?
-6. **Integrations:** accounting-package export (e.g. for the client's auditor), bank statement import formats, FBR/provincial portals, portals like Zameen for lead intake.
-7. **Hosting residency & compliance:** any requirement to host data in Pakistan? That changes provider choice (§11).
-8. **Volume:** number of companies, properties, bookings, and concurrent users in year 1 — to validate the sizing in §10.
+3. **Budgets — default policy.** Should new project budgets default to *Warn* or *Block*? Who approves a budget and a revision (CFO only, or CEO above a threshold)? Is the operating budget annual only or also quarterly re-forecast? Are unspent balances carried forward? (All are settings, not code — but the client should choose the defaults.)
+4. **Who owns the data on exit?** Export format and retention policy for cancelled subscriptions.
+5. **Offline use:** do site agents need to work without internet? (Changes the client architecture — PWA + sync queue.)
+6. **Regulatory documents:** which approvals/registries must be tracked per project (NOC, layout approval, registry/transfer paperwork), and are digital signatures or e-stamping required?
+7. **Integrations:** accounting-package export (e.g. for the client's auditor), bank statement import formats, FBR/provincial portals, portals like Zameen for lead intake.
+8. **Hosting residency & compliance:** any requirement to host data in Pakistan? That changes provider choice (§11).
+9. **Volume:** number of companies, properties, bookings, and concurrent users in year 1 — to validate the sizing in §10.
 
 ---
 
@@ -485,14 +523,15 @@ Relative effort, **assumption:** 2–3 engineers + 1 designer/QA.
 *Multi-Company & Consolidation (10):* intercompany_accounts, intercompany_transactions, consolidation_groups, consolidation_members, group_accounts, group_account_map, consolidation_runs, consolidated_balances, elimination_entries, elimination_lines.
 *CRM:* leads, lead_stage_history, lead_activities, campaigns, campaign_spend, lead_assignment_rules, site_visits, conversations, messages.
 *Sales:* quotations, quotation_lines, bookings, booking_parties, booking_nominees, payment_plan_templates(+items), installments, installment_reschedules, penalty_rules, penalty_charges, waivers, receipts, receipt_tenders, receipt_allocations, cheques, cheque_events, property_transfers, booking_cancellations, possessions, commission_rules, commissions, sales_invoices(+lines), service_invoices, billing_schedules, credit_notes, contract_templates, contracts, contract_parties.
-*Procurement:* purchase_requests, purchase_orders, po_lines, goods_receipts, vendor_bills, bill_lines, bill_payments, expense_categories, budgets, budget_lines, petty_cash_floats, recurring_templates, stock_items, warehouses, stock_movements.
+*Budgeting & Control (13):* budget_templates, budget_template_lines, budgets, budget_lines, budget_line_periods, budget_snapshots, budget_revisions, budget_revision_lines, budget_commitments, budget_exceptions, budget_alert_rules, budget_alerts, budget_forecasts.
+*Procurement:* purchase_requests, purchase_orders, po_lines, goods_receipts, vendor_bills, bill_lines, bill_payments, expense_categories, petty_cash_floats, recurring_templates, stock_items, warehouses, stock_movements.
 *Construction:* construction_contracts, contract_items, ipcs, ipc_lines, retention_ledger, variation_orders, milestones, progress_reports, progress_photos, contractor_ratings, guarantees, material_issues.
 *HR/Payroll:* employees, departments, designations, salary_components, employee_salary_components, salary_history, shifts, attendance_logs, attendance_daily, holidays, leave_types, leave_policies, leave_balances, leave_requests, payroll_runs, payslips, payslip_lines, staff_loans, loan_installments, sales_targets, incentive_rules.
 *Reporting/Billing:* company_kpi_snapshots, saved_reports, report_schedules, plans, plan_limits, subscriptions, subscription_items, usage_meters, saas_invoices, saas_payments, dunning_events, coupons.
 
 ### Appendix B — What `docs/schema/core.sql` already proves
 
-Run `node docs/schema/smoke-test.mjs` (after `npm i --no-save @electric-sql/pglite`) — **64 checks** against a real Postgres engine:
+Run `node docs/schema/smoke-test.mjs` (after `npm i --no-save @electric-sql/pglite`) — **99 checks** against a real Postgres engine:
 
 - **Ledger:** unbalanced entries rejected · debit-xor-credit lines · posted rows append-only (only "mark reversed" allowed) · group accounts and locked periods unpostable · account balances roll up by trigger · gapless numbering per period.
 - **Sales:** one live booking per property (re-bookable after cancel) · generated `net_price` · allocation marks installments paid/partial · over-allocation rejected.
@@ -502,3 +541,4 @@ Run `node docs/schema/smoke-test.mjs` (after `npm i --no-save @electric-sql/pgli
 - **Combined transactions:** items add up to the total · contra nets to zero · both violations rejected.
 - **Tax:** codes, effective-dated rates, slabs and bundles defined by the admin · overlapping rate periods rejected · exactly one of percent/flat/slabs · rate depends on date (16 % → 18 %) and filer status (3 % vs 6 %) · ordered compound bundle (600,000 then 1,696,000 on 10,600,000) · progressive slabs (40,000 on 2.5 M) · assignment rule and per-document tax record.
 - **Inter-company & consolidation:** visible to both companies, hidden from a third · one call posts both sides atomically with each company seeing only its own side · cannot be posted twice or by a non-party · consolidated cash nets to zero and inter-company receivable/payable eliminate to zero · other organizations see nothing.
+- **Budgeting:** total rolls up from lines · one live budget per project · project budget must name its project · monthly phasing must add up (and is rescaled on revision) · no skipped status steps · creator cannot approve · approval stores a v1 snapshot · approved lines cannot be edited or added to directly · *actual* is read from the ledger for the right project only · open purchase orders reduce what is available and stop counting once invoiced · control returns allow / warn / block with the over-by amount · no budget or out-of-period date ⇒ nothing to enforce · you cannot approve your own exception · alerts fire once per threshold (85 %, 100 %) and never duplicate · revisions: requester cannot approve, reallocation moves money and keeps the total, must net to zero, supplementary raises the total, version and snapshots advance · other companies see no budget data.

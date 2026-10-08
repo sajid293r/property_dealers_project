@@ -391,6 +391,62 @@ export interface Contractor {
   createdAt: string;
 }
 
+export type BudgetKind = "project" | "operating";
+export type BudgetStatus = "draft" | "submitted" | "approved" | "locked" | "closed";
+/** What happens when a voucher/PO/bill would push a line over its budget. */
+export type BudgetControlMode = "none" | "warn" | "block";
+
+export interface BudgetRevision {
+  no: number;
+  date: string;
+  type: "supplementary" | "reallocation" | "reforecast";
+  deltaAmount: number;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  approvedBy?: string;
+}
+
+/**
+ * A budget is a planned limit on spend, set before the money moves. Project
+ * budgets cap a scheme's lifetime cost; the operating budget plans a fiscal
+ * year of running costs month by month. "Actual" always comes from the ledger
+ * and "committed" from approved-but-unpaid commitments — neither is typed in.
+ */
+export interface Budget {
+  id: string;
+  name: string;
+  kind: BudgetKind;
+  /** Set for project budgets. */
+  projectId?: string;
+  fiscalYear: string;
+  status: BudgetStatus;
+  controlMode: BudgetControlMode;
+  version: number;
+  createdBy: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  createdAt: string;
+  revisions: BudgetRevision[];
+}
+
+export interface BudgetLine {
+  id: string;
+  budgetId: string;
+  costCode: string;
+  category: string;
+  description: string;
+  budgetAmount: number;
+  /** Approved but not yet paid (POs, running bills, unpaid expenses). */
+  committedAmount: number;
+  /** Paid to date (from the ledger). */
+  actualAmount: number;
+  /** Estimate at completion / full-year outlook. */
+  forecastAmount: number;
+  /** Operating budgets only: 12 fiscal-year months, Jul → Jun. */
+  monthlyBudgetAmounts?: number[];
+  monthlyActualAmounts?: number[];
+}
+
 export type ConstructionContractStatus = "active" | "completed" | "terminated";
 
 /** A construction contractor's engagement on a project — the thing that gets added/removed. */

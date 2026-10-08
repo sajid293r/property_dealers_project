@@ -1233,6 +1233,178 @@ Table project_documents {
   Note: 'Maps, approvals, brochures'
 }
 
+Table budget_templates {
+  id uuid [pk]
+  company_id uuid [not null]
+  name text [unique, not null]
+  kind text [not null, note: 'project|operating|capex']
+  description text [not null]
+  active boolean [not null]
+  Note: 'Reusable category splits for new budgets'
+}
+
+Table budget_template_lines {
+  id uuid [pk]
+  company_id uuid [not null]
+  template_id uuid [not null]
+  cost_code text [not null]
+  category text [not null]
+  account_id uuid
+  share_pct numeric(18,2) [not null]
+  Note: 'Categories and their share of the total'
+}
+
+Table budgets {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_no text [unique, not null]
+  name text [not null]
+  kind text [not null, note: 'project|operating|capex']
+  project_id uuid [note: 'required for project budgets']
+  cost_center_id uuid
+  fiscal_year_id uuid
+  period_start date
+  period_end date
+  status text [not null, note: 'draft|submitted|approved|locked|closed']
+  control_mode text [not null, note: 'none|warn|block']
+  version_no int [not null]
+  parent_budget_id uuid [note: 'copied / carried forward from']
+  template_id uuid
+  total_amount numeric(18,2) [not null, note: 'rolls up from the lines']
+  currency text [not null]
+  created_by uuid [not null]
+  approved_by uuid
+  approved_at timestamptz
+  locked_at timestamptz
+  Note: 'A planned limit on spend — per project, per fiscal year, or per capital item'
+}
+
+Table budget_lines {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_id uuid [not null]
+  line_no int [not null]
+  cost_code text [not null]
+  category text [not null]
+  description text [not null]
+  account_id uuid [not null, note: 'the ledger account whose postings count as "actual"']
+  cost_center_id uuid
+  budget_amount numeric(18,2) [not null]
+  basis text [not null, note: 'manual|per_unit|pct_of_revenue']
+  notes text [not null]
+  Note: 'One budgeted category, tied to a ledger account'
+}
+
+Table budget_line_periods {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_line_id uuid [not null]
+  period_id uuid [not null]
+  amount numeric(18,2) [not null]
+  Note: 'Month-by-month phasing of a line (must add up to the line)'
+}
+
+Table budget_snapshots {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_id uuid [not null]
+  version_no int [not null]
+  reason text [not null]
+  data jsonb [not null, note: 'all lines as approved']
+  taken_at timestamptz [not null]
+  Note: 'Frozen copy of the budget at every approved version (audit trail)'
+}
+
+Table budget_revisions {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_id uuid [not null]
+  revision_no int [not null]
+  type text [not null, note: 'supplementary|reallocation|reforecast']
+  reason text [not null]
+  delta_amount numeric(18,2) [not null, note: 'net change to the budget total']
+  status text [not null, note: 'pending|approved|rejected']
+  requested_by uuid [not null]
+  approved_by uuid [note: 'must differ from requested_by']
+  approved_at timestamptz
+  approval_request_id uuid
+  Note: 'A formal request to change an approved budget'
+}
+
+Table budget_revision_lines {
+  id uuid [pk]
+  company_id uuid [not null]
+  revision_id uuid [not null]
+  budget_line_id uuid [not null]
+  delta_amount numeric(18,2) [not null, note: '+ adds, - takes away (a reallocation nets to zero)']
+  Note: 'Which lines gain or lose money in a revision'
+}
+
+Table budget_commitments {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_line_id uuid [not null]
+  source_type text [not null, note: 'purchase_order|construction_contract|ipc|vendor_bill|payroll|manual']
+  source_id uuid
+  amount numeric(18,2) [not null]
+  status text [not null, note: 'open|invoiced|released|cancelled']
+  committed_on date [not null]
+  note text [not null]
+  Note: 'Money already spoken for but not yet paid (orders, contracts, running bills)'
+}
+
+Table budget_exceptions {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_line_id uuid [not null]
+  doc_type text [not null, note: 'voucher|purchase_order|vendor_bill|ipc']
+  doc_id uuid
+  requested_amount numeric(18,2) [not null]
+  over_by numeric(18,2) [not null]
+  reason text [not null]
+  status text [not null, note: 'pending|approved|rejected']
+  requested_by uuid [not null]
+  decided_by uuid [note: 'must differ from requested_by']
+  decided_at timestamptz
+  Note: 'A request to go over budget when control mode is Block'
+}
+
+Table budget_alert_rules {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_id uuid [note: 'null = applies to every budget']
+  threshold_pct numeric(18,2) [not null]
+  channel text [not null, note: 'in_app|email|whatsapp']
+  notify_role_id uuid
+  active boolean [not null]
+  Note: 'Notify when a line reaches a threshold (e.g. 85%, 100%)'
+}
+
+Table budget_alerts {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_line_id uuid [not null]
+  threshold_pct numeric(18,2) [not null]
+  utilization_pct numeric(18,2) [not null]
+  triggered_at timestamptz [not null]
+  acknowledged_by uuid
+  acknowledged_at timestamptz
+  Note: 'Alerts that have fired (one per line per threshold)'
+}
+
+Table budget_forecasts {
+  id uuid [pk]
+  company_id uuid [not null]
+  budget_line_id uuid [not null]
+  as_of date [not null]
+  method text [not null, note: 'run_rate|percent_complete|manual']
+  estimate_to_complete numeric(18,2) [not null]
+  forecast_at_completion numeric(18,2) [not null]
+  note text [not null]
+  created_by uuid [not null]
+  Note: 'Estimate at completion / full-year outlook per line'
+}
+
 Table tax_authorities {
   id uuid [pk]
   company_id uuid [not null]
@@ -2087,26 +2259,6 @@ Table bill_payments {
   Note: 'Payments applied to bills'
 }
 
-Table budgets {
-  id uuid [pk]
-  company_id uuid [not null]
-  project_id uuid [not null]
-  name text [not null]
-  fiscal_year_id uuid
-  status text [not null]
-  Note: 'Approved budget per project'
-}
-
-Table budget_lines {
-  id uuid [pk]
-  company_id uuid [not null]
-  budget_id uuid [not null]
-  cost_code text [not null]
-  account_id uuid
-  amount numeric(18,2) [not null]
-  Note: 'Budget by cost code'
-}
-
 Table petty_cash_floats {
   id uuid [pk]
   company_id uuid [not null]
@@ -2887,6 +3039,50 @@ Ref: property_holds.held_by > users.id
 Ref: project_documents.company_id > companies.id
 Ref: project_documents.project_id > projects.id
 Ref: project_documents.file_id > documents.id
+Ref: budget_templates.company_id > companies.id
+Ref: budget_template_lines.company_id > companies.id
+Ref: budget_template_lines.template_id > budget_templates.id
+Ref: budget_template_lines.account_id > gl_accounts.id
+Ref: budgets.company_id > companies.id
+Ref: budgets.project_id > projects.id
+Ref: budgets.cost_center_id > cost_centers.id
+Ref: budgets.fiscal_year_id > fiscal_years.id
+Ref: budgets.parent_budget_id > budgets.id
+Ref: budgets.template_id > budget_templates.id
+Ref: budgets.created_by > users.id
+Ref: budgets.approved_by > users.id
+Ref: budget_lines.company_id > companies.id
+Ref: budget_lines.budget_id > budgets.id
+Ref: budget_lines.account_id > gl_accounts.id
+Ref: budget_lines.cost_center_id > cost_centers.id
+Ref: budget_line_periods.company_id > companies.id
+Ref: budget_line_periods.budget_line_id > budget_lines.id
+Ref: budget_line_periods.period_id > accounting_periods.id
+Ref: budget_snapshots.company_id > companies.id
+Ref: budget_snapshots.budget_id > budgets.id
+Ref: budget_revisions.company_id > companies.id
+Ref: budget_revisions.budget_id > budgets.id
+Ref: budget_revisions.requested_by > users.id
+Ref: budget_revisions.approved_by > users.id
+Ref: budget_revisions.approval_request_id > approval_requests.id
+Ref: budget_revision_lines.company_id > companies.id
+Ref: budget_revision_lines.revision_id > budget_revisions.id
+Ref: budget_revision_lines.budget_line_id > budget_lines.id
+Ref: budget_commitments.company_id > companies.id
+Ref: budget_commitments.budget_line_id > budget_lines.id
+Ref: budget_exceptions.company_id > companies.id
+Ref: budget_exceptions.budget_line_id > budget_lines.id
+Ref: budget_exceptions.requested_by > users.id
+Ref: budget_exceptions.decided_by > users.id
+Ref: budget_alert_rules.company_id > companies.id
+Ref: budget_alert_rules.budget_id > budgets.id
+Ref: budget_alert_rules.notify_role_id > roles.id
+Ref: budget_alerts.company_id > companies.id
+Ref: budget_alerts.budget_line_id > budget_lines.id
+Ref: budget_alerts.acknowledged_by > users.id
+Ref: budget_forecasts.company_id > companies.id
+Ref: budget_forecasts.budget_line_id > budget_lines.id
+Ref: budget_forecasts.created_by > users.id
 Ref: tax_authorities.company_id > companies.id
 Ref: tax_codes.company_id > companies.id
 Ref: tax_codes.authority_id > tax_authorities.id
@@ -3116,12 +3312,6 @@ Ref: bill_lines.tax_code_id > tax_codes.id
 Ref: bill_payments.company_id > companies.id
 Ref: bill_payments.bill_id > vendor_bills.id
 Ref: bill_payments.voucher_id > vouchers.id
-Ref: budgets.company_id > companies.id
-Ref: budgets.project_id > projects.id
-Ref: budgets.fiscal_year_id > fiscal_years.id
-Ref: budget_lines.company_id > companies.id
-Ref: budget_lines.budget_id > budgets.id
-Ref: budget_lines.account_id > gl_accounts.id
 Ref: petty_cash_floats.company_id > companies.id
 Ref: petty_cash_floats.custodian_id > users.id
 Ref: petty_cash_floats.account_id > gl_accounts.id
@@ -3386,6 +3576,22 @@ TableGroup "Sales & Collections" {
   commissions
 }
 
+TableGroup "Budgeting & Control" {
+  budget_templates
+  budget_template_lines
+  budgets
+  budget_lines
+  budget_line_periods
+  budget_snapshots
+  budget_revisions
+  budget_revision_lines
+  budget_commitments
+  budget_exceptions
+  budget_alert_rules
+  budget_alerts
+  budget_forecasts
+}
+
 TableGroup "Tax Management" {
   tax_authorities
   tax_codes
@@ -3420,8 +3626,6 @@ TableGroup "Procurement & Stock" {
   vendor_bills
   bill_lines
   bill_payments
-  budgets
-  budget_lines
   petty_cash_floats
   recurring_templates
   warehouses

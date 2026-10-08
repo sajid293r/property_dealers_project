@@ -12,6 +12,7 @@ import {
   Banknote,
   Wallet,
   ShieldCheck,
+  PiggyBank,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export const PERMISSION_MODULES = [
   { key: "plotMap", label: "Plot Map", icon: MapPinned },
   { key: "accounts", label: "Accounts", icon: Landmark },
   { key: "expenses", label: "Expenses", icon: Receipt },
+  { key: "budgets", label: "Budgets", icon: PiggyBank },
   { key: "reports", label: "Reports", icon: FileText },
   { key: "staff", label: "Staff", icon: UserSquare2 },
   { key: "payroll", label: "Payroll", icon: Banknote },

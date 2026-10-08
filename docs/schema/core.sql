@@ -6,7 +6,8 @@
 -- vouchers — the COA is the structure, vouchers are the documents that post
 -- into it), the rich property model, parties, bookings, installments, receipts
 -- with split tenders, combined transactions, the admin-configurable tax module,
--- and inter-company transactions with consolidation.
+-- budgeting with commitments, revisions and spend control, and inter-company
+-- transactions with consolidation.
 -- The remaining modules (CRM, HR/payroll, procurement, construction, ...)
 -- follow the same conventions; see docs/BACKEND_DESIGN.md §6 for their tables.
 --
@@ -1374,6 +1375,374 @@ begin
   do update set debit_total = consolidated_balances.debit_total + excluded.debit_total,
                 credit_total = consolidated_balances.credit_total + excluded.credit_total;
   return v_run;
+end $$;
+
+-- ---------------------------------------------------------------- budgeting & budget control
+-- A budget is a planned limit on spend. "Actual" is never typed in: it is read from the ledger
+-- (journal_lines on the line's account, narrowed by project / cost centre / period), and
+-- "committed" comes from open commitments (orders, contracts, running bills). Once approved,
+-- the lines can only change through an approved revision (maker-checker), and every approved
+-- version is snapshotted for audit.
+create table budget_templates (
+  id          uuid primary key default gen_random_uuid(),
+  company_id  uuid not null references companies(id),
+  name        text not null,
+  kind        text not null check (kind in ('project','operating','capex')),
+  description text,
+  active      boolean not null default true,
+  unique (company_id, name)
+);
+
+create table budget_template_lines (
+  id          uuid primary key default gen_random_uuid(),
+  company_id  uuid not null references companies(id),
+  template_id uuid not null references budget_templates(id) on delete cascade,
+  cost_code   text,
+  category    text not null,
+  account_id  uuid references gl_accounts(id),
+  share_pct   numeric(6,3) not null check (share_pct > 0 and share_pct <= 100)
+);
+
+create table budgets (
+  id               uuid primary key default gen_random_uuid(),
+  company_id       uuid not null references companies(id),
+  budget_no        text not null,
+  name             text not null,
+  kind             text not null check (kind in ('project','operating','capex')),
+  project_id       uuid references projects(id),
+  cost_center_id   uuid references cost_centers(id),
+  fiscal_year_id   uuid references fiscal_years(id),
+  period_start     date,
+  period_end       date,
+  status           text not null default 'draft' check (status in ('draft','submitted','approved','locked','closed')),
+  control_mode     text not null default 'warn' check (control_mode in ('none','warn','block')),
+  version_no       int not null default 1,
+  parent_budget_id uuid references budgets(id),
+  template_id      uuid references budget_templates(id),
+  total_amount     numeric(18,2) not null default 0,
+  currency         char(3) not null default 'PKR',
+  created_by       uuid references users(id),
+  approved_by      uuid references users(id),
+  approved_at      timestamptz,
+  locked_at        timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  version          int not null default 1,
+  unique (company_id, budget_no),
+  check (kind <> 'project' or project_id is not null),
+  check (period_start is null or period_end is null or period_end >= period_start),
+  check (approved_by is null or approved_by <> created_by)            -- maker-checker on the whole budget
+);
+-- One live budget per project (a closed one may be followed by a new one).
+create unique index budgets_one_live_per_project on budgets (company_id, project_id)
+  where kind = 'project' and status in ('draft','submitted','approved','locked');
+create trigger budgets_touch before update on budgets for each row execute function app.touch_updated_at();
+
+-- Status moves one step at a time; nothing skips approval.
+create or replace function app.assert_budget_transition() returns trigger
+language plpgsql as $$
+begin
+  if new.status is distinct from old.status
+     and (old.status || '>' || new.status) <> all (array['draft>submitted','submitted>draft','submitted>approved','approved>locked','locked>approved','approved>closed','locked>closed','draft>closed']) then
+    raise exception 'A budget cannot go from % to %', old.status, new.status using errcode = '55000';
+  end if;
+  return new;
+end $$;
+create trigger budgets_transition before update on budgets for each row execute function app.assert_budget_transition();
+
+create table budget_lines (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  budget_id      uuid not null references budgets(id) on delete cascade,
+  line_no        int not null,
+  cost_code      text,
+  category       text not null,
+  description    text,
+  account_id     uuid not null references gl_accounts(id),   -- postings to this account count as "actual"
+  cost_center_id uuid references cost_centers(id),
+  budget_amount  numeric(18,2) not null check (budget_amount >= 0),
+  basis          text not null default 'manual' check (basis in ('manual','per_unit','pct_of_revenue')),
+  notes          text,
+  unique (budget_id, line_no)
+);
+create index budget_lines_account_idx on budget_lines (company_id, account_id);
+
+-- After approval, lines change only through an approved revision (app.approve_budget_revision sets the flag).
+create or replace function app.guard_budget_lines() returns trigger
+language plpgsql as $$
+declare v_status text; v_budget uuid := coalesce(new.budget_id, old.budget_id);
+begin
+  select status into v_status from budgets where id = v_budget;
+  if v_status in ('approved','locked','closed') and coalesce(current_setting('app.budget_revision', true), '') <> 'on' then
+    raise exception 'Lines of an % budget can only change through an approved revision', v_status using errcode = '55000';
+  end if;
+  return coalesce(new, old);
+end $$;
+create trigger budget_lines_guard before insert or update or delete on budget_lines
+  for each row execute function app.guard_budget_lines();
+
+create or replace function app.roll_budget_total() returns trigger
+language plpgsql as $$
+declare v_budget uuid := coalesce(new.budget_id, old.budget_id);
+begin
+  update budgets set total_amount = coalesce((select sum(budget_amount) from budget_lines where budget_id = v_budget), 0) where id = v_budget;
+  return null;
+end $$;
+create trigger budget_lines_total after insert or update or delete on budget_lines
+  for each row execute function app.roll_budget_total();
+
+-- Monthly phasing: if a line is phased, the months must add up to the line.
+create table budget_line_periods (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  budget_line_id uuid not null references budget_lines(id) on delete cascade,
+  period_id      uuid not null references accounting_periods(id),
+  amount         numeric(18,2) not null check (amount >= 0),
+  unique (budget_line_id, period_id)
+);
+
+create or replace function app.assert_phasing_matches() returns trigger
+language plpgsql as $$
+declare v_line uuid := coalesce(new.budget_line_id, old.budget_line_id); v_amount numeric; v_sum numeric; v_n int;
+begin
+  select budget_amount into v_amount from budget_lines where id = v_line;
+  if not found then return null; end if;
+  select coalesce(sum(amount), 0), count(*) into v_sum, v_n from budget_line_periods where budget_line_id = v_line;
+  if v_n > 0 and v_sum <> v_amount then
+    raise exception 'Monthly phasing (%) must add up to the line amount (%)', v_sum, v_amount using errcode = '23514';
+  end if;
+  return null;
+end $$;
+create constraint trigger budget_phasing_matches
+  after insert or update or delete on budget_line_periods
+  deferrable initially deferred
+  for each row execute function app.assert_phasing_matches();
+
+create table budget_snapshots (
+  id         uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id),
+  budget_id  uuid not null references budgets(id) on delete cascade,
+  version_no int not null,
+  reason     text,
+  data       jsonb not null,
+  taken_at   timestamptz not null default now(),
+  unique (budget_id, version_no)
+);
+
+create table budget_revisions (
+  id                  uuid primary key default gen_random_uuid(),
+  company_id          uuid not null references companies(id),
+  budget_id           uuid not null references budgets(id),
+  revision_no         int not null,
+  type                text not null check (type in ('supplementary','reallocation','reforecast')),
+  reason              text not null,
+  delta_amount        numeric(18,2) not null default 0,
+  status              text not null default 'pending' check (status in ('pending','approved','rejected')),
+  requested_by        uuid references users(id),
+  approved_by         uuid references users(id),
+  approved_at         timestamptz,
+  approval_request_id uuid,
+  unique (budget_id, revision_no),
+  check (approved_by is null or approved_by <> requested_by)
+);
+
+create table budget_revision_lines (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  revision_id    uuid not null references budget_revisions(id) on delete cascade,
+  budget_line_id uuid not null references budget_lines(id),
+  delta_amount   numeric(18,2) not null check (delta_amount <> 0)
+);
+
+create table budget_commitments (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  budget_line_id uuid not null references budget_lines(id),
+  source_type    text not null check (source_type in ('purchase_order','construction_contract','ipc','vendor_bill','payroll','manual')),
+  source_id      uuid,
+  amount         numeric(18,2) not null check (amount > 0),
+  status         text not null default 'open' check (status in ('open','invoiced','released','cancelled')),
+  committed_on   date not null,
+  note           text
+);
+create index budget_commitments_line_idx on budget_commitments (budget_line_id) where status = 'open';
+
+create table budget_exceptions (
+  id               uuid primary key default gen_random_uuid(),
+  company_id       uuid not null references companies(id),
+  budget_line_id   uuid not null references budget_lines(id),
+  doc_type         text not null check (doc_type in ('voucher','purchase_order','vendor_bill','ipc')),
+  doc_id           uuid,
+  requested_amount numeric(18,2) not null check (requested_amount > 0),
+  over_by          numeric(18,2) not null check (over_by >= 0),
+  reason           text,
+  status           text not null default 'pending' check (status in ('pending','approved','rejected')),
+  requested_by     uuid references users(id),
+  decided_by       uuid references users(id),
+  decided_at       timestamptz,
+  check (decided_by is null or decided_by <> requested_by)           -- you cannot approve your own overrun
+);
+
+create table budget_alert_rules (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  budget_id      uuid references budgets(id),                        -- null = every budget
+  threshold_pct  numeric(6,2) not null check (threshold_pct > 0),
+  channel        text not null default 'in_app' check (channel in ('in_app','email','whatsapp')),
+  notify_role_id uuid references roles(id),
+  active         boolean not null default true
+);
+
+create table budget_alerts (
+  id              uuid primary key default gen_random_uuid(),
+  company_id      uuid not null references companies(id),
+  budget_line_id  uuid not null references budget_lines(id) on delete cascade,
+  threshold_pct   numeric(6,2) not null,
+  utilization_pct numeric(8,2) not null,
+  triggered_at    timestamptz not null default now(),
+  acknowledged_by uuid references users(id),
+  acknowledged_at timestamptz,
+  unique (budget_line_id, threshold_pct)                             -- each threshold fires once per line
+);
+
+create table budget_forecasts (
+  id                      uuid primary key default gen_random_uuid(),
+  company_id              uuid not null references companies(id),
+  budget_line_id          uuid not null references budget_lines(id) on delete cascade,
+  as_of                   date not null,
+  method                  text not null check (method in ('run_rate','percent_complete','manual')),
+  estimate_to_complete    numeric(18,2) not null check (estimate_to_complete >= 0),
+  forecast_at_completion  numeric(18,2) not null,
+  note                    text,
+  created_by              uuid references users(id)
+);
+
+-- Live budget position of every line: budget, committed, actual (from the ledger), available, utilization.
+-- security_invoker => the caller's row-level security applies to everything the view reads.
+create view v_budget_line_status with (security_invoker = true) as
+select l.id               as budget_line_id,
+       l.company_id,
+       l.budget_id,
+       b.name             as budget_name,
+       b.kind,
+       b.status,
+       b.control_mode,
+       l.category,
+       l.account_id,
+       l.budget_amount,
+       coalesce(c.committed, 0)                                  as committed_amount,
+       coalesce(a.actual, 0)                                     as actual_amount,
+       l.budget_amount - coalesce(c.committed, 0) - coalesce(a.actual, 0) as available_amount,
+       case when l.budget_amount > 0
+            then round((coalesce(c.committed, 0) + coalesce(a.actual, 0)) / l.budget_amount * 100, 2) end as utilization_pct
+  from budget_lines l
+  join budgets b on b.id = l.budget_id
+  left join lateral (
+    select sum(bc.amount) as committed from budget_commitments bc
+     where bc.budget_line_id = l.id and bc.status = 'open'
+  ) c on true
+  left join lateral (
+    select sum(jl.debit - jl.credit) as actual
+      from journal_lines jl join journal_entries e on e.id = jl.entry_id
+     where jl.company_id = l.company_id
+       and jl.account_id = l.account_id
+       and (b.project_id is null or jl.project_id = b.project_id)
+       and (l.cost_center_id is null or jl.cost_center_id = l.cost_center_id)
+       and (b.period_start is null or e.entry_date >= b.period_start)
+       and (b.period_end is null or e.entry_date <= b.period_end)
+  ) a on true;
+
+-- Called before a voucher / PO / bill is accepted: would this amount fit, and what should happen?
+-- No row = no approved budget covers it (nothing to enforce).
+create or replace function app.check_budget(p_account uuid, p_project uuid, p_cost_center uuid, p_date date, p_amount numeric)
+returns table (budget_line_id uuid, control_mode text, available numeric, over_by numeric, decision text)
+language sql stable as $$
+  select s.budget_line_id, b.control_mode, s.available_amount,
+         greatest(p_amount - s.available_amount, 0),
+         case when p_amount <= s.available_amount then 'allow'
+              when b.control_mode = 'block' then 'block'
+              when b.control_mode = 'warn' then 'warn'
+              else 'allow' end
+    from v_budget_line_status s
+    join budgets b on b.id = s.budget_id
+    join budget_lines l on l.id = s.budget_line_id
+   where s.account_id = p_account
+     and b.status in ('approved','locked')
+     and (b.project_id is null or b.project_id = p_project)
+     and (l.cost_center_id is null or l.cost_center_id = p_cost_center)
+     and (b.period_start is null or p_date >= b.period_start)
+     and (b.period_end is null or p_date <= b.period_end)
+   order by (b.project_id is not null) desc, (l.cost_center_id is not null) desc
+   limit 1 $$;
+
+-- Fires an alert the first time a line crosses each threshold. Safe to run repeatedly (e.g. nightly or after each posting).
+create or replace function app.evaluate_budget_alerts(p_budget uuid) returns int
+language plpgsql as $$
+declare n int;
+begin
+  insert into budget_alerts (company_id, budget_line_id, threshold_pct, utilization_pct)
+  select s.company_id, s.budget_line_id, r.threshold_pct, s.utilization_pct
+    from v_budget_line_status s
+    join budget_alert_rules r on r.active and r.company_id = s.company_id and (r.budget_id = s.budget_id or r.budget_id is null)
+   where s.budget_id = p_budget and s.utilization_pct >= r.threshold_pct
+  on conflict (budget_line_id, threshold_pct) do nothing;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+-- Draft/submitted -> approved. The approver cannot be the creator; a v1 snapshot is stored.
+create or replace function app.approve_budget(p_budget uuid, p_approver uuid) returns void
+language plpgsql as $$
+declare b budgets;
+begin
+  select * into b from budgets where id = p_budget for update;
+  if not found then raise exception 'Budget not found'; end if;
+  if b.status <> 'submitted' then raise exception 'Only a submitted budget can be approved (this one is %)', b.status using errcode = '55000'; end if;
+  if b.total_amount <= 0 then raise exception 'A budget needs at least one line with an amount before approval' using errcode = '23514'; end if;
+  if p_approver = b.created_by then raise exception 'Maker-checker: the creator cannot approve their own budget' using errcode = '42501'; end if;
+  update budgets set status = 'approved', approved_by = p_approver, approved_at = now() where id = p_budget;
+  insert into budget_snapshots (company_id, budget_id, version_no, reason, data)
+  select b.company_id, b.id, b.version_no, 'Approved',
+         (select jsonb_agg(jsonb_build_object('line_no', line_no, 'category', category, 'amount', budget_amount) order by line_no) from budget_lines where budget_id = p_budget);
+end $$;
+
+-- Applies an approved revision to the lines (the only way to change an approved budget).
+create or replace function app.approve_budget_revision(p_revision uuid, p_approver uuid) returns void
+language plpgsql as $$
+declare r budget_revisions; v_sum numeric; l record; v_old numeric; v_new numeric; v_diff numeric;
+begin
+  select * into r from budget_revisions where id = p_revision for update;
+  if not found then raise exception 'Revision not found'; end if;
+  if r.status <> 'pending' then raise exception 'Revision is already %', r.status using errcode = '55000'; end if;
+  if r.requested_by is not null and r.requested_by = p_approver then
+    raise exception 'Maker-checker: the requester cannot approve their own revision' using errcode = '42501';
+  end if;
+  select coalesce(sum(delta_amount), 0) into v_sum from budget_revision_lines where revision_id = p_revision;
+  if r.type = 'reallocation' and v_sum <> 0 then raise exception 'A reallocation must net to zero (net %)', v_sum using errcode = '23514'; end if;
+  if r.type = 'supplementary' and v_sum <= 0 then raise exception 'A supplementary revision must add budget' using errcode = '23514'; end if;
+
+  perform set_config('app.budget_revision', 'on', true);
+  for l in select rl.budget_line_id, rl.delta_amount from budget_revision_lines rl where rl.revision_id = p_revision loop
+    select budget_amount into v_old from budget_lines where id = l.budget_line_id;
+    v_new := v_old + l.delta_amount;
+    if v_new < 0 then raise exception 'A revision cannot take a line below zero' using errcode = '23514'; end if;
+    update budget_lines set budget_amount = v_new where id = l.budget_line_id;
+    if v_old > 0 and exists (select 1 from budget_line_periods where budget_line_id = l.budget_line_id) then
+      -- keep the monthly phasing proportional and absorb rounding in the largest month
+      update budget_line_periods set amount = round(amount * v_new / v_old, 2) where budget_line_id = l.budget_line_id;
+      select v_new - sum(amount) into v_diff from budget_line_periods where budget_line_id = l.budget_line_id;
+      update budget_line_periods set amount = amount + v_diff
+       where id = (select id from budget_line_periods where budget_line_id = l.budget_line_id order by amount desc, id limit 1);
+    end if;
+  end loop;
+  perform set_config('app.budget_revision', 'off', true);
+
+  update budget_revisions set status = 'approved', approved_by = p_approver, approved_at = now(), delta_amount = v_sum where id = p_revision;
+  update budgets set version_no = version_no + 1 where id = r.budget_id;
+  insert into budget_snapshots (company_id, budget_id, version_no, reason, data)
+  select r.company_id, r.budget_id, b.version_no, r.type || ': ' || r.reason,
+         (select jsonb_agg(jsonb_build_object('line_no', line_no, 'category', category, 'amount', budget_amount) order by line_no) from budget_lines where budget_id = r.budget_id)
+    from budgets b where b.id = r.budget_id;
 end $$;
 
 -- ---------------------------------------------------------------- row-level security (tenant isolation)

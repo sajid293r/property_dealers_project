@@ -318,5 +318,119 @@ await db.exec("begin; set local role app_user; select set_config('app.org_id','9
 const otherOrg = await db.query(`select count(*)::int n from consolidation_groups`); await db.exec("rollback");
 otherOrg.rows[0].n === 0 ? ok("another organization sees no consolidation data") : bad("org isolation", otherOrg.rows);
 
+// ═════════════════════════════════════════════════ Budgeting & control
+console.log("\nBudgeting & control");
+{ // own scope: the budget section reuses short variable names
+const U1 = "b1000000-0000-0000-0000-000000000001", U2 = "b1000000-0000-0000-0000-000000000002";
+const PRJ = "c0000000-0000-0000-0000-000000000001";
+const EXP_CIVIL = "ea000000-0000-0000-0000-000000000001", EXP_MKT = "ea000000-0000-0000-0000-000000000002";
+const BUD = "bd000000-0000-0000-0000-000000000001";
+const L_CIVIL = "b2000000-0000-0000-0000-000000000001", L_MKT = "b2000000-0000-0000-0000-000000000002";
+await db.exec(`insert into users(id,email,full_name) values ('${U1}','maker@x.pk','Maker'),('${U2}','checker@x.pk','Checker')`);
+await asCompany(C1, () => db.exec(`
+  insert into gl_accounts(id,company_id,code,name,account_class,category) values
+    ('${EXP_CIVIL}','${C1}','05010001','Civil works','expense','expense_construction'),
+    ('${EXP_MKT}','${C1}','05020001','Marketing','expense','expense_marketing');
+  insert into budgets(id,company_id,budget_no,name,kind,project_id,period_start,period_end,control_mode,created_by)
+    values ('${BUD}','${C1}','BUD-00001','Green Valley — project budget','project','${PRJ}','2025-07-01','2026-06-30','warn','${U1}');
+  insert into budget_lines(id,company_id,budget_id,line_no,category,account_id,budget_amount) values
+    ('${L_CIVIL}','${C1}','${BUD}',1,'Civil & structural','${EXP_CIVIL}',1000000),
+    ('${L_MKT}','${C1}','${BUD}',2,'Marketing & sales','${EXP_MKT}',200000);
+`)).then(() => ok("draft budget with two lines"), (e) => bad("budget setup", e));
+const tot = await asCompany(C1, () => db.query(`select total_amount from budgets where id='${BUD}'`));
+Number(tot.rows[0].total_amount) === 1200000 ? ok("budget total rolls up from its lines (1,200,000)") : bad("rollup", tot.rows);
+await expectError("a second live budget for the same project is rejected", () => asCompany(C1, () => db.exec(`insert into budgets(company_id,budget_no,name,kind,project_id,created_by) values ('${C1}','BUD-00002','Dup','project','${PRJ}','${U1}')`)), "budgets_one_live_per_project");
+await expectError("a project budget must name its project", () => asCompany(C1, () => db.exec(`insert into budgets(company_id,budget_no,name,kind) values ('${C1}','BUD-00003','No project','project')`)), "check");
+
+// phasing: the months must add up to the line (deferred, checked at commit)
+await asCompany(C1, () => db.exec(`insert into budget_line_periods(company_id,budget_line_id,period_id,amount) values
+  ('${C1}','${L_MKT}','${P1}',80000),('${C1}','${L_MKT}','${P2}',120000)`)).then(() => ok("monthly phasing that adds up to the line is accepted"), (e) => bad("phasing ok", e));
+await expectError("phasing that does not add up to the line is rejected", () => asCompany(C1, () => db.exec(`update budget_line_periods set amount = 90000 where budget_line_id='${L_MKT}' and period_id='${P1}'`)), "must add up");
+
+// status machine + maker-checker
+await expectError("a draft cannot jump straight to approved", () => asCompany(C1, () => db.exec(`update budgets set status='approved' where id='${BUD}'`)), "cannot go from");
+await asCompany(C1, () => db.exec(`update budgets set status='submitted' where id='${BUD}'`)).then(() => ok("draft -> submitted"), (e) => bad("submit", e));
+await expectError("the creator cannot approve their own budget", () => asCompany(C1, () => db.exec(`select app.approve_budget('${BUD}','${U1}')`)), "Maker-checker");
+await asCompany(C1, () => db.exec(`select app.approve_budget('${BUD}','${U2}')`)).then(() => ok("a different user approves it"), (e) => bad("approve", e));
+const snap = await asCompany(C1, () => db.query(`select version_no from budget_snapshots where budget_id='${BUD}'`));
+snap.rows.length === 1 && snap.rows[0].version_no === 1 ? ok("approval stores a v1 snapshot") : bad("snapshot v1", snap.rows);
+await expectError("approved lines cannot be edited directly", () => asCompany(C1, () => db.exec(`update budget_lines set budget_amount = 5000000 where id='${L_CIVIL}'`)), "approved revision");
+await expectError("lines cannot be added to an approved budget", () => asCompany(C1, () => db.exec(`insert into budget_lines(company_id,budget_id,line_no,category,account_id,budget_amount) values ('${C1}','${BUD}',3,'Extra','${EXP_CIVIL}',1)`)), "approved revision");
+
+// actual comes from the ledger
+const post = (id, no, project, account, amount) => asCompany(C1, () => db.exec(`
+  insert into journal_entries(id,company_id,entry_no,entry_date,period_id,source_type) values ('${id}','${C1}','${no}','2025-08-12','${P2}','voucher');
+  insert into journal_lines(company_id,entry_id,line_no,account_id,project_id,debit,credit) values ('${C1}','${id}',1,'${account}',${project ? "'" + project + "'" : "null"},${amount},0);
+  insert into journal_lines(company_id,entry_id,line_no,account_id,debit,credit) values ('${C1}','${id}',2,'${CASH}',0,${amount})`));
+await post("e3000000-0000-0000-0000-000000000001", "JV-00101", PRJ, EXP_CIVIL, 300000);
+await post("e3000000-0000-0000-0000-000000000002", "JV-00102", null, EXP_CIVIL, 999999);   // another project / no project: must not count
+const st = (line) => asCompany(C1, async () => (await db.query(`select budget_amount, committed_amount, actual_amount, available_amount, utilization_pct from v_budget_line_status where budget_line_id='${line}'`)).rows[0]);
+let v = await st(L_CIVIL);
+Number(v.actual_amount) === 300000 && Number(v.available_amount) === 700000 && Number(v.utilization_pct) === 30
+  ? ok("actual is read from the ledger for this project only (300,000 = 30%)") : bad("actual from ledger", v);
+
+// commitments reduce what is available
+await asCompany(C1, () => db.exec(`insert into budget_commitments(id,company_id,budget_line_id,source_type,amount,committed_on) values ('c4000000-0000-0000-0000-000000000001','${C1}','${L_CIVIL}','purchase_order',400000,'2025-08-15')`));
+v = await st(L_CIVIL);
+Number(v.committed_amount) === 400000 && Number(v.available_amount) === 300000 ? ok("an open purchase order is committed (available drops to 300,000)") : bad("commitment", v);
+await asCompany(C1, () => db.exec(`update budget_commitments set status='invoiced' where id='c4000000-0000-0000-0000-000000000001'`));
+v = await st(L_CIVIL);
+Number(v.committed_amount) === 0 ? ok("once invoiced it stops counting as a commitment") : bad("commitment released", v);
+await asCompany(C1, () => db.exec(`update budget_commitments set status='open' where id='c4000000-0000-0000-0000-000000000001'`));
+
+// spend control
+const chk = (amount) => asCompany(C1, async () => (await db.query(`select * from app.check_budget('${EXP_CIVIL}','${PRJ}',null,'2025-09-01',${amount})`)).rows[0]);
+(await chk(200000)).decision === "allow" ? ok("within budget -> allow") : bad("allow", await chk(200000));
+const w = await chk(500000);
+w.decision === "warn" && Number(w.over_by) === 200000 ? ok("over budget with control = Warn -> warn (over by 200,000)") : bad("warn", w);
+await asCompany(C1, () => db.exec(`update budgets set control_mode='block' where id='${BUD}'`));
+(await chk(500000)).decision === "block" ? ok("over budget with control = Block -> block") : bad("block", await chk(500000));
+const none = await asCompany(C1, async () => (await db.query(`select * from app.check_budget('${CASH}','${PRJ}',null,'2025-09-01',1)`)).rows.length);
+none === 0 ? ok("no budget covers the account -> nothing to enforce") : bad("no budget", none);
+const outside = await asCompany(C1, async () => (await db.query(`select * from app.check_budget('${EXP_CIVIL}','${PRJ}',null,'2027-01-01',1)`)).rows.length);
+outside === 0 ? ok("a date outside the budget period is not covered") : bad("period", outside);
+await asCompany(C1, () => db.exec(`insert into budget_exceptions(company_id,budget_line_id,doc_type,requested_amount,over_by,reason,requested_by) values ('${C1}','${L_CIVIL}','vendor_bill',500000,200000,'Urgent culvert repair','${U1}')`)).then(() => ok("a blocked user can request an exception"), (e) => bad("exception", e));
+await expectError("you cannot approve your own exception", () => asCompany(C1, () => db.exec(`update budget_exceptions set status='approved', decided_by='${U1}', decided_at=now() where budget_line_id='${L_CIVIL}'`)), "check");
+
+// alerts
+await asCompany(C1, () => db.exec(`insert into budget_alert_rules(company_id,threshold_pct) values ('${C1}',85),('${C1}',100)`));
+const ev = (b) => asCompany(C1, async () => (await db.query(`select app.evaluate_budget_alerts('${b}') n`)).rows[0].n);
+(await ev(BUD)) === 0 ? ok("70% used -> no alert yet") : bad("no alert", null);
+await asCompany(C1, () => db.exec(`insert into budget_commitments(company_id,budget_line_id,source_type,amount,committed_on) values ('${C1}','${L_CIVIL}','manual',200000,'2025-08-20')`));
+(await ev(BUD)) === 1 ? ok("crossing 85% fires one alert") : bad("85 alert", null);
+(await ev(BUD)) === 0 ? ok("re-running does not duplicate it") : bad("dup alert", null);
+await asCompany(C1, () => db.exec(`insert into budget_commitments(company_id,budget_line_id,source_type,amount,committed_on) values ('${C1}','${L_CIVIL}','manual',150000,'2025-08-21')`));
+(await ev(BUD)) === 1 ? ok("going over 100% fires the next alert") : bad("100 alert", null);
+
+// revisions: the only way to change an approved budget
+const REV1 = "d5000000-0000-0000-0000-000000000001", REV2 = "d5000000-0000-0000-0000-000000000002", REV3 = "d5000000-0000-0000-0000-000000000003";
+await asCompany(C1, () => db.exec(`
+  insert into budget_revisions(id,company_id,budget_id,revision_no,type,reason,requested_by) values ('${REV1}','${C1}','${BUD}',2,'reallocation','Move to marketing','${U1}');
+  insert into budget_revision_lines(company_id,revision_id,budget_line_id,delta_amount) values ('${C1}','${REV1}','${L_CIVIL}',-100000),('${C1}','${REV1}','${L_MKT}',100000);`));
+await expectError("requester cannot approve their own revision", () => asCompany(C1, () => db.exec(`select app.approve_budget_revision('${REV1}','${U1}')`)), "Maker-checker");
+await asCompany(C1, () => db.exec(`select app.approve_budget_revision('${REV1}','${U2}')`)).then(() => ok("an approved reallocation moves money between lines"), (e) => bad("reallocation", e));
+const after = await asCompany(C1, () => db.query(`select (select budget_amount from budget_lines where id='${L_CIVIL}') c, (select budget_amount from budget_lines where id='${L_MKT}') m, (select total_amount from budgets where id='${BUD}') t, (select version_no from budgets where id='${BUD}') v, (select count(*)::int from budget_snapshots where budget_id='${BUD}') snaps`));
+Number(after.rows[0].c) === 900000 && Number(after.rows[0].m) === 300000 && Number(after.rows[0].t) === 1200000 && after.rows[0].v === 2 && after.rows[0].snaps === 2
+  ? ok("lines 900k / 300k, total unchanged, version 2, second snapshot stored") : bad("after reallocation", after.rows);
+const ph = await asCompany(C1, () => db.query(`select sum(amount) s from budget_line_periods where budget_line_id='${L_MKT}'`));
+Number(ph.rows[0].s) === 300000 ? ok("monthly phasing was rescaled to the new line amount (300,000)") : bad("phasing rescale", ph.rows);
+await asCompany(C1, () => db.exec(`
+  insert into budget_revisions(id,company_id,budget_id,revision_no,type,reason,requested_by) values ('${REV2}','${C1}','${BUD}',3,'reallocation','Unbalanced','${U1}');
+  insert into budget_revision_lines(company_id,revision_id,budget_line_id,delta_amount) values ('${C1}','${REV2}','${L_CIVIL}',-50000),('${C1}','${REV2}','${L_MKT}',20000);`));
+await expectError("a reallocation that does not net to zero is rejected", () => asCompany(C1, () => db.exec(`select app.approve_budget_revision('${REV2}','${U2}')`)), "net to zero");
+await asCompany(C1, () => db.exec(`
+  insert into budget_revisions(id,company_id,budget_id,revision_no,type,reason,requested_by) values ('${REV3}','${C1}','${BUD}',4,'supplementary','Scope addition','${U1}');
+  insert into budget_revision_lines(company_id,revision_id,budget_line_id,delta_amount) values ('${C1}','${REV3}','${L_CIVIL}',250000);
+  select app.approve_budget_revision('${REV3}','${U2}')`));
+const sup = await asCompany(C1, () => db.query(`select total_amount from budgets where id='${BUD}'`));
+Number(sup.rows[0].total_amount) === 1450000 ? ok("a supplementary revision raises the total (1,450,000)") : bad("supplementary", sup.rows);
+await expectError("editing lines directly is still blocked after revisions", () => asCompany(C1, () => db.exec(`update budget_lines set budget_amount = 1 where id='${L_CIVIL}'`)), "approved revision");
+
+// tenant isolation
+const other = await asCompany(C2, () => db.query(`select (select count(*)::int from budgets) b, (select count(*)::int from budget_lines) l, (select count(*)::int from v_budget_line_status) v`));
+other.rows[0].b === 0 && other.rows[0].l === 0 && other.rows[0].v === 0 ? ok("another company sees no budgets, lines or status rows") : bad("budget isolation", other.rows);
+
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

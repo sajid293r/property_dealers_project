@@ -87,3 +87,8 @@ export const accountsService = {
   list: (companyId: string) => withLatency(getDataset(companyId).accounts),
   transactions: (companyId: string) => withLatency(getDataset(companyId).transactions),
 };
+
+export const budgetsService = {
+  list: (companyId: string) => withLatency(getDataset(companyId).budgets),
+  lines: (companyId: string) => withLatency(getDataset(companyId).budgetLines),
+};
