@@ -27,6 +27,8 @@ const schema = z
 
     /** Origins allowed to call the API from a browser, comma separated. */
     CORS_ORIGIN: z.string().optional(),
+    /** How long (seconds) a person's membership and permissions are remembered between requests; 0 = look them up every time. */
+    AUTH_CACHE_SECONDS: z.coerce.number().int().min(0).max(300).default(20),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   })
   .refine((c) => c.SUPABASE_JWKS_URL || c.SUPABASE_JWT_SECRET, {

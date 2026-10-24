@@ -232,3 +232,23 @@ describe("serverless bridge (Netlify Functions)", () => {
     expect((await bridge(h.app, new Request("https://site.netlify.app/api/health"))).status).toBe(200);
   });
 });
+
+describe("remembering who a person is (speed)", () => {
+  it("remembers membership briefly when asked to, and always looks it up fresh by default", async () => {
+    const { buildApp } = await import("../src/app.js");
+    const { createVerifier } = await import("../src/auth.js");
+    const { JWT_SECRET } = await import("./helpers.js");
+    const verifier = createVerifier({ SUPABASE_JWT_SECRET: JWT_SECRET, SUPABASE_JWT_AUDIENCE: "authenticated", SUPABASE_JWKS_URL: undefined, SUPABASE_JWT_ISSUER: undefined });
+    const cached = buildApp({ config: { LOG_LEVEL: "silent", AUTH_CACHE_SECONDS: 60 }, db: h.db, verifier });
+    await cached.ready();
+    const token = await h.token(ID.bob, "bob@a.pk");
+    const ask = (app: typeof cached) => app.inject({ method: "GET", url: "/v1/access", headers: { authorization: `Bearer ${token}`, "x-company-id": A } });
+
+    expect((await ask(cached)).statusCode).toBe(200);
+    await h.admin((c) => c.query(`update company_members set status = 'suspended' where company_id = $1 and user_id = $2`, [A, ID.bob]));
+    expect((await ask(cached)).statusCode).toBe(200);        // still remembered for up to a minute
+    expect((await ask(h.app)).statusCode).toBe(403);         // the normal app looks it up every time
+    await h.admin((c) => c.query(`update company_members set status = 'active' where company_id = $1 and user_id = $2`, [A, ID.bob]));
+    await cached.close();
+  });
+});

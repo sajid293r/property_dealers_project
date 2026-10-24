@@ -30,7 +30,7 @@ import { bankingRoutes } from "./routes/banking.js";
 import type { CnicKeys } from "./cnic.js";
 
 export interface AppDeps {
-  config: Pick<Config, "LOG_LEVEL"> & Partial<Pick<Config, "CORS_ORIGIN">>;
+  config: Pick<Config, "LOG_LEVEL"> & Partial<Pick<Config, "CORS_ORIGIN" | "AUTH_CACHE_SECONDS">>;
   db: Db;
   verifier: TokenVerifier;
   /** Keys for storing CNICs safely; without them a CNIC is refused rather than stored in the clear. */
@@ -72,7 +72,7 @@ export function buildApp({ config, db, verifier, cnic = null }: AppDeps): Fastif
     void reply.code(404).send({ error: { code: "not_found", message: "There is nothing at this address.", requestId: req.id } });
   });
 
-  const guards = createGuards(db, verifier);
+  const guards = createGuards(db, verifier, config.AUTH_CACHE_SECONDS ?? 0);
   systemRoutes(app, db, guards);
   catalogRoutes(app, db, guards);
   propertyRoutes(app, db, guards);

@@ -30,7 +30,13 @@ export interface Guards {
   inCompany: (permission?: string) => (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
 }
 
-export function createGuards(db: Db, verifier: TokenVerifier): Guards {
+export function createGuards(db: Db, verifier: TokenVerifier, cacheSeconds = 0): Guards {
+  const cacheMs = cacheSeconds * 1000;
+  /** people we have already registered (and matched against pending invitations) on this instance */
+  const known = new Map<string, number>();
+  type Found = { member: { role_id: string; status: string; company_status: string; plan: Plan }; grants: Record<string, string | boolean>[] } | null;
+  const memberships = new Map<string, { at: number; found: Found }>();
+
   async function authenticate(req: FastifyRequest): Promise<AuthUser> {
     const header = req.headers.authorization;
     if (!header?.toLowerCase().startsWith("bearer ")) {
@@ -45,14 +51,18 @@ export function createGuards(db: Db, verifier: TokenVerifier): Guards {
     }
     // First time we see this person: create their profile row. The id is Supabase's, so the two stay linked.
     if (!user.email) throw new AppError(401, "email_required", "Your sign-in has no email address, which PropIQ needs.");
-    await db.asUser(user.userId, async (q) => {
-      await q.query(
-        `insert into users (id, email, full_name) values ($1, $2, coalesce($3, $2)) on conflict (id) do nothing`,
-        [user.userId, user.email, user.fullName],
-      );
-      // anyone invited by email joins the company the first time they sign in
-      await q.query(`select app.accept_invites($1, $2)`, [user.userId, user.email]);
-    });
+    const seen = known.get(user.userId);
+    if (!cacheMs || !seen || seen < Date.now()) {
+      await db.asUser(user.userId, async (q) => {
+        await q.query(
+          `insert into users (id, email, full_name) values ($1, $2, coalesce($3, $2)) on conflict (id) do nothing`,
+          [user.userId, user.email, user.fullName],
+        );
+        // anyone invited by email joins the company the first time they sign in
+        await q.query(`select app.accept_invites($1, $2)`, [user.userId, user.email]);
+      });
+      if (cacheMs) known.set(user.userId, Date.now() + cacheMs * 15);
+    }
     req.auth = user;
     return user;
   }
@@ -71,7 +81,9 @@ export function createGuards(db: Db, verifier: TokenVerifier): Guards {
 
     // Membership and permissions come from our tables, read as the person themselves. A person who is not a member
     // gets exactly the same answer as a company that does not exist, so ids cannot be probed.
-    const found = await db.asUser(user.userId, async (q) => {
+    const cacheKey = `${user.userId}:${companyId.toLowerCase()}`;
+    const cached = cacheMs ? memberships.get(cacheKey) : undefined;
+    const found: Found = cached && Date.now() - cached.at < cacheMs ? cached.found : await db.asUser(user.userId, async (q) => {
       const member = await q.query<{ role_id: string; status: string; company_status: string; plan: Plan }>(
         `select cm.role_id, cm.status, c.status as company_status, app.company_plan(c.id) as plan
            from company_members cm join companies c on c.id = cm.company_id
@@ -86,6 +98,8 @@ export function createGuards(db: Db, verifier: TokenVerifier): Guards {
       );
       return { member: m, grants: grants.rows };
     });
+    // only a positive answer is remembered, so newly granted access shows up at once; a removal takes effect within the cache time
+    if (cacheMs && found && !(cached && Date.now() - cached.at < cacheMs)) memberships.set(cacheKey, { at: Date.now(), found });
     if (!found || found.member.status !== "active" || found.member.company_status !== "active") {
       throw new AppError(403, "no_access", "You do not have access to this company.");
     }

@@ -63,10 +63,9 @@ export class Db {
   private async run<T>(settings: Record<string, string>, fn: (q: Queryable) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     try {
-      await client.query("begin");
-      for (const [key, value] of Object.entries(settings)) {
-        await client.query("select set_config($1, $2, true)", [key, value]);
-      }
+      // one round trip for "begin" and every setting (each trip to a far-away database costs real time)
+      const sets = Object.entries(settings).map(([key, value]) => `set_config(${client.escapeLiteral(key)}, ${client.escapeLiteral(value)}, true)`);
+      await client.query(sets.length ? `begin; select ${sets.join(", ")}` : "begin");
       const result = await fn(client);
       await client.query("commit"); // deferred rules (balanced entries, schedules that add up) are checked here
       return result;
