@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStaff, useProjects } from "@/lib/hooks/use-data";
+import { useCompany } from "@/lib/providers/company-provider";
+import { createProject } from "@/lib/api/live";
 import { PROJECT_TYPES, nextProjectCode } from "@/lib/projects";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { Project, ProjectType } from "@/lib/types";
@@ -29,6 +31,7 @@ export function NewProjectDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const { company, live } = useCompany();
   const { data: staff } = useStaff();
   const { data: projects } = useProjects();
 
@@ -63,7 +66,23 @@ export function NewProjectDialog({
     onOpenChange(next);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (live) {
+      const created = await createProject(company.id, {
+        name: name.trim(),
+        type: type === "Mixed-Use" ? "mixed_use" : (type.toLowerCase() as "residential" | "commercial"),
+        city: city || undefined,
+        address: address.trim() || undefined,
+        description: description.trim() || undefined,
+        landAreaMarla: Number(landAreaMarla) || undefined,
+        approvedBudget: budget || "0",
+        plannedStart: plannedStartDate || undefined,
+        plannedEnd: plannedEndDate || undefined,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success(`${created.code} — ${created.name} created`, { description: "Add properties to it from Properties." });
+      return;
+    }
     const code = nextProjectCode(projects ?? []);
     const today = new Date().toISOString().slice(0, 10);
     const newProject: Project = {
@@ -95,7 +114,7 @@ export function NewProjectDialog({
       title="New Project"
       description="Open a new development scheme — properties and contractors attach to it once it's live."
       submitLabel="Create Project"
-      submitDisabled={!name || !address || !landAreaMarla || !projectManagerId || !budget}
+      submitDisabled={!name || !address || !landAreaMarla || (!live && !projectManagerId) || !budget}
       onSubmit={handleSubmit}
     >
       <Field label="Project name">
@@ -113,16 +132,18 @@ export function NewProjectDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Project manager">
-          <Select value={projectManagerId} onValueChange={setProjectManagerId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
-            <SelectContent>
-              {managers.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        {!live && (
+          <Field label="Project manager">
+            <Select value={projectManagerId} onValueChange={setProjectManagerId}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
+              <SelectContent>
+                {managers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
       </FieldRow>
 
       <FieldRow>

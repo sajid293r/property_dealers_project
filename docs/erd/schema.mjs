@@ -7,22 +7,26 @@
 // Standard columns omitted from the diagrams for readability (present on every table):
 //   created_at, updated_at, version, deleted_at (master data)
 
+// phase: "mvp"    = built for the first release (dealer core: sell, collect, account, report)
+//        "phase2" = designed and tested in SQL, but frozen: nobody builds API/UI for it until the pilot says so
+// phase2Tables: tables inside an MVP module that are still phase 2 (shown with a "phase 2" tag).
+// Every module MUST declare a phase; build.mjs fails otherwise.
 export const MODULES = [
-  { key: "platform", title: "Platform & Tenancy", color: "#0f766e", blurb: "Groups, companies, users, roles, settings — who can do what, where." },
-  { key: "services", title: "Platform Services", color: "#475569", blurb: "Audit, files, approvals, notifications, imports, webhooks — built once, used by every module." },
-  { key: "parties", title: "Parties (Address Book)", color: "#7c3aed", blurb: "Customers, dealers, vendors, contractors and owners as one deduplicated address book." },
-  { key: "accounting", title: "Accounting & Ledger", color: "#b45309", blurb: "Chart of accounts (the structure) and vouchers (the documents) both post to one double-entry journal; combined transactions and bank reconciliation." },
-  { key: "projects", title: "Projects & Properties", color: "#15803d", blurb: "Schemes, land and approvals, plus a deep property model: location, size, plot/building/commercial specs, amenities, utilities, legal & ownership chain, valuation, media, listings and charges." },
-  { key: "crm", title: "CRM & Leads", color: "#be185d", blurb: "Leads, activities, site visits, campaigns, assignment and WhatsApp conversations." },
-  { key: "sales", title: "Sales & Collections", color: "#1d4ed8", blurb: "Quotation → booking → installments → receipts, cheques, transfers, cancellations, commissions." },
-  { key: "budget", title: "Budgeting & Control", color: "#047857", blurb: "Plan spend per project and per year, phase it by month, approve and lock it, change it only through revisions, track commitments, and stop or warn on overruns." },
-  { key: "tax", title: "Tax Management", color: "#b91c1c", blurb: "Admin-configurable tax codes, effective-dated rates, bundles, assignment rules, exemptions, returns and payments." },
-  { key: "invoicing", title: "Invoicing & Contracts", color: "#c2410c", blurb: "Sales and service invoices, recurring billing, credit notes, agreement templates." },
-  { key: "procurement", title: "Procurement & Stock", color: "#0e7490", blurb: "Vendors' POs, goods receipts, bills, budgets, petty cash and material stock." },
-  { key: "construction", title: "Construction & Costing", color: "#a16207", blurb: "Contracts, BOQ, running bills (IPC), retention, variations, progress and guarantees." },
-  { key: "hr", title: "HR, Attendance & Payroll", color: "#9333ea", blurb: "Employees, salary structure, attendance, leave, payroll runs, loans, targets." },
-  { key: "group", title: "Multi-Company & Consolidation", color: "#0369a1", blurb: "Inter-company transactions, group chart of accounts, eliminations and consolidated statements." },
-  { key: "saas", title: "Reporting & SaaS Billing", color: "#334155", blurb: "KPI snapshots, saved/scheduled reports, plans, subscriptions and usage." },
+  { key: "platform", phase: "mvp", title: "Platform & Tenancy", color: "#0f766e", blurb: "Groups, companies, users, roles, settings — who can do what, where." },
+  { key: "services", phase: "mvp", title: "Platform Services", color: "#475569", blurb: "Audit, files, approvals, notifications, imports, webhooks — built once, used by every module." },
+  { key: "parties", phase: "mvp", title: "Parties (Address Book)", color: "#7c3aed", blurb: "Customers, dealers, vendors, contractors and owners as one deduplicated address book." },
+  { key: "accounting", phase: "mvp", title: "Accounting & Ledger", color: "#b45309", blurb: "Chart of accounts (the structure) and vouchers (the documents) both post to one double-entry journal; combined transactions and bank reconciliation." },
+  { key: "projects", phase: "mvp", title: "Projects & Properties", color: "#15803d", blurb: "Schemes, land and approvals, plus a deep property model: location, size, plot/building/commercial specs, amenities, utilities, legal & ownership chain, valuation, media, listings and charges." },
+  { key: "crm", phase: "mvp", title: "CRM & Leads", color: "#be185d", blurb: "Leads, activities, site visits, campaigns, assignment and WhatsApp conversations." },
+  { key: "sales", phase: "mvp", title: "Sales & Collections", color: "#1d4ed8", blurb: "Quotation → booking → installments → receipts, cheques, transfers, cancellations, commissions." },
+  { key: "budget", phase: "phase2", title: "Budgeting & Control", color: "#047857", blurb: "Plan spend per project and per year, phase it by month, approve and lock it, change it only through revisions, track commitments, and stop or warn on overruns." },
+  { key: "tax", phase: "mvp", phase2Tables: ["tax_returns", "tax_return_lines", "tax_payments"], title: "Tax Management", color: "#b91c1c", blurb: "Admin-configurable tax codes, effective-dated rates, bundles, assignment rules, exemptions, returns and payments." },
+  { key: "invoicing", phase: "mvp", title: "Invoicing & Contracts", color: "#c2410c", blurb: "Sales and service invoices, recurring billing, credit notes, agreement templates." },
+  { key: "procurement", phase: "phase2", title: "Procurement & Stock", color: "#0e7490", blurb: "Vendors' POs, goods receipts, bills, budgets, petty cash and material stock." },
+  { key: "construction", phase: "phase2", title: "Construction & Costing", color: "#a16207", blurb: "Contracts, BOQ, running bills (IPC), retention, variations, progress and guarantees." },
+  { key: "hr", phase: "phase2", title: "HR, Attendance & Payroll", color: "#9333ea", blurb: "Employees, salary structure, attendance, leave, payroll runs, loans, targets." },
+  { key: "group", phase: "phase2", title: "Multi-Company & Consolidation", color: "#0369a1", blurb: "Inter-company transactions, group chart of accounts, eliminations and consolidated statements." },
+  { key: "saas", phase: "mvp", phase2Tables: ["usage_meters", "dunning_events", "coupons", "subscription_items"], title: "Reporting & SaaS Billing", color: "#334155", blurb: "KPI snapshots, saved/scheduled reports, plans, subscriptions and usage." },
 ];
 
 export const TABLES = [];
@@ -86,7 +90,39 @@ can_create bool
 can_edit bool
 can_delete bool
 can_approve bool
-data_scope text # own|team|project|company
+data_scope text # own|team|branch|project|company
+`, { noid: true, global: true });
+
+t("platform", "branches", "Offices of a company (head office, city branches)", `
+code text # unique per company
+name text
+city text null
+address text null
+phone text null
+is_head_office bool # one per company
+active bool
+`);
+
+t("platform", "teams", "Sales / recovery teams, optionally inside one branch", `
+branch_id uuid fk=branches null
+name text
+lead_user_id uuid fk=users null
+active bool
+`);
+
+t("platform", "team_members", "Who is on which team (only members of the company)", `
+company_id uuid pk fk=companies
+team_id uuid pk fk=teams
+user_id uuid pk fk=users
+is_lead bool
+`, { noid: true });
+
+t("platform", "state_transitions", "Which status changes are legal for each record type, and the permission each needs", `
+entity text # booking|installment|receipt|property|voucher
+from_state text
+to_state text
+required_permission text null # module.action; null = system-driven
+description text null
 `, { noid: true, global: true });
 
 t("platform", "company_members", "Which role a user holds in which company", `
@@ -94,6 +130,7 @@ company_id uuid pk fk=companies
 user_id uuid pk fk=users
 role_id uuid fk=roles
 status text
+branch_id uuid fk=branches null # the office this person works from
 `, { noid: true, global: true });
 
 t("platform", "invitations", "Pending invites to join a company", `
@@ -339,8 +376,9 @@ kind text # person|organization
 display_name text
 legal_name text
 name_ur text
-cnic text uq # encrypted at rest
-cnic_hash text
+cnic_enc text null # AES-GCM ciphertext made by the API; plain digits are never stored
+cnic_hash text null uq # keyed HMAC-SHA-256; unique per company
+cnic_last4 text null # for display and support lookups
 ntn text
 phone_e164 text
 email text
@@ -477,6 +515,7 @@ combined_txn_id uuid fk=combined_transactions null
 approved_by uuid fk=users null
 approval_note text
 recurring_rule jsonb
+branch_id uuid fk=branches null
 created_by uuid fk=users
 `);
 
@@ -548,8 +587,13 @@ created_by uuid fk=users
 
 t("accounting", "combined_transaction_items", "The receipts / vouchers / bill payments that make up a combined transaction", `
 combined_txn_id uuid fk=combined_transactions
-item_type text # receipt|voucher|bill_payment|invoice_settlement|cheque
-ref_id uuid # the document it points to
+item_type text # receipt|voucher|invoice_settlement (bill_payment, cheque join with their tables)
+receipt_id uuid fk=receipts null # exactly one of these six is set, matching item_type
+voucher_id uuid fk=vouchers null
+sales_invoice_id uuid fk=sales_invoices null
+service_invoice_id uuid fk=service_invoices null
+bill_payment_id uuid fk=bill_payments null
+cheque_id uuid fk=cheques null
 direction text # in|out
 amount num
 `);
@@ -949,18 +993,22 @@ reason text
 
 t("projects", "property_status_history", "Every status change", `
 property_id uuid fk=properties
-from_status text
+from_status text null
 to_status text
-changed_by uuid fk=users
-reason text
+changed_by uuid fk=users null
+reason text null
+changed_at ts # append-only; written by trigger, status is derived from holds/bookings
 `);
 
 t("projects", "property_holds", "Temporary reservations with auto-expiry", `
 property_id uuid fk=properties
-held_for_party_id uuid fk=parties null
-held_by uuid fk=users
+held_for_party_id uuid fk=parties null # null = held by staff, no named customer
+held_by uuid fk=users null
+held_at ts
 expires_at ts
-released_at ts null
+released_at ts null # one un-released hold per property
+release_reason text null # converted|cancelled|expired|manual
+converted_booking_id uuid fk=bookings null
 `);
 
 t("projects", "project_documents", "Maps, approvals, brochures", `
@@ -1056,7 +1104,7 @@ delta_amount num # + adds, - takes away (a reallocation nets to zero)
 t("budget", "budget_commitments", "Money already spoken for but not yet paid (orders, contracts, running bills)", `
 budget_line_id uuid fk=budget_lines
 source_type text # purchase_order|construction_contract|ipc|vendor_bill|payroll|manual
-source_id uuid null
+source_id uuid null # required unless source_type = manual; typed FKs added with the procurement tables
 amount num
 status text # open|invoiced|released|cancelled
 committed_on date
@@ -1174,8 +1222,16 @@ file_id uuid fk=documents null
 `);
 
 t("tax", "document_taxes", "Every tax computed on any document (invoice, booking, bill …)", `
-doc_type text
-doc_id uuid
+doc_type text # booking|receipt|sales_invoice|service_invoice|voucher (+ vendor_bill|payroll|transfer|commission in phase 2)
+booking_id uuid fk=bookings null # exactly one of these is set, matching doc_type
+receipt_id uuid fk=receipts null
+sales_invoice_id uuid fk=sales_invoices null
+service_invoice_id uuid fk=service_invoices null
+voucher_id uuid fk=vouchers null
+vendor_bill_id uuid fk=vendor_bills null
+payroll_run_id uuid fk=payroll_runs null
+transfer_id uuid fk=property_transfers null
+commission_id uuid fk=commissions null
 tax_code_id uuid fk=tax_codes
 tax_rate_id uuid fk=tax_rates null
 base_amount num
@@ -1432,6 +1488,8 @@ net_price num
 payment_type text # cash|installment
 status text # pending|confirmed|completed|cancelled
 approved_by uuid fk=users null
+branch_id uuid fk=branches null # which office made the sale
+idempotency_key text null # retry-safe creation; unique per company when set
 `);
 
 t("sales", "booking_parties", "Joint owners", `
@@ -1500,6 +1558,10 @@ instrument_ref text
 status text # posted|void
 combined_txn_id uuid fk=combined_transactions null
 journal_entry_id uuid fk=journal_entries null
+branch_id uuid fk=branches null # which office took the money
+voided_at timestamptz null
+voided_by uuid fk=users null
+void_reason text null # required to void; allocations + journal entry are reversed, never deleted
 `);
 
 t("sales", "receipt_tenders", "How one receipt was paid: cash + cheque + online in a single receipt", `
@@ -1518,7 +1580,8 @@ installment_id uuid fk=installments null
 penalty_id uuid fk=penalty_charges null
 sales_invoice_id uuid fk=sales_invoices null
 service_invoice_id uuid fk=service_invoices null
-amount num # exactly one target is set
+amount num # exactly one target is set; negative = reversal of an earlier row
+reverses_id uuid fk=receipt_allocations null uq # append-only: a void adds reversal rows instead of editing
 `);
 
 t("sales", "cheques", "Post-dated cheque register", `
@@ -2157,7 +2220,8 @@ valid_until date null
 export const SUBGROUPS = {
   platform: [
     ["Identity & access", ["users", "org_members", "roles", "role_permissions", "company_members", "invitations", "sessions", "api_keys"]],
-    ["Organization & settings", ["organizations", "companies", "settings", "feature_flags", "document_sequences"]],
+    ["Organization & settings", ["organizations", "companies", "settings", "feature_flags", "document_sequences", "state_transitions"]],
+    ["Branches & teams", ["branches", "teams", "team_members"]],
   ],
   services: [
     ["Audit, files & collaboration", ["audit_log", "documents", "document_links", "comments", "tags", "tag_links", "custom_field_definitions", "saved_views"]],

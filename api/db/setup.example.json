@@ -1,0 +1,8 @@
+{
+  "organization": { "name": "Your Organization", "slug": "your-organization", "plan": "premium" },
+  "company": { "name": "Your Company", "shortName": "Your Co", "city": "Lahore" },
+  "people": [
+    { "name": "Owner Name", "email": "owner@example.com", "role": "Owner", "orgRole": "owner" },
+    { "name": "Manager Name", "email": "manager@example.com", "role": "Administrator", "orgRole": "admin" }
+  ]
+}

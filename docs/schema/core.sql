@@ -181,7 +181,9 @@ create table parties (
   display_name  text not null,
   legal_name    text,
   name_ur       text,                          -- Urdu rendering for bilingual documents
-  cnic          text,                          -- encrypt at rest in production (see design doc §9)
+  cnic_enc      text,                          -- AES-GCM ciphertext, produced by the API (docs/schema/cnic.mjs)
+  cnic_hash     text check (cnic_hash ~ '^[0-9a-f]{64}$'),   -- keyed HMAC-SHA-256 of the 13 digits: the only searchable/unique form
+  cnic_last4    text check (cnic_last4 ~ '^[0-9]{4}$'),      -- for display (*********5671) and support lookups
   ntn           text,
   phone_e164    text,                          -- normalized +923XXXXXXXXX, used for de-duplication
   email         text,
@@ -194,7 +196,9 @@ create table parties (
   version       int not null default 1,
   deleted_at    timestamptz
 );
-create unique index parties_cnic_uq  on parties (company_id, cnic) where cnic is not null and deleted_at is null;
+-- the three CNIC columns are all set or all empty; plain digits are never stored
+alter table parties add constraint parties_cnic_complete check ((cnic_hash is null) = (cnic_enc is null) and (cnic_hash is null) = (cnic_last4 is null));
+create unique index parties_cnic_uq  on parties (company_id, cnic_hash) where cnic_hash is not null and deleted_at is null;
 create index parties_phone_idx on parties (company_id, phone_e164);
 create index parties_name_idx  on parties (company_id, lower(display_name));
 create trigger parties_touch before update on parties for each row execute function app.touch_updated_at();
@@ -669,16 +673,39 @@ create trigger journal_lines_immutable before update or delete on journal_lines
 -- Rule 3: no posting into a locked period or onto a group (header) account.
 create or replace function app.assert_postable() returns trigger
 language plpgsql as $$
-declare v_group boolean; v_locked text;
+declare v_group boolean; v_locked text; v_year text;
 begin
   select is_group into v_group from gl_accounts where id = new.account_id;
   if v_group then raise exception 'Account is a group header and cannot be posted to' using errcode = '23514'; end if;
-  select p.status into v_locked from journal_entries e join accounting_periods p on p.id = e.period_id where e.id = new.entry_id;
+  select p.status, f.status into v_locked, v_year
+    from journal_entries e join accounting_periods p on p.id = e.period_id join fiscal_years f on f.id = p.fiscal_year_id
+   where e.id = new.entry_id;
   if v_locked = 'locked' then raise exception 'Accounting period is locked' using errcode = '23514'; end if;
+  if v_year = 'closed' then raise exception 'Fiscal year is closed' using errcode = '23514'; end if;
   return new;
 end $$;
 create trigger journal_lines_postable before insert on journal_lines
   for each row execute function app.assert_postable();
+
+-- Rule 4: the entry's date lies inside the period it is booked to, in the same company.
+create or replace function app.assert_entry_period() returns trigger
+language plpgsql as $$
+declare pr accounting_periods;
+begin
+  select * into pr from accounting_periods where id = new.period_id;
+  if not found then raise exception 'Accounting period not found' using errcode = 'P0002'; end if;
+  if pr.company_id <> new.company_id then raise exception 'Accounting period belongs to another company' using errcode = '23514'; end if;
+  if new.entry_date < pr.start_date or new.entry_date > pr.end_date then
+    raise exception 'Entry date % is outside the accounting period (% to %)', new.entry_date, pr.start_date, pr.end_date using errcode = '23514';
+  end if;
+  return new;
+end $$;
+create trigger journal_entries_period before insert on journal_entries
+  for each row execute function app.assert_entry_period();
+
+-- Rule 5: a document is posted once. Its correction is a reversal (reversal_of set), which may share the source.
+create unique index journal_entries_one_per_source on journal_entries (company_id, source_type, source_id)
+  where source_id is not null and reversal_of is null;
 
 -- Running totals per account per period: trial balance / dashboards read this
 -- (small table) instead of scanning millions of journal lines. Updated in the same transaction.
@@ -732,10 +759,20 @@ create table combined_transaction_items (
   id               uuid primary key default gen_random_uuid(),
   company_id       uuid not null references companies(id),
   combined_txn_id  uuid not null references combined_transactions(id) on delete cascade,
-  item_type        text not null check (item_type in ('receipt','voucher','bill_payment','invoice_settlement','cheque')),
-  ref_id           uuid not null,
+  -- Exactly one typed reference, matching item_type. Each is a (company_id, id) foreign key added in the
+  -- tenant-reference block below, so an item can never point at a missing or another company's document.
+  -- 'bill_payment' and 'cheque' items arrive with the procurement / cheque tables (phase 2 / Wave 2).
+  item_type        text not null check (item_type in ('receipt','voucher','invoice_settlement')),
+  receipt_id       uuid,
+  voucher_id       uuid,
+  sales_invoice_id uuid,
+  service_invoice_id uuid,
   direction        text not null check (direction in ('in','out')),
-  amount           numeric(18,2) not null check (amount > 0)
+  amount           numeric(18,2) not null check (amount > 0),
+  check (num_nonnulls(receipt_id, voucher_id, sales_invoice_id, service_invoice_id) = 1),
+  check (case item_type when 'receipt' then receipt_id is not null
+                        when 'voucher' then voucher_id is not null
+                        else coalesce(sales_invoice_id, service_invoice_id) is not null end)
 );
 create index combined_items_txn_idx on combined_transaction_items (combined_txn_id);
 
@@ -823,13 +860,238 @@ create table bookings (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   version          int not null default 1,
+  idempotency_key  text,                                  -- retry-safe creation (see app.create_booking)
   unique (company_id, booking_no)
 );
+create unique index bookings_idempotency_uq on bookings (company_id, idempotency_key) where idempotency_key is not null;
 -- One live booking per property, enforced by the database (not just the UI).
 create unique index bookings_one_live_per_property on bookings (company_id, property_id)
   where status in ('pending','confirmed','completed');
 create index bookings_customer_idx on bookings (company_id, customer_id);
 create trigger bookings_touch before update on bookings for each row execute function app.touch_updated_at();
+
+-- ---------------------------------------------------------------- property availability: holds, status, safe booking
+-- properties.status is DERIVED from what exists, never typed in by hand:
+--   completed booking                      -> 'sold'
+--   pending/confirmed booking or live hold -> 'reserved'
+--   none of these                          -> 'available'
+-- ('blocked','rented','cancelled' are manual states; they are only allowed while nothing is live on the property.)
+-- Every change is written to property_status_history. The plot map and the booking screen
+-- both read properties.status, so they cannot disagree.
+create table property_holds (
+  id                 uuid primary key default gen_random_uuid(),
+  company_id         uuid not null references companies(id),
+  property_id        uuid not null references properties(id),
+  held_for_party_id  uuid references parties(id),             -- null = held by staff, no named customer
+  held_by            uuid references users(id),
+  held_at            timestamptz not null default now(),
+  expires_at         timestamptz not null,
+  released_at        timestamptz,
+  release_reason     text check (release_reason in ('converted','cancelled','expired','manual')),
+  converted_booking_id uuid references bookings(id),
+  check (expires_at > held_at),
+  check ((released_at is null) = (release_reason is null))
+);
+-- One un-released hold per property. An expired-but-not-yet-released hold still occupies the slot until
+-- app.expire_holds() (or the next hold/booking attempt) releases it, so the index needs no now().
+create unique index property_one_active_hold on property_holds (property_id) where released_at is null;
+create index property_holds_expiry_idx on property_holds (expires_at) where released_at is null;
+
+create table property_status_history (
+  id           uuid primary key default gen_random_uuid(),
+  company_id   uuid not null references companies(id),
+  property_id  uuid not null references properties(id),
+  from_status  text,
+  to_status    text not null,
+  changed_by   uuid references users(id),
+  reason       text,
+  changed_at   timestamptz not null default now()
+);
+create index property_status_history_idx on property_status_history (property_id, changed_at desc);
+
+create or replace function app.block_append_only() returns trigger
+language plpgsql as $$
+begin
+  raise exception '% is append-only', tg_table_name using errcode = '55000';
+end $$;
+create trigger property_status_history_immutable before update or delete on property_status_history
+  for each row execute function app.block_append_only();
+
+-- Bring properties.status in line with the live bookings/holds. Idempotent; call it after any change to either.
+create or replace function app.sync_property_status(p_property uuid, p_reason text default null) returns void
+language plpgsql as $$
+declare p properties; v_new text;
+begin
+  select * into p from properties where id = p_property for update;
+  if not found then return; end if;
+  if exists (select 1 from bookings where property_id = p_property and status = 'completed') then
+    v_new := 'sold';
+  elsif exists (select 1 from bookings where property_id = p_property and status in ('pending','confirmed'))
+     or exists (select 1 from property_holds where property_id = p_property and released_at is null and expires_at > now()) then
+    v_new := 'reserved';
+  else
+    v_new := 'available';
+  end if;
+  if p.status in ('available','reserved','sold') and p.status <> v_new then
+    perform set_config('app.status_reason', coalesce(p_reason, ''), true);
+    update properties set status = v_new where id = p_property;
+  end if;
+end $$;
+
+-- Reject manual status edits that contradict the live bookings/holds.
+create or replace function app.guard_property_status() returns trigger
+language plpgsql as $$
+declare v_completed boolean; v_pending boolean; v_hold boolean;
+begin
+  if new.status is not distinct from old.status then return new; end if;
+  select exists (select 1 from bookings where property_id = new.id and status = 'completed'),
+         exists (select 1 from bookings where property_id = new.id and status in ('pending','confirmed')),
+         exists (select 1 from property_holds where property_id = new.id and released_at is null and expires_at > now())
+    into v_completed, v_pending, v_hold;
+  if new.status = 'sold' and not v_completed then
+    raise exception 'A property can only be sold through a completed booking' using errcode = '23514';
+  elsif new.status = 'reserved' and not (v_pending or v_hold) then
+    raise exception 'A property can only be reserved through a hold or a booking' using errcode = '23514';
+  elsif new.status not in ('sold','reserved') and (v_completed or v_pending or v_hold) then
+    raise exception 'Property has a live booking or hold; cancel or release it first' using errcode = '23514';
+  end if;
+  return new;
+end $$;
+create trigger properties_status_guard before update of status on properties
+  for each row execute function app.guard_property_status();
+
+create or replace function app.log_property_status() returns trigger
+language plpgsql as $$
+begin
+  insert into property_status_history (company_id, property_id, from_status, to_status, changed_by, reason)
+  values (new.company_id, new.id, old.status, new.status, app.current_user_id(),
+          nullif(current_setting('app.status_reason', true), ''));
+  perform set_config('app.status_reason', '', true);
+  return null;
+end $$;
+create trigger properties_status_log after update of status on properties
+  for each row when (new.status is distinct from old.status) execute function app.log_property_status();
+
+-- Holds: lock the property row, free any expired hold, then require 'available'.
+create or replace function app.before_hold_insert() returns trigger
+language plpgsql as $$
+declare p properties;
+begin
+  select * into p from properties where id = new.property_id for update;
+  if not found then raise exception 'Property not found' using errcode = 'P0002'; end if;
+  if p.company_id <> new.company_id then raise exception 'Property belongs to another company' using errcode = '23514'; end if;
+  update property_holds set released_at = now(), release_reason = 'expired'
+   where property_id = new.property_id and released_at is null and expires_at <= now();
+  perform app.sync_property_status(new.property_id, 'Hold expired');
+  select status into p.status from properties where id = new.property_id;
+  if p.status <> 'available' then
+    raise exception 'Property % is not available (status: %)', p.code, p.status using errcode = '23514';
+  end if;
+  return new;
+end $$;
+create trigger property_holds_before_insert before insert on property_holds
+  for each row execute function app.before_hold_insert();
+
+create or replace function app.after_hold_change() returns trigger
+language plpgsql as $$
+begin
+  perform app.sync_property_status(new.property_id,
+    case when tg_op = 'INSERT' then 'Hold placed' else 'Hold released (' || coalesce(new.release_reason, 'manual') || ')' end);
+  return null;
+end $$;
+create trigger property_holds_after_change after insert or update of released_at on property_holds
+  for each row execute function app.after_hold_change();
+
+-- Bookings: lock the property row and require it to be bookable by THIS customer.
+create or replace function app.assert_booking_allowed() returns trigger
+language plpgsql as $$
+declare p properties; h property_holds;
+begin
+  if new.status not in ('pending','confirmed','completed') then return new; end if;
+  select * into p from properties where id = new.property_id for update;
+  if not found then raise exception 'Property not found' using errcode = 'P0002'; end if;
+  if p.company_id <> new.company_id then raise exception 'Property belongs to another company' using errcode = '23514'; end if;
+  if p.status not in ('available','reserved') then
+    raise exception 'Property % is not available (status: %)', p.code, p.status using errcode = '23514';
+  end if;
+  select * into h from property_holds where property_id = new.property_id and released_at is null and expires_at > now();
+  if found and not (coalesce(h.held_for_party_id = new.customer_id, false)
+                    or (h.held_for_party_id is null and h.held_by is not distinct from new.created_by)) then
+    raise exception 'Property % is on hold for someone else until %', p.code, h.expires_at using errcode = '23514';
+  end if;
+  return new;
+end $$;
+create trigger bookings_before_insert before insert on bookings
+  for each row execute function app.assert_booking_allowed();
+
+create or replace function app.after_booking_change() returns trigger
+language plpgsql as $$
+begin
+  if tg_op = 'INSERT' and new.status in ('pending','confirmed','completed') then
+    update property_holds set released_at = now(), release_reason = 'converted', converted_booking_id = new.id
+     where property_id = new.property_id and released_at is null;
+  end if;
+  perform app.sync_property_status(new.property_id,
+    case when tg_op = 'INSERT' then 'Booking ' || new.booking_no || ' created'
+         else 'Booking ' || new.booking_no || ' is now ' || new.status end);
+  return null;
+end $$;
+create trigger bookings_after_change after insert or update of status on bookings
+  for each row execute function app.after_booking_change();
+
+-- Public entry points (the API calls these; they hold no logic the triggers do not already enforce).
+create or replace function app.place_hold(p_property uuid, p_party uuid, p_by uuid, p_minutes int default 1440)
+returns uuid language plpgsql as $$
+declare v_company uuid; v_id uuid;
+begin
+  select company_id into v_company from properties where id = p_property;     -- RLS: another tenant's property is invisible
+  if v_company is null then raise exception 'Property not found' using errcode = 'P0002'; end if;
+  insert into property_holds (company_id, property_id, held_for_party_id, held_by, expires_at)
+  values (v_company, p_property, p_party, p_by, now() + make_interval(mins => p_minutes))
+  returning id into v_id;
+  return v_id;
+end $$;
+
+create or replace function app.release_hold(p_hold uuid, p_reason text default 'manual') returns void
+language plpgsql as $$
+begin
+  update property_holds set released_at = now(), release_reason = p_reason
+   where id = p_hold and released_at is null;
+  if not found then raise exception 'Hold not found or already released' using errcode = 'P0002'; end if;
+end $$;
+
+-- Sweep: free every expired hold of the current company (the scheduler runs it per company).
+create or replace function app.expire_holds() returns int
+language plpgsql as $$
+declare v_n int;
+begin
+  update property_holds set released_at = now(), release_reason = 'expired'
+   where released_at is null and expires_at <= now();
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+-- Idempotent: the same p_key returns the booking already created instead of making a second one.
+create or replace function app.create_booking(
+  p_property uuid, p_customer uuid, p_payment_type text, p_by uuid,
+  p_list_price numeric default null, p_discount numeric default 0, p_date date default current_date,
+  p_agent uuid default null, p_dealer uuid default null, p_status text default 'pending', p_key text default null)
+returns uuid language plpgsql as $$
+declare v_company uuid; v_price numeric; v_id uuid;
+begin
+  select company_id, list_price into v_company, v_price from properties where id = p_property;
+  if v_company is null then raise exception 'Property not found' using errcode = 'P0002'; end if;
+  if p_key is not null then
+    select id into v_id from bookings where company_id = v_company and idempotency_key = p_key;
+    if found then return v_id; end if;
+  end if;
+  insert into bookings (company_id, booking_no, property_id, customer_id, sales_agent_id, dealer_id, booking_date,
+                        list_price, discount, payment_type, status, created_by, idempotency_key)
+  values (v_company, app.next_doc_no(v_company, 'BOOKING'), p_property, p_customer, p_agent, p_dealer, p_date,
+          coalesce(p_list_price, v_price), p_discount, p_payment_type, p_status, p_by, p_key)
+  returning id into v_id;
+  return v_id;
+end $$;
 
 create table installments (
   id            uuid primary key default gen_random_uuid(),
@@ -860,6 +1122,9 @@ create table receipts (
   status           text not null default 'posted' check (status in ('posted','void')),
   combined_txn_id  uuid references combined_transactions(id),
   journal_entry_id uuid references journal_entries(id),
+  voided_at        timestamptz,
+  voided_by        uuid references users(id),
+  void_reason      text,
   created_by       uuid references users(id),
   created_at       timestamptz not null default now(),
   unique (company_id, receipt_no),
@@ -937,6 +1202,8 @@ create table service_invoices (
 
 -- What a receipt settled. Exactly one target per row; a receipt may have many rows
 -- (several installments across bookings + a penalty + a service invoice ...).
+-- APPEND-ONLY: a mistake is undone by a reversal row (negative amount, reverses_id -> the original),
+-- never by editing or deleting. The target's paid_amount/status is always recomputed from these rows.
 create table receipt_allocations (
   id                 uuid primary key default gen_random_uuid(),
   company_id         uuid not null references companies(id),
@@ -945,42 +1212,130 @@ create table receipt_allocations (
   penalty_id         uuid references penalty_charges(id),
   sales_invoice_id   uuid references sales_invoices(id),
   service_invoice_id uuid references service_invoices(id),
-  amount             numeric(18,2) not null check (amount > 0),
-  check (num_nonnulls(installment_id, penalty_id, sales_invoice_id, service_invoice_id) = 1)
+  amount             numeric(18,2) not null check (amount <> 0),
+  reverses_id        uuid unique references receipt_allocations(id),   -- unique: an allocation is reversed at most once
+  check (num_nonnulls(installment_id, penalty_id, sales_invoice_id, service_invoice_id) = 1),
+  check ((amount < 0) = (reverses_id is not null))
 );
 create index receipt_allocations_receipt_idx on receipt_allocations (receipt_id);
+create index receipt_allocations_installment_idx on receipt_allocations (installment_id) where installment_id is not null;
 
--- An allocation can never exceed the receipt total, and keeps the target's state consistent.
+create or replace function app.block_allocation_mutation() returns trigger
+language plpgsql as $$
+begin
+  raise exception 'receipt_allocations is append-only; void the receipt (app.void_receipt) to reverse it' using errcode = '55000';
+end $$;
+create trigger receipt_allocations_immutable before update or delete on receipt_allocations
+  for each row execute function app.block_allocation_mutation();
+
+-- Keeps the target consistent: paid_amount = sum of ALL its allocation rows (reversals included),
+-- status follows from it. Recomputed, never incremented, so it cannot drift.
 create or replace function app.apply_allocation() returns trigger
 language plpgsql as $$
-declare v_receipt numeric; v_allocated numeric;
+declare v_receipt numeric; v_status text; v_net numeric; v_paid numeric;
 begin
-  select amount into v_receipt from receipts where id = new.receipt_id;
-  select coalesce(sum(amount),0) into v_allocated from receipt_allocations where receipt_id = new.receipt_id;
-  if v_allocated > v_receipt then
-    raise exception 'Allocations (%) exceed receipt amount (%)', v_allocated, v_receipt using errcode = '23514';
+  select amount, status into v_receipt, v_status from receipts where id = new.receipt_id;
+  if new.amount > 0 and v_status = 'void' then
+    raise exception 'Receipt is void; it cannot take new allocations' using errcode = '23514';
   end if;
+  select coalesce(sum(amount),0) into v_net from receipt_allocations where receipt_id = new.receipt_id;
+  if v_net > v_receipt then
+    raise exception 'Allocations (%) exceed receipt amount (%)', v_net, v_receipt using errcode = '23514';
+  end if;
+
   if new.installment_id is not null then
-    update installments set paid_amount = paid_amount + new.amount,
-           status = case when paid_amount + new.amount >= amount then 'paid' else 'partial' end
+    select coalesce(sum(amount),0) into v_paid from receipt_allocations where installment_id = new.installment_id;
+    update installments set paid_amount = v_paid,
+           status = case when status = 'waived' then status
+                         when v_paid >= amount then 'paid' when v_paid > 0 then 'partial' else 'due' end
      where id = new.installment_id;
   elsif new.penalty_id is not null then
-    update penalty_charges set paid_amount = paid_amount + new.amount,
-           status = case when paid_amount + new.amount >= amount then 'paid' else 'partial' end
+    select coalesce(sum(amount),0) into v_paid from receipt_allocations where penalty_id = new.penalty_id;
+    update penalty_charges set paid_amount = v_paid,
+           status = case when status = 'waived' then status
+                         when v_paid >= amount then 'paid' when v_paid > 0 then 'partial' else 'open' end
      where id = new.penalty_id;
   elsif new.sales_invoice_id is not null then
-    update sales_invoices set paid_amount = paid_amount + new.amount,
-           status = case when paid_amount + new.amount >= total then 'paid' else 'partial' end
+    select coalesce(sum(amount),0) into v_paid from receipt_allocations where sales_invoice_id = new.sales_invoice_id;
+    update sales_invoices set paid_amount = v_paid,
+           status = case when status = 'void' then status
+                         when v_paid >= total then 'paid' when v_paid > 0 then 'partial' else 'unpaid' end
      where id = new.sales_invoice_id;
   else
-    update service_invoices set paid_amount = paid_amount + new.amount,
-           status = case when paid_amount + new.amount >= amount then 'paid' else 'partial' end
+    select coalesce(sum(amount),0) into v_paid from receipt_allocations where service_invoice_id = new.service_invoice_id;
+    update service_invoices set paid_amount = v_paid,
+           status = case when status = 'void' then status
+                         when v_paid >= amount then 'paid' when v_paid > 0 then 'partial' else 'unpaid' end
      where id = new.service_invoice_id;
   end if;
   return null;
 end $$;
 create trigger receipt_allocations_apply after insert on receipt_allocations
   for each row execute function app.apply_allocation();
+
+-- A posted receipt cannot change amount or customer; it can only go posted -> void, and only once
+-- nothing is still allocated (app.void_receipt reverses the allocations first).
+create or replace function app.guard_receipt_update() returns trigger
+language plpgsql as $$
+begin
+  if old.status = 'void' then raise exception 'A void receipt cannot be changed' using errcode = '55000'; end if;
+  if new.amount <> old.amount or new.customer_id <> old.customer_id then
+    raise exception 'A posted receipt cannot change amount or customer; void it and issue a new one' using errcode = '55000';
+  end if;
+  if new.status = 'void' and (select coalesce(sum(amount),0) from receipt_allocations where receipt_id = old.id) <> 0 then
+    raise exception 'Reverse the allocations of this receipt first (use app.void_receipt)' using errcode = '55000';
+  end if;
+  return new;
+end $$;
+create trigger receipts_guard before update on receipts
+  for each row execute function app.guard_receipt_update();
+
+-- Reverse a posted journal entry: a new, balanced entry with debits and credits swapped.
+-- The original is flagged 'reversed' (the only change an entry ever accepts).
+create or replace function app.reverse_entry(p_entry uuid, p_date date, p_reason text, p_by uuid default null)
+returns uuid language plpgsql as $$
+declare e journal_entries; v_period uuid; v_new uuid := gen_random_uuid();
+begin
+  select * into e from journal_entries where id = p_entry for update;
+  if not found then raise exception 'Journal entry not found' using errcode = 'P0002'; end if;
+  if e.status <> 'posted' then raise exception 'Journal entry % is already reversed', e.entry_no using errcode = '55000'; end if;
+  if e.reversal_of is not null then raise exception 'A reversing entry cannot itself be reversed' using errcode = '55000'; end if;
+  select id into v_period from accounting_periods
+   where company_id = e.company_id and p_date between start_date and end_date;
+  if v_period is null then raise exception 'No accounting period covers %', p_date using errcode = '23514'; end if;
+
+  insert into journal_entries (id, company_id, entry_no, entry_date, period_id, source_type, source_id, description, reversal_of, posted_by)
+  values (v_new, e.company_id, app.next_doc_no(e.company_id, 'REV'), p_date, v_period, e.source_type, e.source_id,
+          'Reversal of ' || e.entry_no || coalesce(': ' || p_reason, ''), e.id, p_by);
+  insert into journal_lines (company_id, entry_id, line_no, account_id, party_id, project_id, cost_center_id, debit, credit, memo)
+  select company_id, v_new, line_no, account_id, party_id, project_id, cost_center_id, credit, debit, memo
+    from journal_lines where entry_id = e.id;
+  update journal_entries set status = 'reversed' where id = e.id;
+  return v_new;
+end $$;
+
+-- Void a posted receipt: reverse every allocation (targets return to due/partial), reverse its
+-- journal entry, then mark it void. One transaction; all or nothing.
+create or replace function app.void_receipt(p_receipt uuid, p_by uuid, p_reason text, p_date date default current_date)
+returns void language plpgsql as $$
+declare r receipts;
+begin
+  select * into r from receipts where id = p_receipt for update;
+  if not found then raise exception 'Receipt not found' using errcode = 'P0002'; end if;
+  if r.status <> 'posted' then raise exception 'Receipt % is already void', r.receipt_no using errcode = '55000'; end if;
+  if p_reason is null or btrim(p_reason) = '' then raise exception 'A reason is required to void a receipt' using errcode = '23514'; end if;
+
+  insert into receipt_allocations (company_id, receipt_id, installment_id, penalty_id, sales_invoice_id, service_invoice_id, amount, reverses_id)
+  select a.company_id, a.receipt_id, a.installment_id, a.penalty_id, a.sales_invoice_id, a.service_invoice_id, -a.amount, a.id
+    from receipt_allocations a
+   where a.receipt_id = p_receipt and a.amount > 0
+     and not exists (select 1 from receipt_allocations x where x.reverses_id = a.id);
+
+  if r.journal_entry_id is not null then
+    perform app.reverse_entry(r.journal_entry_id, p_date, 'Receipt ' || r.receipt_no || ' voided', p_by);
+  end if;
+  update receipts set status = 'void', voided_at = now(), voided_by = p_by, void_reason = p_reason where id = p_receipt;
+end $$;
 
 alter table property_ownership_history
   add constraint property_ownership_booking_fk foreign key (booking_id) references bookings(id);
@@ -1095,8 +1450,14 @@ create table party_tax_exemptions (
 create table document_taxes (
   id               uuid primary key default gen_random_uuid(),
   company_id       uuid not null references companies(id),
-  doc_type         text not null,
-  doc_id           uuid not null,
+  -- doc_type says which document was taxed; exactly one typed reference points at it (composite FKs below).
+  -- vendor_bill / payroll / transfer / commission join the list when those tables exist.
+  doc_type         text not null check (doc_type in ('booking','receipt','sales_invoice','service_invoice','voucher')),
+  booking_id       uuid,
+  receipt_id       uuid,
+  sales_invoice_id uuid,
+  service_invoice_id uuid,
+  voucher_id       uuid,
   tax_code_id      uuid not null references tax_codes(id),
   tax_rate_id      uuid references tax_rates(id),
   base_amount      numeric(18,2) not null,
@@ -1105,9 +1466,16 @@ create table document_taxes (
   direction        text not null check (direction in ('output','input','withheld_by_us','withheld_from_us')),
   status           text not null default 'computed' check (status in ('computed','posted','reversed')),
   override_reason  text,
-  journal_entry_id uuid references journal_entries(id)
+  journal_entry_id uuid references journal_entries(id),
+  check (num_nonnulls(booking_id, receipt_id, sales_invoice_id, service_invoice_id, voucher_id) = 1),
+  check (case doc_type when 'booking' then booking_id is not null when 'receipt' then receipt_id is not null
+                       when 'sales_invoice' then sales_invoice_id is not null when 'service_invoice' then service_invoice_id is not null
+                       else voucher_id is not null end)
 );
-create index document_taxes_doc_idx on document_taxes (company_id, doc_type, doc_id);
+create index document_taxes_doc_idx on document_taxes (company_id, doc_type);
+create index document_taxes_booking_idx on document_taxes (booking_id) where booking_id is not null;
+create index document_taxes_receipt_idx on document_taxes (receipt_id) where receipt_id is not null;
+create index document_taxes_sinv_idx on document_taxes (sales_invoice_id) where sales_invoice_id is not null;
 
 create table tax_returns (
   id            uuid primary key default gen_random_uuid(),
@@ -1563,7 +1931,10 @@ create table budget_commitments (
   amount         numeric(18,2) not null check (amount > 0),
   status         text not null default 'open' check (status in ('open','invoiced','released','cancelled')),
   committed_on   date not null,
-  note           text
+  note           text,
+  -- A manual commitment names no document; every other one must name the PO / contract / IPC / bill it came from.
+  -- (The foreign keys to those tables are added when the procurement and construction tables are migrated.)
+  check ((source_type = 'manual') = (source_id is null))
 );
 create index budget_commitments_line_idx on budget_commitments (budget_line_id) where status = 'open';
 
@@ -1745,6 +2116,519 @@ begin
     from budgets b where b.id = r.budget_id;
 end $$;
 
+-- ---------------------------------------------------------------- payment plan: the schedule always adds up to the price
+-- An installment booking is built with app.build_schedule (down payment + equal installments + optional balloon);
+-- the rounding remainder goes into the LAST installment, so the total is exact to the paisa. Rules:
+--   * a booking cannot be confirmed (or completed) unless its schedule adds up to the net price
+--   * it cannot be completed while any installment is still due or part-paid (paid or waived is fine)
+--   * once confirmed, the total stays locked: any change to amounts, price or discount must leave the
+--     schedule adding up by the end of the transaction (so a reschedule is allowed, a silent change is not)
+-- Cash bookings have no schedule rules.
+create or replace function app.build_schedule(
+  p_booking uuid, p_down numeric, p_count int, p_first_due date,
+  p_interval_months int default 1, p_balloon numeric default 0, p_balloon_due date default null)
+returns int language plpgsql as $$
+declare b bookings; v_rest numeric; v_base numeric := 0; v_last numeric := 0; v_seq int := 0; i int;
+begin
+  select * into b from bookings where id = p_booking for update;
+  if not found then raise exception 'Booking not found' using errcode = 'P0002'; end if;
+  if b.status <> 'pending' then raise exception 'A schedule can only be built for a pending booking' using errcode = '55000'; end if;
+  if b.payment_type <> 'installment' then raise exception 'Only installment bookings have a payment schedule' using errcode = '23514'; end if;
+  if exists (select 1 from installments where booking_id = p_booking) then
+    raise exception 'This booking already has a payment schedule' using errcode = '55000';
+  end if;
+  if p_down < 0 or p_balloon < 0 or p_count < 0 or p_interval_months < 1 then
+    raise exception 'Down payment, balloon, number of installments and interval must be positive' using errcode = '23514';
+  end if;
+  if p_balloon > 0 and p_balloon_due is null then raise exception 'A balloon payment needs a due date' using errcode = '23514'; end if;
+  if p_count > 0 and p_first_due is null then raise exception 'The first installment needs a due date' using errcode = '23514'; end if;
+
+  v_rest := b.list_price - b.discount - p_down - p_balloon;
+  if p_count = 0 then
+    if v_rest <> 0 then raise exception 'With no installments the down payment and balloon must equal the price (difference %)', v_rest using errcode = '23514'; end if;
+  else
+    if v_rest <= 0 then raise exception 'The down payment and balloon leave nothing for the installments' using errcode = '23514'; end if;
+    v_base := floor(v_rest / p_count * 100) / 100;                       -- round DOWN so the last one is never smaller than the rest
+    if v_base <= 0 then raise exception 'Too many installments for the amount left' using errcode = '23514'; end if;
+    v_last := v_rest - v_base * (p_count - 1);
+  end if;
+
+  if p_down > 0 then
+    v_seq := v_seq + 1;
+    insert into installments (company_id, booking_id, seq, kind, due_date, amount) values (b.company_id, b.id, v_seq, 'down_payment', b.booking_date, p_down);
+  end if;
+  for i in 1 .. p_count loop
+    v_seq := v_seq + 1;
+    insert into installments (company_id, booking_id, seq, kind, due_date, amount)
+    values (b.company_id, b.id, v_seq, 'installment', p_first_due + make_interval(months => (i - 1) * p_interval_months),
+            case when i = p_count then v_last else v_base end);
+  end loop;
+  if p_balloon > 0 then
+    v_seq := v_seq + 1;
+    insert into installments (company_id, booking_id, seq, kind, due_date, amount) values (b.company_id, b.id, v_seq, 'balloon', p_balloon_due, p_balloon);
+  end if;
+  return v_seq;
+end $$;
+
+-- Confirming / completing: the schedule must exist and add up (checked at the moment of the move, with a plain message).
+create or replace function app.guard_booking_schedule() returns trigger
+language plpgsql as $$
+declare v_sum numeric; v_n int; v_open int;
+begin
+  if new.status = old.status or new.payment_type <> 'installment' or new.status not in ('confirmed','completed') then return new; end if;
+  select coalesce(sum(amount), 0), count(*), count(*) filter (where status in ('due','partial'))
+    into v_sum, v_n, v_open from installments where booking_id = new.id;
+  if v_n = 0 then
+    raise exception 'An installment booking needs its payment schedule before it can be %', new.status using errcode = '23514';
+  end if;
+  if v_sum <> new.list_price - new.discount then
+    raise exception 'The installment schedule (%) does not add up to the booking price (%)', v_sum, new.list_price - new.discount using errcode = '23514';
+  end if;
+  if new.status = 'completed' and v_open > 0 then
+    raise exception '% installment(s) are still unpaid; a booking completes when all are paid or waived', v_open using errcode = '23514';
+  end if;
+  return new;
+end $$;
+-- named so it runs after bookings_transition: an illegal move is reported as illegal first
+create trigger bookings_transition_schedule before update of status on bookings
+  for each row execute function app.guard_booking_schedule();
+
+-- After confirmation the total stays locked (deferred: a reschedule may rewrite several rows in one transaction).
+create or replace function app.assert_schedule_total() returns trigger
+language plpgsql as $$
+declare v_id uuid; b bookings; v_sum numeric;
+begin
+  if tg_table_name = 'bookings' then
+    v_id := coalesce(new.id, old.id);
+  else
+    v_id := coalesce(new.booking_id, old.booking_id);
+  end if;
+  select * into b from bookings where id = v_id;
+  if not found or b.payment_type <> 'installment' or b.status not in ('confirmed','completed') then return null; end if;
+  select coalesce(sum(amount), 0) into v_sum from installments where booking_id = v_id;
+  if v_sum <> b.net_price then
+    raise exception 'The installment schedule (%) does not add up to the booking price (%)', v_sum, b.net_price using errcode = '23514';
+  end if;
+  return null;
+end $$;
+create constraint trigger installments_schedule_total after insert or update of amount or delete on installments
+  deferrable initially deferred for each row execute function app.assert_schedule_total();
+create constraint trigger bookings_schedule_total after update of list_price, discount, payment_type on bookings
+  deferrable initially deferred for each row execute function app.assert_schedule_total();
+
+-- ---------------------------------------------------------------- state machines (table-driven)
+-- One place says which status changes are legal and which permission each needs; one trigger enforces it
+-- on every table that has a lifecycle. The API reads the same table (app.allowed_transitions) to decide
+-- which buttons to show, so the screen and the database cannot disagree. Diagrams: docs/STATE_MACHINES.md.
+-- Permission names are "<module>.<action>" exactly as in lib/permissions.ts.
+create table state_transitions (
+  entity              text not null,                 -- 'booking', 'installment', 'receipt', 'property', 'voucher'
+  from_state          text not null,
+  to_state            text not null,
+  required_permission text,                          -- null = system-driven (derived from other records)
+  description         text,
+  primary key (entity, from_state, to_state),
+  check (from_state <> to_state)
+);
+
+-- The API sets  app.permissions = 'deals.edit,accounts.approve,...'  for the request (set_config, transaction-local).
+-- When it is set, a transition that needs a permission the caller lacks is refused. When it is not set
+-- (migrations, background jobs running as the system) only the legality of the transition is checked.
+create or replace function app.enforce_transition() returns trigger
+language plpgsql as $$
+declare v_entity text := tg_argv[0]; v_col text := tg_argv[1]; v_old text; v_new text; v_perm text; v_have text;
+begin
+  v_old := to_jsonb(old) ->> v_col;
+  v_new := to_jsonb(new) ->> v_col;
+  if v_old is not distinct from v_new then return new; end if;
+  select required_permission into v_perm from state_transitions
+   where entity = v_entity and from_state = v_old and to_state = v_new;
+  if not found then
+    raise exception 'A % cannot go from "%" to "%"', v_entity, v_old, v_new using errcode = '23514';
+  end if;
+  v_have := nullif(current_setting('app.permissions', true), '');
+  if v_perm is not null and v_have is not null and not (v_perm = any (string_to_array(v_have, ','))) then
+    raise exception 'Moving a % from "%" to "%" needs the % permission', v_entity, v_old, v_new, v_perm using errcode = '42501';
+  end if;
+  return new;
+end $$;
+
+-- What can this record do next? (for the API / UI)
+create or replace function app.allowed_transitions(p_entity text, p_from text)
+returns table (to_state text, required_permission text, description text)
+language sql stable as $$
+  select to_state, required_permission, description from state_transitions
+   where entity = p_entity and from_state = p_from order by to_state
+$$;
+
+insert into state_transitions (entity, from_state, to_state, required_permission, description) values
+  -- bookings
+  ('booking','pending','confirmed','deals.edit','Confirm the booking'),
+  ('booking','confirmed','completed','deals.edit','All dues cleared / possession given'),
+  ('booking','pending','cancelled','deals.approve','Cancel before confirmation'),
+  ('booking','confirmed','cancelled','deals.approve','Cancel a confirmed booking'),
+  ('booking','completed','cancelled','deals.approve','Reverse a completed sale (frees the property again)'),
+  -- installments: moved by receipts and their reversals, or by a waiver
+  ('installment','due','partial',null,'Part-paid by a receipt'),
+  ('installment','due','paid',null,'Paid in full by a receipt'),
+  ('installment','partial','paid',null,'Balance paid'),
+  ('installment','partial','due',null,'Payment reversed'),
+  ('installment','paid','partial',null,'Part of the payment reversed'),
+  ('installment','paid','due',null,'Payment reversed'),
+  ('installment','due','waived','accounts.approve','Waive the installment'),
+  ('installment','partial','waived','accounts.approve','Waive the balance'),
+  ('installment','waived','due','accounts.approve','Undo a waiver'),
+  -- receipts
+  ('receipt','posted','void','accounts.approve','Void a receipt (use app.void_receipt)'),
+  -- properties: derived states are system-driven, the rest are manual
+  ('property','available','reserved',null,'A hold or booking exists'),
+  ('property','reserved','available',null,'Hold released / booking cancelled'),
+  ('property','reserved','sold',null,'Booking completed'),
+  ('property','available','sold',null,'Booking recorded as completed'),
+  ('property','sold','available',null,'Completed booking reversed'),
+  ('property','available','blocked','inventory.edit','Take off the market'),
+  ('property','blocked','available','inventory.edit','Put back on the market'),
+  ('property','available','rented','inventory.edit','Let out'),
+  ('property','rented','available','inventory.edit','Tenancy ended'),
+  ('property','available','cancelled','inventory.approve','Withdraw the property'),
+  ('property','cancelled','available','inventory.approve','Reinstate the property'),
+  -- vouchers
+  ('voucher','draft','pending','accounts.create','Submit for approval'),
+  ('voucher','pending','approved','accounts.approve','Approve'),
+  ('voucher','pending','rejected','accounts.approve','Reject'),
+  ('voucher','rejected','draft','accounts.edit','Reopen to edit'),
+  ('voucher','draft','void','accounts.edit','Discard a draft'),
+  ('voucher','approved','void','accounts.approve','Void an approved voucher (reverses its entry)');
+
+create trigger bookings_transition     before update of status on bookings     for each row execute function app.enforce_transition('booking','status');
+create trigger installments_transition before update of status on installments for each row execute function app.enforce_transition('installment','status');
+create trigger receipts_transition     before update of status on receipts      for each row execute function app.enforce_transition('receipt','status');
+create trigger properties_transition   before update of status on properties    for each row execute function app.enforce_transition('property','status');
+create trigger vouchers_transition     before update of status on vouchers      for each row execute function app.enforce_transition('voucher','status');
+
+-- ---------------------------------------------------------------- conventions & audit trail
+-- Convention (full text: BACKEND_DESIGN.md §4):
+--   document      (money / legal paper)   created_at + created_by, NEVER deleted_at: voided or reversed, not removed
+--   master data   (people, projects ...)  created_at + updated_at + version (optimistic locking); deleted_at to archive
+--   detail rows   (lines, links, logs)    inherit from their parent; no columns required
+-- v_convention_gaps is the lint: it must be empty. A new top-level table is added to its registry in the same change.
+alter table sales_invoices   add column created_at timestamptz not null default now(), add column created_by uuid references users(id);
+alter table service_invoices add column created_at timestamptz not null default now(), add column created_by uuid references users(id);
+alter table gl_accounts    add column updated_at timestamptz not null default now(), add column version int not null default 1;
+alter table cost_centers   add column created_at timestamptz not null default now(), add column updated_at timestamptz not null default now(), add column version int not null default 1;
+alter table property_types add column created_at timestamptz not null default now(), add column updated_at timestamptz not null default now(), add column version int not null default 1;
+alter table tax_codes      add column created_at timestamptz not null default now(), add column updated_at timestamptz not null default now(), add column version int not null default 1;
+create trigger gl_accounts_touch    before update on gl_accounts    for each row execute function app.touch_updated_at();
+create trigger cost_centers_touch   before update on cost_centers   for each row execute function app.touch_updated_at();
+create trigger property_types_touch before update on property_types for each row execute function app.touch_updated_at();
+create trigger tax_codes_touch      before update on tax_codes      for each row execute function app.touch_updated_at();
+
+create or replace view v_convention_gaps as
+with reg(tbl, kind) as (values
+  ('journal_entries','document'), ('receipts','document'), ('vouchers','document'), ('bookings','document'),
+  ('sales_invoices','document'), ('service_invoices','document'), ('combined_transactions','document'),
+  ('intercompany_transactions','document'),
+  ('parties','master'), ('projects','master'), ('properties','master'), ('gl_accounts','master'),
+  ('cost_centers','master'), ('property_types','master'), ('tax_codes','master')),
+cols as (
+  select table_name::text as tbl, array_agg(column_name::text) as c
+    from information_schema.columns where table_schema = current_schema() group by table_name)
+select r.tbl as table_name, r.kind, p.problem
+  from reg r
+  left join cols on cols.tbl = r.tbl
+  cross join lateral (values
+    ('table does not exist',                                 cols.c is null),
+    ('document has no created_at / posted_at',               r.kind = 'document' and not coalesce(cols.c && array['created_at','posted_at'], false)),
+    ('document has no created_by / posted_by',               r.kind = 'document' and not coalesce(cols.c && array['created_by','posted_by'], false)),
+    ('document has deleted_at: it must be voided or reversed, never deleted', r.kind = 'document' and coalesce('deleted_at' = any (cols.c), false)),
+    ('master data has no created_at',                        r.kind = 'master' and not coalesce('created_at' = any (cols.c), false)),
+    ('master data has no updated_at',                        r.kind = 'master' and not coalesce('updated_at' = any (cols.c), false)),
+    ('master data has no version (optimistic locking)',      r.kind = 'master' and not coalesce('version' = any (cols.c), false))
+  ) as p(problem, violated)
+ where p.violated;
+
+-- ---- audit trail: who changed what, with before / after values
+-- One trigger function attached to every table whose changes matter to the business. It records the
+-- fields that actually changed (not the whole row) and ignores bookkeeping-only updates (updated_at, version).
+-- The API sets app.user_id and app.request_id per request; background jobs run without a user.
+create or replace function app.audit_row() returns trigger
+language plpgsql as $$
+declare v_old jsonb; v_new jsonb; v_before jsonb; v_after jsonb; v_action text; v_row jsonb;
+begin
+  if tg_op = 'INSERT' then
+    v_action := 'create'; v_row := to_jsonb(new); v_after := v_row;
+  elsif tg_op = 'DELETE' then
+    v_action := 'delete'; v_row := to_jsonb(old); v_before := v_row;
+  else
+    v_old := to_jsonb(old); v_new := to_jsonb(new); v_row := v_new;
+    select jsonb_object_agg(n.key, n.value), jsonb_object_agg(n.key, v_old -> n.key)
+      into v_after, v_before
+      from jsonb_each(v_new) n
+     where n.key not in ('updated_at','version') and (v_old -> n.key) is distinct from n.value;
+    if v_after is null then return null; end if;                       -- nothing but bookkeeping changed
+    v_action := case when (v_old ->> 'deleted_at') is null and (v_new ->> 'deleted_at') is not null then 'delete'
+                     when (v_old ->> 'status') is distinct from (v_new ->> 'status') then 'status_change'
+                     else 'update' end;
+  end if;
+  insert into audit_log (company_id, user_id, action, entity_type, entity_id, before_data, after_data, request_id)
+  values ((v_row ->> 'company_id')::uuid, app.current_user_id(), v_action, tg_table_name,
+          (v_row ->> 'id')::uuid, v_before, v_after, nullif(current_setting('app.request_id', true), ''));
+  return null;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'properties','property_holds','bookings','installments','receipts','receipt_allocations','vouchers',
+    'journal_entries','gl_accounts','parties','projects','budgets','budget_revisions','tax_rates','tax_codes','cost_centers']
+  loop
+    execute format('create trigger %I after insert or update or delete on %I for each row execute function app.audit_row()', t || '_audit', t);
+  end loop;
+end $$;
+
+-- the trail itself can never be edited or deleted (old months are detached as whole partitions)
+create trigger audit_log_immutable before update or delete on audit_log
+  for each row execute function app.block_append_only();
+
+-- ---------------------------------------------------------------- branches, teams and data scope
+-- "Multi-branch" in the pricing table maps to this: a company has branches (offices); staff belong to a branch
+-- and optionally to teams. A role grants each module a data scope: own | team | branch | company | project.
+create table branches (
+  id             uuid primary key default gen_random_uuid(),
+  company_id     uuid not null references companies(id),
+  code           text not null,
+  name           text not null,
+  city           text,
+  address        text,
+  phone          text,
+  is_head_office boolean not null default false,
+  active         boolean not null default true,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  version        int not null default 1,
+  unique (company_id, code)
+);
+create unique index branches_one_head_office on branches (company_id) where is_head_office;
+create trigger branches_touch before update on branches for each row execute function app.touch_updated_at();
+
+create table teams (
+  id            uuid primary key default gen_random_uuid(),
+  company_id    uuid not null references companies(id),
+  branch_id     uuid,                                        -- a team may sit inside one branch (composite FK below)
+  name          text not null,
+  lead_user_id  uuid references users(id),
+  active        boolean not null default true,
+  created_at    timestamptz not null default now(),
+  unique (company_id, name)
+);
+
+-- only people who work in this company can be on its teams
+create table team_members (
+  company_id  uuid not null references companies(id),
+  team_id     uuid not null,
+  user_id     uuid not null,
+  is_lead     boolean not null default false,
+  primary key (team_id, user_id),
+  foreign key (company_id, user_id) references company_members (company_id, user_id)
+);
+create index team_members_user_idx on team_members (company_id, user_id);
+
+alter table company_members add column branch_id uuid;                       -- the branch this person works from
+alter table bookings add column branch_id uuid;                              -- which office made the sale / took the money
+alter table receipts add column branch_id uuid;
+alter table vouchers add column branch_id uuid;
+
+alter table role_permissions drop constraint role_permissions_data_scope_check;
+alter table role_permissions add  constraint role_permissions_data_scope_check
+  check (data_scope in ('own','team','branch','project','company'));
+
+-- Is a record owned by p_owner (its creator / assigned agent) visible to the signed-in user for this module?
+--   company  everything          branch  people in my branch          team  people on any of my teams
+--   own      only my records     project  needs per-project assignment (not modelled yet) -> fails closed
+-- No grant for the module, or not an active member of the current company -> false.
+-- The API puts this in its WHERE clauses:  ... where app.user_in_scope('deals', created_by)
+create or replace function app.user_in_scope(p_module text, p_owner uuid) returns boolean
+language sql stable as $$
+  with me as (
+    select cm.company_id, cm.user_id, cm.branch_id, coalesce(rp.data_scope, 'none') as scope
+      from company_members cm
+      left join role_permissions rp on rp.role_id = cm.role_id and rp.module = p_module
+     where cm.company_id = app.current_company() and cm.user_id = app.current_user_id() and cm.status = 'active')
+  select coalesce((
+    select case me.scope
+      when 'company' then true
+      when 'own'     then p_owner is not null and p_owner = me.user_id
+      when 'branch'  then p_owner is not null and (p_owner = me.user_id or (me.branch_id is not null and exists (
+                            select 1 from company_members o
+                             where o.company_id = me.company_id and o.user_id = p_owner and o.branch_id = me.branch_id)))
+      when 'team'    then p_owner is not null and (p_owner = me.user_id or exists (
+                            select 1 from team_members a join team_members b on b.team_id = a.team_id
+                             where a.company_id = me.company_id and a.user_id = me.user_id and b.user_id = p_owner))
+      else false end
+    from me), false)
+$$;
+
+-- ---------------------------------------------------------------- reconciliation (the database checks itself)
+-- Every row returned is something that should not be true. On a healthy database the view is empty.
+-- The nightly job runs it per company (RLS applies); ops runs it as the owner to see every company.
+-- Triggers already prevent most of these; the view exists to catch what slips through
+-- (a bug, a manual repair, a trigger switched off for a data fix) before a customer does.
+create or replace view v_reconciliation as
+  -- 1. every journal entry balances
+  select e.company_id, 'ledger_unbalanced'::text as check_name, 'journal_entries'::text as entity_type, e.id as entity_id,
+         'debits ' || sum(l.debit) || ' vs credits ' || sum(l.credit) as detail
+    from journal_entries e join journal_lines l on l.entry_id = e.id
+   group by e.company_id, e.id having sum(l.debit) <> sum(l.credit)
+  union all
+  -- 2. the rolled-up balances equal the journal they summarise
+  select coalesce(a.company_id, j.company_id), 'ledger_balance_drift', 'account_balances', coalesce(a.account_id, j.account_id),
+         'stored ' || coalesce(a.debit_total, 0) || '/' || coalesce(a.credit_total, 0) || ' vs journal ' || coalesce(j.d, 0) || '/' || coalesce(j.c, 0)
+    from account_balances a
+    full join (select l.company_id, l.account_id, e.period_id, sum(l.debit) d, sum(l.credit) c
+                 from journal_lines l join journal_entries e on e.id = l.entry_id group by 1, 2, 3) j
+      on j.company_id = a.company_id and j.account_id = a.account_id and j.period_id = a.period_id
+   where coalesce(a.debit_total, 0) <> coalesce(j.d, 0) or coalesce(a.credit_total, 0) <> coalesce(j.c, 0)
+  union all
+  -- 3. a receipt never allocates more than it received; a void receipt allocates nothing
+  select r.company_id, 'receipt_over_allocated', 'receipts', r.id, 'allocated ' || sum(a.amount) || ' of ' || r.amount
+    from receipts r join receipt_allocations a on a.receipt_id = r.id
+   group by r.company_id, r.id having sum(a.amount) > r.amount
+  union all
+  select r.company_id, 'void_receipt_still_allocated', 'receipts', r.id, 'void but net allocation is ' || sum(a.amount)
+    from receipts r join receipt_allocations a on a.receipt_id = r.id
+   where r.status = 'void' group by r.company_id, r.id having sum(a.amount) <> 0
+  union all
+  -- 4. what a target says it has been paid equals what the allocations say
+  select t.company_id, 'paid_amount_drift', 'installments', t.id, 'stored ' || t.paid_amount || ' vs allocations ' || coalesce(s.n, 0)
+    from installments t left join (select installment_id, sum(amount) n from receipt_allocations where installment_id is not null group by 1) s on s.installment_id = t.id
+   where t.paid_amount <> coalesce(s.n, 0)
+  union all
+  select t.company_id, 'paid_amount_drift', 'penalty_charges', t.id, 'stored ' || t.paid_amount || ' vs allocations ' || coalesce(s.n, 0)
+    from penalty_charges t left join (select penalty_id, sum(amount) n from receipt_allocations where penalty_id is not null group by 1) s on s.penalty_id = t.id
+   where t.paid_amount <> coalesce(s.n, 0)
+  union all
+  select t.company_id, 'paid_amount_drift', 'sales_invoices', t.id, 'stored ' || t.paid_amount || ' vs allocations ' || coalesce(s.n, 0)
+    from sales_invoices t left join (select sales_invoice_id, sum(amount) n from receipt_allocations where sales_invoice_id is not null group by 1) s on s.sales_invoice_id = t.id
+   where t.paid_amount <> coalesce(s.n, 0)
+  union all
+  select t.company_id, 'paid_amount_drift', 'service_invoices', t.id, 'stored ' || t.paid_amount || ' vs allocations ' || coalesce(s.n, 0)
+    from service_invoices t left join (select service_invoice_id, sum(amount) n from receipt_allocations where service_invoice_id is not null group by 1) s on s.service_invoice_id = t.id
+   where t.paid_amount <> coalesce(s.n, 0)
+  union all
+  -- 5. the plot map and the booking screen agree: stored status equals what holds and bookings imply
+  select p.company_id, 'property_status_drift', 'properties', p.id, 'status is ' || p.status || ' but holds/bookings say ' || d.derived
+    from properties p
+   cross join lateral (select case
+        when exists (select 1 from bookings b where b.property_id = p.id and b.status = 'completed') then 'sold'
+        when exists (select 1 from bookings b where b.property_id = p.id and b.status in ('pending','confirmed'))
+          or exists (select 1 from property_holds h where h.property_id = p.id and h.released_at is null and h.expires_at > now()) then 'reserved'
+        else 'available' end as derived) d
+   where p.status in ('available','reserved','sold') and p.status <> d.derived
+     and not exists (select 1 from property_holds h where h.property_id = p.id and h.released_at is null and h.expires_at > now() - interval '1 hour')
+  union all
+  -- 6. the hold-expiry job is running (an expired hold should be released within the hour)
+  select h.company_id, 'stale_hold', 'property_holds', h.id, 'expired ' || h.expires_at || ' and still not released'
+    from property_holds h where h.released_at is null and h.expires_at < now() - interval '1 hour'
+  union all
+  -- 7. a confirmed installment booking's schedule adds up to its price
+  select b.company_id, 'booking_schedule_mismatch', 'bookings', b.id,
+         'schedule ' || coalesce(s.total, 0) || ' vs price ' || b.net_price
+    from bookings b left join (select booking_id, sum(amount) total from installments group by 1) s on s.booking_id = b.id
+   where b.payment_type = 'installment' and b.status in ('confirmed','completed') and coalesce(s.total, 0) <> b.net_price
+  union all
+  -- 8. no journal entry claims a document that does not exist
+  select e.company_id, 'orphan_journal_source', 'journal_entries', e.id, e.source_type || ' ' || e.source_id || ' not found'
+    from journal_entries e
+   where e.source_id is not null and e.reversal_of is null and (
+         (e.source_type = 'receipt' and not exists (select 1 from receipts r where r.id = e.source_id))
+      or (e.source_type = 'voucher' and not exists (select 1 from vouchers v where v.id = e.source_id)));
+
+-- One line per check, including the clean ones, for dashboards and the nightly alert.
+create or replace function app.reconciliation_summary() returns table (check_name text, problems bigint)
+language sql stable as $$
+  select c.name, count(r.check_name)
+    from unnest(array['ledger_unbalanced','ledger_balance_drift','receipt_over_allocated','void_receipt_still_allocated',
+                      'paid_amount_drift','property_status_drift','stale_hold','booking_schedule_mismatch','orphan_journal_source']) as c(name)
+    left join v_reconciliation r on r.check_name = c.name
+   group by c.name order by c.name
+$$;
+
+-- ---------------------------------------------------------------- cross-tenant reference protection
+-- A single-column foreign key (bookings.property_id -> properties.id) is checked by Postgres as the table
+-- owner, so row-level security does not stop company A's row from pointing at company B's row.
+-- Fix: every cross-reference in the sales / accounting / property chain ALSO carries company_id, so the
+-- parent must belong to the same company: foreign key (company_id, X_id) references parent (company_id, id).
+-- Nullable references stay optional (a NULL column skips the check; company_id is never NULL).
+do $$
+declare
+  r record;
+  -- child table, child column, parent table
+  links text[][] := array[
+    ['bookings','property_id','properties'], ['bookings','customer_id','parties'], ['bookings','dealer_id','parties'],
+    ['installments','booking_id','bookings'],
+    ['penalty_charges','installment_id','installments'],
+    ['receipts','customer_id','parties'], ['receipts','booking_id','bookings'],
+    ['receipts','deposit_account','gl_accounts'], ['receipts','journal_entry_id','journal_entries'],
+    ['receipt_tenders','receipt_id','receipts'], ['receipt_tenders','deposit_account','gl_accounts'],
+    ['receipt_allocations','receipt_id','receipts'], ['receipt_allocations','installment_id','installments'],
+    ['receipt_allocations','penalty_id','penalty_charges'], ['receipt_allocations','sales_invoice_id','sales_invoices'],
+    ['receipt_allocations','service_invoice_id','service_invoices'], ['receipt_allocations','reverses_id','receipt_allocations'],
+    ['sales_invoices','customer_id','parties'], ['sales_invoices','booking_id','bookings'],
+    ['service_invoices','customer_id','parties'], ['service_invoices','property_id','properties'],
+    ['accounting_periods','fiscal_year_id','fiscal_years'],
+    ['journal_entries','period_id','accounting_periods'], ['journal_entries','reversal_of','journal_entries'],
+    ['receipts','combined_txn_id','combined_transactions'], ['vouchers','combined_txn_id','combined_transactions'],
+    ['journal_lines','entry_id','journal_entries'], ['journal_lines','account_id','gl_accounts'],
+    ['journal_lines','party_id','parties'], ['journal_lines','project_id','projects'], ['journal_lines','cost_center_id','cost_centers'],
+    ['project_blocks','project_id','projects'],
+    ['properties','project_id','projects'], ['properties','block_id','project_blocks'],
+    ['properties','type_id','property_types'], ['properties','owner_party_id','parties'],
+    ['property_holds','property_id','properties'], ['property_holds','held_for_party_id','parties'],
+    ['property_holds','converted_booking_id','bookings'],
+    ['property_status_history','property_id','properties'],
+    ['vouchers','party_id','parties'], ['vouchers','journal_entry_id','journal_entries'],
+    ['combined_transaction_items','combined_txn_id','combined_transactions'],
+    ['combined_transaction_items','receipt_id','receipts'], ['combined_transaction_items','voucher_id','vouchers'],
+    ['combined_transaction_items','sales_invoice_id','sales_invoices'], ['combined_transaction_items','service_invoice_id','service_invoices'],
+    ['document_taxes','booking_id','bookings'], ['document_taxes','receipt_id','receipts'], ['document_taxes','voucher_id','vouchers'],
+    ['document_taxes','sales_invoice_id','sales_invoices'], ['document_taxes','service_invoice_id','service_invoices'],
+    ['teams','branch_id','branches'], ['team_members','team_id','teams'],
+    ['company_members','branch_id','branches'], ['bookings','branch_id','branches'],
+    ['receipts','branch_id','branches'], ['vouchers','branch_id','branches'],
+    ['voucher_lines','voucher_id','vouchers'], ['voucher_lines','account_id','gl_accounts'],
+    ['voucher_lines','project_id','projects'], ['voucher_lines','cost_center_id','cost_centers']
+  ];
+  i int;
+begin
+  -- 1. every parent gets (company_id, id) as a unique key, once
+  for r in select distinct links[g.n][3] as parent from generate_series(1, array_length(links, 1)) as g(n) loop
+    if not exists (select 1 from pg_constraint where conname = r.parent || '_company_id_id_uq') then
+      execute format('alter table %I add constraint %I unique (company_id, id)', r.parent, r.parent || '_company_id_id_uq');
+    end if;
+  end loop;
+  -- 2. the composite foreign keys
+  for i in 1 .. array_length(links, 1) loop
+    execute format('alter table %I add constraint %I foreign key (company_id, %I) references %I (company_id, id)',
+                   links[i][1], links[i][1] || '_' || links[i][2] || '_tenant_fk', links[i][2], links[i][3]);
+  end loop;
+end $$;
+
+-- Lint: single-column references between tenant tables that still lack the company-scoped twin.
+-- The core chain above must never appear here; new tables should be added to the list as they are built.
+create or replace view v_tenant_fk_gaps as
+select c.conrelid::regclass::text as child_table, a.attname::text as child_column, c.confrelid::regclass::text as parent_table
+  from pg_constraint c
+  join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
+ where c.contype = 'f' and array_length(c.conkey, 1) = 1 and a.attname <> 'company_id'
+   and c.connamespace = current_schema()::regnamespace
+   and exists (select 1 from pg_attribute x where x.attrelid = c.conrelid  and x.attname = 'company_id' and not x.attisdropped)
+   and exists (select 1 from pg_attribute y where y.attrelid = c.confrelid and y.attname = 'company_id' and not y.attisdropped)
+   and not exists (
+     select 1 from pg_constraint d
+      where d.contype = 'f' and d.conrelid = c.conrelid and d.confrelid = c.confrelid and array_length(d.conkey, 1) = 2
+        and (select attname from pg_attribute where attrelid = d.conrelid and attnum = d.conkey[2]) = a.attname);
+
 -- ---------------------------------------------------------------- row-level security (tenant isolation)
 -- Applied to every table that has a company_id column. A request that has not set
 -- app.company_id sees nothing; one that sets it sees only that company's rows.
@@ -1764,6 +2648,10 @@ begin
     execute format('create policy tenant_isolation on %I using (company_id = app.current_company()) with check (company_id = app.current_company())', t.table_name);
   end loop;
 end $$;
+
+-- Sign-in lookup: a person can always READ their own memberships, before any company is selected. This is how the
+-- API learns which companies the signed-in user may enter. Read-only; writing still needs the company context.
+create policy own_memberships on company_members for select using (user_id = app.current_user_id());
 
 -- Organization-level and two-company tables get their own policies.
 -- Inter-company transactions: visible to (and writable by) either company involved, nobody else.

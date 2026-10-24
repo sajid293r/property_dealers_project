@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveLeads } from "@/components/live/leads-live";
+
 import { Users2 as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -86,7 +89,7 @@ function followUpMeta(dateStr?: string) {
   return { label: formatDate(dateStr), tone: "bg-secondary text-secondary-foreground border-border" };
 }
 
-export default function CrmPage() {
+function DemoCrmPage() {
   const { data: leads, isLoading } = useLeads();
   const [search, setSearch] = React.useState("");
   const [source, setSource] = React.useState("all");
@@ -344,4 +347,9 @@ function LeadCard({
       </Card>
     </motion.div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveLeads /> : <DemoCrmPage />;
 }

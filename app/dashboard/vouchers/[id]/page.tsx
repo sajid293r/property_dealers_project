@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveVoucherDetail } from "@/components/live/voucher-detail";
+
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
 import Link from "next/link";
@@ -21,7 +24,7 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { Voucher } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function VoucherDetailPage() {
+function DemoVoucherDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -242,4 +245,9 @@ function ActivityRow({ label, date }: { label: string; date: string }) {
       </div>
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveVoucherDetail /> : <DemoVoucherDetailPage />;
 }

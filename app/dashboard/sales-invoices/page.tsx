@@ -1,5 +1,10 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveVoucherList, type VoucherListPreset } from "@/components/live/voucher-list";
+
+const SALES_PRESET: VoucherListPreset = { types: ["SV", "CN"], eyebrow: "Sales & CRM", title: "Sales Invoices", description: "Invoices and credit notes issued to customers", newLabel: "New invoice", icon: ReceiptText };
+
 import { ReceiptText as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -24,7 +29,7 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { SalesInvoice } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function SalesInvoicesPage() {
+function DemoSalesInvoicesPage() {
   const { data: invoices, isLoading } = useSalesInvoices();
   const { data: customers } = useCustomers();
   const queryClient = useQueryClient();
@@ -178,4 +183,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveVoucherList preset={SALES_PRESET} /> : <DemoSalesInvoicesPage />;
 }

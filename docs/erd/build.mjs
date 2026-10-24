@@ -39,6 +39,7 @@ const edges = []; // { child, parent, col, nullable, unique, draw }
 for (const tb of byName.values()) {
   const modKeys = new Set(MODULES.map((m) => m.key));
   if (!modKeys.has(tb.module)) errors.push(`${tb.name}: unknown module ${tb.module}`);
+
   for (const c of tb.columns) {
     if (!c.fk) continue;
     if (!byName.has(c.fk)) {
@@ -55,6 +56,19 @@ if (errors.length) {
 }
 
 const tablesOf = (mod) => [...byName.values()].filter((t) => t.module === mod);
+
+// Every module declares MVP or phase 2; a phase2Tables entry must name a table of that module.
+for (const m of MODULES) {
+  if (m.phase !== "mvp" && m.phase !== "phase2") errors.push(`module ${m.key}: needs phase "mvp" or "phase2" (got ${JSON.stringify(m.phase)})`);
+  for (const n of m.phase2Tables ?? []) {
+    const tb = byName.get(n);
+    if (!tb || tb.module !== m.key) errors.push(`module ${m.key}: phase2Tables names "${n}", which is not one of its tables`);
+    if (m.phase === "phase2") errors.push(`module ${m.key}: phase2Tables is pointless on a phase2 module`);
+  }
+}
+if (errors.length) { console.error(errors.join("\n")); process.exit(1); }
+const isPhase2 = (t) => { const m = MODULES.find((x) => x.key === t.module); return m.phase === "phase2" || (m.phase2Tables ?? []).includes(t.name); };
+const PHASE_LABEL = { mvp: "MVP", phase2: "Phase 2" };
 
 // Sub-diagram groups: every table of a module must appear in exactly one group.
 function groupsOf(modKey) {
@@ -145,6 +159,8 @@ function overviewMermaid() {
 const stats = {
   tables: byName.size,
   modules: MODULES.length,
+  mvpTables: [...byName.values()].filter((t) => !isPhase2(t)).length,
+  phase2Tables: [...byName.values()].filter((t) => isPhase2(t)).length,
   columns: [...byName.values()].reduce((n, t) => n + t.columns.length, 0),
   relationships: edges.filter((e) => !(e.col === "company_id")).length,
   drawn: visibleEdges.length,
@@ -155,6 +171,7 @@ let md = `# PropIQ — Entity Relationship Diagrams
 
 > Generated from [\`schema.mjs\`](schema.mjs) by \`node docs/erd/build.mjs\` — **do not edit by hand**.
 > **${stats.tables} tables · ${stats.columns} key attributes · ${stats.relationships} relationships · ${stats.modules} feature areas.**
+> **MVP: ${stats.mvpTables} tables · Phase 2 (designed and tested, frozen until the pilot says otherwise): ${stats.phase2Tables} tables.**
 > Open this file in VS Code (Markdown preview with a Mermaid extension) or on GitHub to see the diagrams.
 > For the interactive viewer open [\`viewer.html\`](viewer.html). To edit visually, import [\`erd.dbml\`](erd.dbml) into https://dbdiagram.io.
 
@@ -168,7 +185,8 @@ ${overviewMermaid()}
 
 `;
 for (const m of MODULES) {
-  md += `## ${m.title} (${tablesOf(m.key).length} tables)\n\n${m.blurb}\n\n`;
+  md += `## ${m.title} — ${PHASE_LABEL[m.phase]} (${tablesOf(m.key).length} tables)\n\n${m.blurb}\n\n`;
+  if (m.phase2Tables?.length) md += `*Phase 2 within this area: ${m.phase2Tables.map((n) => `\`${n}\``).join(", ")}.*\n\n`;
   for (const g of groupsOf(m.key)) md += `### ${g.title} (${g.tables.length})\n\n\`\`\`mermaid\n${mermaidFor(g.tables)}\n\`\`\`\n\n`;
 }
 fs.writeFileSync(new URL("ERD.md", OUT), md);
@@ -201,10 +219,12 @@ const data = {
   modules: MODULES.map((m) => ({
     ...m,
     count: tablesOf(m.key).length,
+    p2Count: tablesOf(m.key).filter(isPhase2).length,
     groups: groupsOf(m.key).map((g) => ({ title: g.title, count: g.tables.length, mermaid: mermaidFor(g.tables), names: g.tables.map((t) => t.name) })),
     tables: tablesOf(m.key).map((t) => ({
       name: t.name,
       desc: t.desc,
+      p2: isPhase2(t),
       columns: t.columns.map((c) => ({ n: c.name, t: c.type, pk: !!c.pk, fk: c.fk || null, uq: !!c.uq, nl: !!c.nullable, note: c.note })),
       refs: edges.filter((e) => e.child === t.name && e.col !== "company_id").map((e) => e.parent),
       usedBy: edges.filter((e) => e.parent === t.name && e.col !== "company_id").map((e) => e.child),
@@ -216,4 +236,5 @@ const template = fs.readFileSync(new URL("viewer.template.html", OUT), "utf8");
 fs.writeFileSync(new URL("viewer.html", OUT), template.replace("/*__DATA__*/null", JSON.stringify(data)));
 
 console.log(`OK  ${stats.tables} tables, ${stats.columns} attributes, ${stats.relationships} relationships, ${stats.drawn} drawn lines, ${stats.modules} modules`);
-for (const m of MODULES) console.log(`    ${m.title.padEnd(28)} ${tablesOf(m.key).length}`);
+for (const m of MODULES) console.log(`    ${m.title.padEnd(28)} ${tablesOf(m.key).length}  ${PHASE_LABEL[m.phase]}`);
+console.log(`    MVP tables ${stats.mvpTables} · phase-2 tables ${stats.phase2Tables}`);

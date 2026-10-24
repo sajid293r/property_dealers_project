@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/lib/providers/query-provider";
+import { AuthProvider } from "@/lib/providers/auth-provider";
 import { CompanyProvider } from "@/lib/providers/company-provider";
 import { PlanProvider } from "@/lib/providers/plan-provider";
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from "@/lib/brand";
@@ -45,16 +46,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          <CompanyProvider>
-            <QueryProvider>
-              <PlanProvider>
-                <TooltipProvider delayDuration={200}>
-                  {children}
-                  <Toaster richColors position="top-right" />
-                </TooltipProvider>
-              </PlanProvider>
-            </QueryProvider>
-          </CompanyProvider>
+          <AuthProvider>
+            <CompanyProvider>
+              <QueryProvider>
+                <PlanProvider>
+                  <TooltipProvider delayDuration={200}>
+                    {children}
+                    <Toaster richColors position="top-right" />
+                  </TooltipProvider>
+                </PlanProvider>
+              </QueryProvider>
+            </CompanyProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveCustomers } from "@/components/live/customers-live";
+
 import { Wallet as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -16,7 +19,7 @@ import { useCustomers } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export default function CustomersPage() {
+function DemoCustomersPage() {
   const { data: customers, isLoading } = useCustomers();
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
@@ -114,4 +117,9 @@ export default function CustomersPage() {
       <NewCustomerDialog open={open} onOpenChange={setOpen} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveCustomers /> : <DemoCustomersPage />;
 }

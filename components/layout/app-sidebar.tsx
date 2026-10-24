@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Building2, ChevronDown, Crown, Lock, Sparkles } from "lucide-react";
+import { Building2, ChevronDown, Crown, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,8 +21,9 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { NAV_ITEMS, PLAN_LABEL, tierMeets } from "@/lib/plan";
+import { PLAN_LABEL, navForTier } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
+import { useCompany } from "@/lib/providers/company-provider";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { CompanySwitcher } from "@/components/layout/company-switcher";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
@@ -49,9 +50,11 @@ function ActiveRail() {
 export function AppSidebar() {
   const pathname = usePathname();
   const { tier } = usePlanTier();
+  const { live } = useCompany();
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
 
-  const sections = Array.from(new Set(NAV_ITEMS.map((i) => i.section)));
+  const { visible, moreCount } = navForTier(tier, { live });
+  const sections = Array.from(new Set(visible.map((i) => i.section)));
 
   return (
     <Sidebar collapsible="icon">
@@ -87,8 +90,7 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {NAV_ITEMS.filter((i) => i.section === section).map((item) => {
-                  const locked = !tierMeets(tier, item.minTier);
+                {visible.filter((i) => i.section === section).map((item) => {
                   const childActive =
                     item.children?.some((c) => isActivePath(pathname, c.href)) ?? false;
                   const active = isActivePath(pathname, item.href) || childActive;
@@ -102,7 +104,6 @@ export function AppSidebar() {
                           aria-expanded={isOpen}
                           className={cn(
                             "relative transition-colors duration-150",
-                            locked && "opacity-55 pointer-events-none",
                             "isolate hover:translate-x-0.5",
                           )}
                           onClick={() =>
@@ -119,12 +120,7 @@ export function AppSidebar() {
                             )}
                           />
                         </SidebarMenuButton>
-                        {locked && (
-                          <SidebarMenuBadge>
-                            <Lock className="size-3" />
-                          </SidebarMenuBadge>
-                        )}
-                        {isOpen && !locked && (
+                        {isOpen && (
                           <SidebarMenuSub>
                             {item.children.map((child) => {
                               const childOneActive = isActivePath(pathname, child.href);
@@ -151,21 +147,15 @@ export function AppSidebar() {
                         isActive={active}
                         className={cn(
                           "relative transition-colors duration-150",
-                          locked && "opacity-55",
                           "isolate hover:translate-x-0.5",
                         )}
                       >
-                        <Link href={locked ? "/dashboard/settings/billing" : item.href}>
+                        <Link href={item.href}>
                           {active && <ActiveRail />}
                           <item.icon />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
-                      {locked && (
-                        <SidebarMenuBadge>
-                          <Lock className="size-3" />
-                        </SidebarMenuBadge>
-                      )}
                     </SidebarMenuItem>
                   );
                 })}
@@ -173,6 +163,23 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        {moreCount > 0 && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="More features" className="isolate hover:translate-x-0.5">
+                    <Link href="/dashboard/settings/billing">
+                      <Sparkles className="text-sidebar-primary" />
+                      <span>More features</span>
+                    </Link>
+                  </SidebarMenuButton>
+                  <SidebarMenuBadge className="text-[10px] font-semibold text-sidebar-primary">+{moreCount}</SidebarMenuBadge>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
@@ -186,7 +193,7 @@ export function AppSidebar() {
             <span className="ml-auto flex size-2 rounded-full bg-success animate-pulse-ring" />
           </div>
           <p className="relative text-[11px] leading-snug text-sidebar-foreground/65">
-            Switch tiers from Settings to preview what each plan unlocks.
+            {live ? "Your plan decides which sections are available." : "Switch tiers from Settings to preview what each plan unlocks."}
           </p>
           <Link
             href="/dashboard/settings/billing"

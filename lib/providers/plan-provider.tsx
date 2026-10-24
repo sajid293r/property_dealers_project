@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { PlanTier } from "@/lib/types";
+import { useCompany } from "@/lib/providers/company-provider";
 
 interface PlanContextValue {
   tier: PlanTier;
@@ -13,7 +14,10 @@ const PlanContext = React.createContext<PlanContextValue | null>(null);
 const STORAGE_KEY = "demo-plan-tier";
 
 export function PlanProvider({ children }: { children: React.ReactNode }) {
-  const [tier, setTierState] = React.useState<PlanTier>("premium");
+  const { company, live } = useCompany();
+  const [demoTier, setTierState] = React.useState<PlanTier>("premium");
+  // a real company's plan comes from its subscription; only the demo lets you try the plans
+  const tier: PlanTier = live ? company.plan ?? "basic" : demoTier;
 
   React.useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as PlanTier | null;
@@ -23,9 +27,10 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTier = React.useCallback((next: PlanTier) => {
+    if (live) return;
     setTierState(next);
     window.localStorage.setItem(STORAGE_KEY, next);
-  }, []);
+  }, [live]);
 
   return (
     <PlanContext.Provider value={{ tier, setTier }}>

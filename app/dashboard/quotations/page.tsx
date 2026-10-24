@@ -1,5 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveQuotations } from "@/components/live/quotations-live";
+
 import { FileStack as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -23,7 +27,7 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { Quotation, QuotationStatus } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function QuotationsPage() {
+function DemoQuotationsPage() {
   const { data: quotations, isLoading } = useQuotations();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -202,4 +206,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <Suspense fallback={null}><LiveQuotations /></Suspense> : <DemoQuotationsPage />;
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveVoucherList } from "@/components/live/voucher-list";
+
 import { ScrollText as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -47,7 +50,7 @@ import { toast } from "sonner";
 
 type TypeFilter = "all" | VoucherType;
 
-export default function VouchersPage() {
+function DemoVouchersPage() {
   const { data: vouchers, isLoading } = useVouchers();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -275,4 +278,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveVoucherList /> : <DemoVouchersPage />;
 }

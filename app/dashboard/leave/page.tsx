@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveLeave } from "@/components/live/leave-live";
+
 import { Palmtree as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -31,7 +34,7 @@ import { formatDate } from "@/lib/format";
 import type { LeaveRequest, LeaveStatus } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function LeavePage() {
+function DemoLeavePage() {
   const { data: requests, isLoading } = useLeaveRequests();
   const { data: staff } = useStaff();
   const queryClient = useQueryClient();
@@ -215,4 +218,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveLeave /> : <DemoLeavePage />;
 }

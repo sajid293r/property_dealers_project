@@ -18,6 +18,7 @@ export function formatPkr(amount: number, options?: { compact?: boolean }) {
 }
 
 export function formatDate(dateStr: string) {
+  if (!dateStr) return "—";
   return new Intl.DateTimeFormat("en-PK", {
     day: "2-digit",
     month: "short",
@@ -35,4 +36,15 @@ export function dateOffsetFromToday(days: number) {
 /** Short money label for chart axes: "4.5M", "850K" — no currency prefix so it never wraps. */
 export function formatAxis(amount: number) {
   return formatPkr(amount, { compact: true }).replace("Rs ", "");
+}
+
+/** Exact money for ledgers and vouchers: always shows the paisa, so a posted amount is never rounded on screen. */
+export function formatMoney(amount: number, options?: { compact?: boolean }) {
+  if (options?.compact) return formatPkr(amount, options);
+  return new Intl.NumberFormat("en-PK", {
+    style: "currency",
+    currency: "PKR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }

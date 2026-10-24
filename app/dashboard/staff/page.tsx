@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveStaff } from "@/components/live/staff-live";
+
 import { UserSquare2 as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -16,7 +19,7 @@ import { NewStaffDialog } from "@/components/dialogs/new-staff-dialog";
 import { useStaff } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 
-export default function StaffPage() {
+function DemoStaffPage() {
   const { data: staff, isLoading } = useStaff();
   const [open, setOpen] = React.useState(false);
 
@@ -88,4 +91,9 @@ export default function StaffPage() {
       <NewStaffDialog open={open} onOpenChange={setOpen} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveStaff /> : <DemoStaffPage />;
 }

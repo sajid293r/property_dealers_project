@@ -15,8 +15,12 @@ export interface Company {
   email: string;
   /** CSS color (oklch) used to tint the company's avatar and highlights. */
   accent: string;
-  /** True for companies created at runtime — they start with an empty workspace. */
+  /** The subscription plan of a real company (basic | moderate | premium). */
+  plan?: "basic" | "moderate" | "premium";
+  /** True for companies created at runtime. */
   custom?: boolean;
+  /** True when a runtime company was created pre-filled with sample data (otherwise it starts empty). */
+  sample?: boolean;
 }
 
 export const SEED_COMPANIES: Company[] = [

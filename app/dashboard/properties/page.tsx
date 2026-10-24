@@ -1,5 +1,7 @@
 "use client";
 
+import { isLiveCompanyId } from "@/lib/api/live";
+import Link from "next/link";
 import { Building2 as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -222,12 +224,16 @@ function UnitRow({
       <td className="py-2.5">
         <div className="flex items-center gap-3">
           <div className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
-            <Image src={unit.imageUrl} alt={unit.title} fill sizes="40px" className="object-cover" />
+            {unit.imageUrl ? (
+              <Image src={unit.imageUrl} alt={unit.title} fill sizes="40px" className="object-cover" />
+            ) : (
+              <span className="flex size-full items-center justify-center text-muted-foreground"><KpiBuilding2 className="size-4" /></span>
+            )}
           </div>
           <div>
-            <p className="font-medium leading-tight">{unit.title}</p>
+            {isLiveCompanyId(unit.id) ? <Link href={`/dashboard/properties/${unit.id}`} className="font-medium leading-tight hover:text-primary hover:underline">{unit.title}</Link> : <p className="font-medium leading-tight">{unit.title}</p>}
             <p className="font-mono text-[11px] text-muted-foreground">
-              {unit.code} · {unit.project} · Block {unit.block}
+              {unit.code} · {unit.project} · {unit.block ? `Block ${unit.block}` : "No block"}
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { getDataset } from "@/lib/mock-data/company-data";
+import { fetchProjects, fetchUnits, isLiveCompanyId } from "@/lib/api/live";
 
 // Simulated latency so loading/skeleton states feel real even with mock data.
 // This is the seam where real fetch()/server-action calls replace the in-memory reads.
@@ -8,7 +9,8 @@ function withLatency<T>(data: T, ms = 350): Promise<T> {
 }
 
 export const unitsService = {
-  list: (companyId: string) => withLatency(getDataset(companyId).units),
+  // real companies read from the API; the demo companies read the built-in sample data
+  list: (companyId: string) => (isLiveCompanyId(companyId) ? fetchUnits(companyId) : withLatency(getDataset(companyId).units)),
 };
 
 export const customersService = {
@@ -72,7 +74,7 @@ export const leaveRequestsService = {
 };
 
 export const projectsService = {
-  list: (companyId: string) => withLatency(getDataset(companyId).projects),
+  list: (companyId: string) => (isLiveCompanyId(companyId) ? fetchProjects(companyId) : withLatency(getDataset(companyId).projects)),
 };
 
 export const contractorsService = {

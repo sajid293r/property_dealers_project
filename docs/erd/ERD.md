@@ -1,7 +1,8 @@
 # PropIQ — Entity Relationship Diagrams
 
 > Generated from [`schema.mjs`](schema.mjs) by `node docs/erd/build.mjs` — **do not edit by hand**.
-> **227 tables · 1837 key attributes · 418 relationships · 15 feature areas.**
+> **231 tables · 1889 key attributes · 444 relationships · 15 feature areas.**
+> **MVP: 155 tables · Phase 2 (designed and tested, frozen until the pilot says otherwise): 76 tables.**
 > Open this file in VS Code (Markdown preview with a Mermaid extension) or on GitHub to see the diagrams.
 > For the interactive viewer open [`viewer.html`](viewer.html). To edit visually, import [`erd.dbml`](erd.dbml) into https://dbdiagram.io.
 
@@ -11,7 +12,7 @@
 
 ```mermaid
 flowchart LR
-  platform["<b>Platform & Tenancy</b><br/>13 tables"]
+  platform["<b>Platform & Tenancy</b><br/>17 tables"]
   services["<b>Platform Services</b><br/>23 tables"]
   parties["<b>Parties (Address Book)</b><br/>8 tables"]
   accounting["<b>Accounting & Ledger</b><br/>17 tables"]
@@ -29,18 +30,26 @@ flowchart LR
   services -->|1| parties
   accounting -->|4| parties
   accounting -->|2| projects
+  accounting -->|1| platform
   accounting -->|1| services
+  accounting -->|2| sales
+  accounting -->|2| invoicing
+  accounting -->|1| procurement
   projects -->|7| parties
   projects -->|1| accounting
-  projects -->|1| sales
+  projects -->|2| sales
   projects -->|1| invoicing
   projects -->|1| tax
   budget -->|6| accounting
   budget -->|1| projects
   budget -->|1| services
   budget -->|1| platform
-  tax -->|5| accounting
+  tax -->|6| accounting
   tax -->|1| parties
+  tax -->|4| sales
+  tax -->|2| invoicing
+  tax -->|1| procurement
+  tax -->|1| hr
   group -->|5| accounting
   crm -->|4| projects
   crm -->|1| accounting
@@ -48,6 +57,7 @@ flowchart LR
   sales -->|11| parties
   sales -->|1| crm
   sales -->|5| projects
+  sales -->|2| platform
   sales -->|6| accounting
   sales -->|2| invoicing
   invoicing -->|4| parties
@@ -81,7 +91,7 @@ flowchart LR
   style saas fill:#334155,stroke:#334155,color:#fff
 ```
 
-## Platform & Tenancy (13 tables)
+## Platform & Tenancy — MVP (17 tables)
 
 Groups, companies, users, roles, settings — who can do what, where.
 
@@ -119,13 +129,14 @@ erDiagram
     bool can_edit
     bool can_delete
     bool can_approve
-    text data_scope "own|team|project|company"
+    text data_scope "own|team|branch|project|company"
   }
   company_members {
     uuid company_id PK, FK
     uuid user_id PK, FK
     uuid role_id FK
     text status
+    uuid branch_id FK "the office this person works from"
   }
   invitations {
     uuid id PK
@@ -158,17 +169,21 @@ erDiagram
   organizations {
     uuid id PK "from Platform & Tenancy"
   }
+  branches {
+    uuid id PK "from Platform & Tenancy"
+  }
   organizations ||--o{ org_members : "org_id"
   users ||--o{ org_members : "user_id"
   organizations |o--o{ roles : "org_id"
   roles ||--o{ role_permissions : "role_id"
   users ||--o{ company_members : "user_id"
   roles ||--o{ company_members : "role_id"
+  branches |o--o{ company_members : "branch_id"
   roles ||--o{ invitations : "role_id"
   users ||--o{ sessions : "user_id"
 ```
 
-### Organization & settings (5)
+### Organization & settings (6)
 
 ```mermaid
 erDiagram
@@ -216,11 +231,57 @@ erDiagram
     text prefix
     bigint next_value
   }
+  state_transitions {
+    text entity "booking|installment|receipt|property|voucher"
+    text from_state
+    text to_state
+    text required_permission "module.action; null = system-driven"
+    text description "nullable"
+  }
   organizations ||--o{ companies : "org_id"
   organizations |o--o{ feature_flags : "org_id"
 ```
 
-## Platform Services (23 tables)
+### Branches & teams (3)
+
+```mermaid
+erDiagram
+  branches {
+    uuid id PK
+    uuid company_id FK
+    text code "unique per company"
+    text name
+    text city "nullable"
+    text address "nullable"
+    text phone "nullable"
+    bool is_head_office "one per company"
+    bool active
+  }
+  teams {
+    uuid id PK
+    uuid company_id FK
+    uuid branch_id FK "nullable"
+    text name
+    uuid lead_user_id FK "nullable"
+    bool active
+  }
+  team_members {
+    uuid company_id FK
+    uuid company_id PK, FK
+    uuid team_id PK, FK
+    uuid user_id PK, FK
+    bool is_lead
+  }
+  users {
+    uuid id PK "from Platform & Tenancy"
+  }
+  branches |o--o{ teams : "branch_id"
+  users |o--o{ teams : "lead_user_id"
+  teams ||--o{ team_members : "team_id"
+  users ||--o{ team_members : "user_id"
+```
+
+## Platform Services — MVP (23 tables)
 
 Audit, files, approvals, notifications, imports, webhooks — built once, used by every module.
 
@@ -483,7 +544,7 @@ erDiagram
   outbox_events ||--o{ webhook_deliveries : "event_id"
 ```
 
-## Parties (Address Book) (8 tables)
+## Parties (Address Book) — MVP (8 tables)
 
 Customers, dealers, vendors, contractors and owners as one deduplicated address book.
 
@@ -498,8 +559,9 @@ erDiagram
     text display_name
     text legal_name
     text name_ur
-    text cnic UK "encrypted at rest"
-    text cnic_hash
+    text cnic_enc "AES-GCM ciphertext made by the API; plain digits are never stored"
+    text cnic_hash UK "keyed HMAC-SHA-256; unique per company"
+    text cnic_last4 "for display and support lookups"
     text ntn
     text phone_e164
     text email
@@ -579,7 +641,7 @@ erDiagram
   parties ||--o{ blacklist_entries : "party_id"
 ```
 
-## Accounting & Ledger (17 tables)
+## Accounting & Ledger — MVP (17 tables)
 
 Chart of accounts (the structure) and vouchers (the documents) both post to one double-entry journal; combined transactions and bank reconciliation.
 
@@ -721,6 +783,7 @@ erDiagram
     uuid approved_by FK "nullable"
     text approval_note
     jsonb recurring_rule
+    uuid branch_id FK "nullable"
     uuid created_by FK
   }
   voucher_lines {
@@ -762,8 +825,13 @@ erDiagram
     uuid id PK
     uuid company_id FK
     uuid combined_txn_id FK
-    text item_type "receipt|voucher|bill_payment|invoice_settlement|cheque"
-    uuid ref_id "the document it points to"
+    text item_type "receipt|voucher|invoice_settlement (bill_payment, cheque join with their tables)"
+    uuid receipt_id FK "exactly one of these six is set, matching item_type"
+    uuid voucher_id FK "nullable"
+    uuid sales_invoice_id FK "nullable"
+    uuid service_invoice_id FK "nullable"
+    uuid bill_payment_id FK "nullable"
+    uuid cheque_id FK "nullable"
     text direction "in|out"
     numeric amount
   }
@@ -772,6 +840,9 @@ erDiagram
   }
   journal_entries {
     uuid id PK "from Accounting & Ledger"
+  }
+  branches {
+    uuid id PK "from Platform & Tenancy"
   }
   gl_accounts {
     uuid id PK "from Accounting & Ledger"
@@ -782,9 +853,25 @@ erDiagram
   cost_centers {
     uuid id PK "from Accounting & Ledger"
   }
+  receipts {
+    uuid id PK "from Sales & Collections"
+  }
+  sales_invoices {
+    uuid id PK "from Invoicing & Contracts"
+  }
+  service_invoices {
+    uuid id PK "from Invoicing & Contracts"
+  }
+  bill_payments {
+    uuid id PK "from Procurement & Stock"
+  }
+  cheques {
+    uuid id PK "from Sales & Collections"
+  }
   parties |o--o{ vouchers : "party_id"
   journal_entries |o--o{ vouchers : "journal_entry_id"
   combined_transactions |o--o{ vouchers : "combined_txn_id"
+  branches |o--o{ vouchers : "branch_id"
   vouchers ||--o{ voucher_lines : "voucher_id"
   gl_accounts ||--o{ voucher_lines : "account_id"
   projects |o--o{ voucher_lines : "project_id"
@@ -794,6 +881,12 @@ erDiagram
   journal_entries |o--o{ combined_transactions : "journal_entry_id"
   combined_transactions |o--o{ combined_transactions : "reversal_of"
   combined_transactions ||--o{ combined_transaction_items : "combined_txn_id"
+  receipts |o--o{ combined_transaction_items : "receipt_id"
+  vouchers |o--o{ combined_transaction_items : "voucher_id"
+  sales_invoices |o--o{ combined_transaction_items : "sales_invoice_id"
+  service_invoices |o--o{ combined_transaction_items : "service_invoice_id"
+  bill_payments |o--o{ combined_transaction_items : "bill_payment_id"
+  cheques |o--o{ combined_transaction_items : "cheque_id"
 ```
 
 ### Bank reconciliation (3)
@@ -844,7 +937,7 @@ erDiagram
   bank_statements ||--o{ bank_reconciliations : "statement_id"
 ```
 
-## Projects & Properties (35 tables)
+## Projects & Properties — MVP (35 tables)
 
 Schemes, land and approvals, plus a deep property model: location, size, plot/building/commercial specs, amenities, utilities, legal & ownership chain, valuation, media, listings and charges.
 
@@ -1388,19 +1481,23 @@ erDiagram
     uuid id PK
     uuid company_id FK
     uuid property_id FK
-    text from_status
+    text from_status "nullable"
     text to_status
-    uuid changed_by FK
-    text reason
+    uuid changed_by FK "nullable"
+    text reason "nullable"
+    timestamptz changed_at "append-only; written by trigger, status is derived from holds/bookings"
   }
   property_holds {
     uuid id PK
     uuid company_id FK
     uuid property_id FK
-    uuid held_for_party_id FK "nullable"
-    uuid held_by FK
+    uuid held_for_party_id FK "null = held by staff, no named customer"
+    uuid held_by FK "nullable"
+    timestamptz held_at
     timestamptz expires_at
-    timestamptz released_at "nullable"
+    timestamptz released_at "one un-released hold per property"
+    text release_reason "converted|cancelled|expired|manual"
+    uuid converted_booking_id FK "nullable"
   }
   properties {
     uuid id PK "from Projects & Properties"
@@ -1417,6 +1514,9 @@ erDiagram
   parties {
     uuid id PK "from Parties (Address Book)"
   }
+  bookings {
+    uuid id PK "from Sales & Collections"
+  }
   properties ||--o{ property_media : "property_id"
   documents ||--o{ property_media : "file_id"
   properties ||--o{ property_listings : "property_id"
@@ -1430,9 +1530,10 @@ erDiagram
   properties ||--o{ property_status_history : "property_id"
   properties ||--o{ property_holds : "property_id"
   parties |o--o{ property_holds : "held_for_party_id"
+  bookings |o--o{ property_holds : "converted_booking_id"
 ```
 
-## CRM & Leads (9 tables)
+## CRM & Leads — MVP (9 tables)
 
 Leads, activities, site visits, campaigns, assignment and WhatsApp conversations.
 
@@ -1566,7 +1667,7 @@ erDiagram
   conversations ||--o{ messages : "conversation_id"
 ```
 
-## Sales & Collections (22 tables)
+## Sales & Collections — MVP (22 tables)
 
 Quotation → booking → installments → receipts, cheques, transfers, cancellations, commissions.
 
@@ -1630,6 +1731,8 @@ erDiagram
     text payment_type "cash|installment"
     text status "pending|confirmed|completed|cancelled"
     uuid approved_by FK "nullable"
+    uuid branch_id FK "which office made the sale"
+    text idempotency_key "retry-safe creation; unique per company when set"
   }
   booking_parties {
     uuid company_id FK
@@ -1659,6 +1762,9 @@ erDiagram
   projects {
     uuid id PK "from Projects & Properties"
   }
+  branches {
+    uuid id PK "from Platform & Tenancy"
+  }
   parties |o--o{ quotations : "customer_id"
   leads |o--o{ quotations : "lead_id"
   properties ||--o{ quotations : "property_id"
@@ -1673,6 +1779,7 @@ erDiagram
   parties |o--o{ bookings : "dealer_id"
   quotations |o--o{ bookings : "quotation_id"
   payment_plan_templates |o--o{ bookings : "plan_template_id"
+  branches |o--o{ bookings : "branch_id"
   bookings ||--o{ booking_parties : "booking_id"
   parties ||--o{ booking_parties : "party_id"
   bookings ||--o{ booking_nominees : "booking_id"
@@ -1763,6 +1870,10 @@ erDiagram
     text status "posted|void"
     uuid combined_txn_id FK "nullable"
     uuid journal_entry_id FK "nullable"
+    uuid branch_id FK "which office took the money"
+    undefined voided_at "nullable"
+    uuid voided_by FK "nullable"
+    text void_reason "required to void; allocations + journal entry are reversed, never deleted"
   }
   receipt_tenders {
     uuid id PK
@@ -1783,7 +1894,8 @@ erDiagram
     uuid penalty_id FK "nullable"
     uuid sales_invoice_id FK "nullable"
     uuid service_invoice_id FK "nullable"
-    numeric amount "exactly one target is set"
+    numeric amount "exactly one target is set; negative = reversal of an earlier row"
+    uuid reverses_id FK, UK "append-only: a void adds reversal rows instead of editing"
   }
   parties {
     uuid id PK "from Parties (Address Book)"
@@ -1799,6 +1911,12 @@ erDiagram
   }
   journal_entries {
     uuid id PK "from Accounting & Ledger"
+  }
+  branches {
+    uuid id PK "from Platform & Tenancy"
+  }
+  users {
+    uuid id PK "from Platform & Tenancy"
   }
   cheques {
     uuid id PK "from Sales & Collections"
@@ -1820,6 +1938,8 @@ erDiagram
   gl_accounts |o--o{ receipts : "deposit_account_id"
   combined_transactions |o--o{ receipts : "combined_txn_id"
   journal_entries |o--o{ receipts : "journal_entry_id"
+  branches |o--o{ receipts : "branch_id"
+  users |o--o{ receipts : "voided_by"
   receipts ||--o{ receipt_tenders : "receipt_id"
   gl_accounts ||--o{ receipt_tenders : "deposit_account_id"
   cheques |o--o{ receipt_tenders : "cheque_id"
@@ -1828,6 +1948,7 @@ erDiagram
   penalty_charges |o--o{ receipt_allocations : "penalty_id"
   sales_invoices |o--o{ receipt_allocations : "sales_invoice_id"
   service_invoices |o--o{ receipt_allocations : "service_invoice_id"
+  receipt_allocations |o--o| receipt_allocations : "reverses_id"
 ```
 
 ### Cheques, commissions & after-sales (7)
@@ -1948,7 +2069,7 @@ erDiagram
   vouchers |o--o{ commissions : "payment_voucher_id"
 ```
 
-## Budgeting & Control (13 tables)
+## Budgeting & Control — Phase 2 (13 tables)
 
 Plan spend per project and per year, phase it by month, approve and lock it, change it only through revisions, track commitments, and stop or warn on overruns.
 
@@ -2086,7 +2207,7 @@ erDiagram
     uuid company_id FK
     uuid budget_line_id FK
     text source_type "purchase_order|construction_contract|ipc|vendor_bill|payroll|manual"
-    uuid source_id "nullable"
+    uuid source_id "required unless source_type = manual; typed FKs added with the procurement tables"
     numeric amount
     text status "open|invoiced|released|cancelled"
     date committed_on
@@ -2165,9 +2286,11 @@ erDiagram
   budget_lines ||--o{ budget_forecasts : "budget_line_id"
 ```
 
-## Tax Management (11 tables)
+## Tax Management — MVP (11 tables)
 
 Admin-configurable tax codes, effective-dated rates, bundles, assignment rules, exemptions, returns and payments.
+
+*Phase 2 within this area: `tax_returns`, `tax_return_lines`, `tax_payments`.*
 
 ### Tax setup (codes, rates, bundles, rules) (7)
 
@@ -2277,8 +2400,16 @@ erDiagram
   document_taxes {
     uuid id PK
     uuid company_id FK
-    text doc_type
-    uuid doc_id
+    text doc_type "booking|receipt|sales_invoice|service_invoice|voucher (+ vendor_bill|payroll|transfer|commission in phase 2)"
+    uuid booking_id FK "exactly one of these is set, matching doc_type"
+    uuid receipt_id FK "nullable"
+    uuid sales_invoice_id FK "nullable"
+    uuid service_invoice_id FK "nullable"
+    uuid voucher_id FK "nullable"
+    uuid vendor_bill_id FK "nullable"
+    uuid payroll_run_id FK "nullable"
+    uuid transfer_id FK "nullable"
+    uuid commission_id FK "nullable"
     uuid tax_code_id FK
     uuid tax_rate_id FK "nullable"
     numeric base_amount
@@ -2319,6 +2450,33 @@ erDiagram
     text challan_no
     uuid voucher_id FK "nullable"
   }
+  bookings {
+    uuid id PK "from Sales & Collections"
+  }
+  receipts {
+    uuid id PK "from Sales & Collections"
+  }
+  sales_invoices {
+    uuid id PK "from Invoicing & Contracts"
+  }
+  service_invoices {
+    uuid id PK "from Invoicing & Contracts"
+  }
+  vouchers {
+    uuid id PK "from Accounting & Ledger"
+  }
+  vendor_bills {
+    uuid id PK "from Procurement & Stock"
+  }
+  payroll_runs {
+    uuid id PK "from HR, Attendance & Payroll"
+  }
+  property_transfers {
+    uuid id PK "from Sales & Collections"
+  }
+  commissions {
+    uuid id PK "from Sales & Collections"
+  }
   tax_codes {
     uuid id PK "from Tax Management"
   }
@@ -2334,9 +2492,15 @@ erDiagram
   documents {
     uuid id PK "from Platform Services"
   }
-  vouchers {
-    uuid id PK "from Accounting & Ledger"
-  }
+  bookings |o--o{ document_taxes : "booking_id"
+  receipts |o--o{ document_taxes : "receipt_id"
+  sales_invoices |o--o{ document_taxes : "sales_invoice_id"
+  service_invoices |o--o{ document_taxes : "service_invoice_id"
+  vouchers |o--o{ document_taxes : "voucher_id"
+  vendor_bills |o--o{ document_taxes : "vendor_bill_id"
+  payroll_runs |o--o{ document_taxes : "payroll_run_id"
+  property_transfers |o--o{ document_taxes : "transfer_id"
+  commissions |o--o{ document_taxes : "commission_id"
   tax_codes ||--o{ document_taxes : "tax_code_id"
   tax_rates |o--o{ document_taxes : "tax_rate_id"
   journal_entries |o--o{ document_taxes : "journal_entry_id"
@@ -2349,7 +2513,7 @@ erDiagram
   vouchers |o--o{ tax_payments : "voucher_id"
 ```
 
-## Invoicing & Contracts (8 tables)
+## Invoicing & Contracts — MVP (8 tables)
 
 Sales and service invoices, recurring billing, credit notes, agreement templates.
 
@@ -2481,7 +2645,7 @@ erDiagram
   parties ||--o{ contract_parties : "party_id"
 ```
 
-## Procurement & Stock (13 tables)
+## Procurement & Stock — Phase 2 (13 tables)
 
 Vendors' POs, goods receipts, bills, budgets, petty cash and material stock.
 
@@ -2685,7 +2849,7 @@ erDiagram
   warehouses ||--o{ stock_movements : "warehouse_id"
 ```
 
-## Construction & Costing (12 tables)
+## Construction & Costing — Phase 2 (12 tables)
 
 Contracts, BOQ, running bills (IPC), retention, variations, progress and guarantees.
 
@@ -2862,7 +3026,7 @@ erDiagram
   stock_movements ||--o{ material_issues : "stock_movement_id"
 ```
 
-## HR, Attendance & Payroll (21 tables)
+## HR, Attendance & Payroll — Phase 2 (21 tables)
 
 Employees, salary structure, attendance, leave, payroll runs, loans, targets.
 
@@ -3133,7 +3297,7 @@ erDiagram
   employees ||--o{ sales_targets : "employee_id"
 ```
 
-## Multi-Company & Consolidation (10 tables)
+## Multi-Company & Consolidation — Phase 2 (10 tables)
 
 Inter-company transactions, group chart of accounts, eliminations and consolidated statements.
 
@@ -3274,9 +3438,11 @@ erDiagram
   group_accounts ||--o{ elimination_lines : "group_account_id"
 ```
 
-## Reporting & SaaS Billing (12 tables)
+## Reporting & SaaS Billing — MVP (12 tables)
 
 KPI snapshots, saved/scheduled reports, plans, subscriptions and usage.
+
+*Phase 2 within this area: `usage_meters`, `dunning_events`, `coupons`, `subscription_items`.*
 
 ### Reporting (3)
 

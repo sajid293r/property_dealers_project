@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveAccounts } from "@/components/live/accounts-live";
+
 import { Landmark as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { AnimatedNumber } from "@/components/animated-number";
@@ -18,7 +21,7 @@ import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export default function AccountsPage() {
+function DemoAccountsPage() {
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const { data: transactions, isLoading: txLoading } = useTransactions();
   const [transferOpen, setTransferOpen] = React.useState(false);
@@ -208,4 +211,9 @@ export default function AccountsPage() {
       <TransferPaymentDialog open={transferOpen} onOpenChange={setTransferOpen} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveAccounts /> : <DemoAccountsPage />;
 }

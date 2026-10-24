@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Bell, ChevronDown, Search, Wallet } from "lucide-react";
+import { Bell, ChevronDown, LogIn, LogOut, Search, UserRound, Wallet } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { CompanyAvatar } from "@/components/company-avatar";
 import { useCompany } from "@/lib/providers/company-provider";
+import { useAuth } from "@/lib/providers/auth-provider";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +28,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function AppTopbar() {
   const { data: accounts, isLoading } = useAccounts();
   const totalCash = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
-  const { company } = useCompany();
+  const { company, live } = useCompany();
+  const { email, signOut, liveAvailable } = useAuth();
+  const router = useRouter();
+  const initials = live && email ? email.slice(0, 2).toUpperCase() : "OA";
   const [paletteOpen, setPaletteOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -49,7 +55,15 @@ export function AppTopbar() {
         <span className="max-w-40 truncate text-sm font-medium">{company.shortName}</span>
       </div>
 
-      <Popover>
+      <span
+        className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold sm:inline-flex ${live ? "border-success/40 bg-success/10 text-success" : "border-gold/40 bg-gold/10 text-gold"}`}
+        title={live ? "Real company data" : "Sample data: nothing here is real"}
+      >
+        <span className={`size-1.5 rounded-full ${live ? "bg-success" : "bg-gold"}`} />
+        {live ? "Live" : "Demo"}
+      </span>
+
+      {!live && (<Popover>
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
@@ -84,7 +98,7 @@ export function AppTopbar() {
             ))}
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover>)}
 
       <button
         type="button"
@@ -107,12 +121,14 @@ export function AppTopbar() {
         >
           <Search className="size-4" />
         </Button>
-        <div className="hidden md:block">
-          <PlanSwitcher />
-        </div>
+        {!live && (
+          <div className="hidden md:block">
+            <PlanSwitcher />
+          </div>
+        )}
         <ThemeToggle />
 
-        <Popover>
+        {!live && (<Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative size-8 hover:bg-secondary">
               <Bell className="size-4" />
@@ -142,17 +158,44 @@ export function AppTopbar() {
               />
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover>)}
 
         <Separator orientation="vertical" className="h-6" />
 
-        <div className="relative">
-          <Avatar className="size-8 ring-2 ring-gold/40 transition-all hover:ring-gold">
-            <AvatarImage src="https://i.pravatar.cc/64?u=owner" />
-            <AvatarFallback>OA</AvatarFallback>
-          </Avatar>
-          <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="relative rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Account menu">
+              <Avatar className="size-8 ring-2 ring-gold/40 transition-all hover:ring-gold">
+                {!live && <AvatarImage src="https://i.pravatar.cc/64?u=owner" />}
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-background bg-success" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel className="font-normal">
+              <p className="truncate text-sm font-medium">{live ? email : "Demo workspace"}</p>
+              <p className="text-xs text-muted-foreground">{live ? "Signed in" : "Sample data only"}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {live || !liveAvailable ? (
+              !liveAvailable ? null : (
+                <>
+                <DropdownMenuItem onSelect={() => router.push("/dashboard/account")} className="gap-2">
+                  <UserRound className="size-4" /> My account
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void signOut()} className="gap-2">
+                  <LogOut className="size-4" /> Sign out
+                </DropdownMenuItem>
+                </>
+              )
+            ) : (
+              <DropdownMenuItem onSelect={() => { void signOut().then(() => router.replace("/login")); }} className="gap-2">
+                <LogIn className="size-4" /> Sign in to your account
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

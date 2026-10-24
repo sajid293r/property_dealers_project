@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveBudgets } from "@/components/live/budgets-live";
+
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
@@ -60,7 +63,7 @@ import { formatPkr, formatAxis } from "@/lib/format";
 import type { Budget, BudgetLine } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export default function BudgetsPage() {
+function DemoBudgetsPage() {
   const { data: budgets, isLoading } = useBudgets();
   const { data: lines } = useBudgetLines();
   const { data: projects } = useProjects();
@@ -535,4 +538,9 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
       </div>
     </SpotlightCard>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveBudgets /> : <DemoBudgetsPage />;
 }

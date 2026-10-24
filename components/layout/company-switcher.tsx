@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 /** Sidebar control for picking which company's workspace is open. */
 export function CompanySwitcher() {
-  const { companies, company, setCompanyId } = useCompany();
+  const { companies, company, setCompanyId, live } = useCompany();
   const { state, isMobile } = useSidebar();
   const [addOpen, setAddOpen] = React.useState(false);
   const collapsed = state === "collapsed" && !isMobile;
@@ -43,7 +43,7 @@ export function CompanySwitcher() {
                     {company.shortName}
                   </span>
                   <span className="block truncate text-[11px] text-sidebar-foreground/55">
-                    {company.city} · {companies.length} companies
+                    {live ? "" : `${company.city} · `}{companies.length} {companies.length === 1 ? "company" : "companies"}
                   </span>
                 </span>
                 <ChevronsUpDown className="size-4 shrink-0 text-sidebar-foreground/50 transition-colors group-hover:text-sidebar-primary" />
@@ -67,28 +67,32 @@ export function CompanySwitcher() {
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-sm font-medium">{c.name}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {c.city} · {c.industry}
+                    {live ? c.industry : `${c.city} · ${c.industry}`}
                   </span>
                 </span>
                 {active && <Check className="size-4 text-primary" />}
               </DropdownMenuItem>
             );
           })}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="gap-2.5 rounded-lg p-2">
-            <Link href="/dashboard/companies">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
-                <LayoutGrid className="size-4" />
-              </span>
-              <span className="text-sm font-medium">Group overview</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setAddOpen(true)} className="gap-2.5 rounded-lg p-2">
-            <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground">
-              <Plus className="size-4" />
-            </span>
-            <span className="text-sm font-medium">Add a company</span>
-          </DropdownMenuItem>
+          {!live && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="gap-2.5 rounded-lg p-2">
+                <Link href="/dashboard/companies">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                    <LayoutGrid className="size-4" />
+                  </span>
+                  <span className="text-sm font-medium">Group overview</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setAddOpen(true)} className="gap-2.5 rounded-lg p-2">
+                <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground">
+                  <Plus className="size-4" />
+                </span>
+                <span className="text-sm font-medium">Add a company</span>
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <NewCompanyDialog open={addOpen} onOpenChange={setAddOpen} />

@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveCheques } from "@/components/live/cheques-live";
+
 import { CalendarClock as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -24,7 +27,7 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { ChequeStatus, PostDatedCheque } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function ChequesPage() {
+function DemoChequesPage() {
   const { data: cheques, isLoading } = usePostDatedCheques();
   const { data: customers } = useCustomers();
   const queryClient = useQueryClient();
@@ -192,4 +195,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveCheques /> : <DemoChequesPage />;
 }

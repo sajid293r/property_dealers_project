@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveReports } from "@/components/live/reports-live";
+
 import { FileText as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -29,7 +32,7 @@ import { useDeals, useUnits, useExpenses } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
 import { toast } from "sonner";
 
-export default function ReportsPage() {
+function DemoReportsPage() {
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
@@ -296,4 +299,9 @@ function ExpensesTab() {
       </Card>
     </TabSection>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveReports /> : <DemoReportsPage />;
 }

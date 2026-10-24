@@ -3,6 +3,7 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useCompany } from "@/lib/providers/company-provider";
+import { useAuth } from "@/lib/providers/auth-provider";
 
 function createClient() {
   return new QueryClient({
@@ -32,6 +33,11 @@ function getClient(companyId: string) {
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const { company } = useCompany();
+  const { status } = useAuth();
+  // Real people's data must never survive a sign-out (the next person on this browser would see it).
+  React.useEffect(() => {
+    if (status === "signedOut") clientsByCompany.clear();
+  }, [status]);
   const client = getClient(company.id);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

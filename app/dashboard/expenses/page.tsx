@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveExpenses } from "@/components/live/expenses-live";
+
 import { Receipt as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -16,7 +19,7 @@ import { useExpenses } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export default function ExpensesPage() {
+function DemoExpensesPage() {
   const { data: expenses, isLoading } = useExpenses();
   const unpaidTotal = expenses?.filter((e) => e.status === "unpaid").reduce((s, e) => s + e.amount, 0) ?? 0;
   const [open, setOpen] = React.useState(false);
@@ -103,4 +106,9 @@ export default function ExpensesPage() {
       <NewExpenseDialog open={open} onOpenChange={setOpen} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveExpenses /> : <DemoExpensesPage />;
 }

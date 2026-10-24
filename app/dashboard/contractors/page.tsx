@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveContractors } from "@/components/live/contractors-live";
+
 import { HardHat as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -15,7 +18,7 @@ import { useContractors, useConstructionContracts } from "@/lib/hooks/use-data";
 import { CONTRACTOR_TRADE_ICON } from "@/lib/projects";
 import { formatPkr } from "@/lib/format";
 
-export default function ContractorsPage() {
+function DemoContractorsPage() {
   const { data: contractors, isLoading } = useContractors();
   const { data: contracts } = useConstructionContracts();
   const [search, setSearch] = React.useState("");
@@ -157,4 +160,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveContractors /> : <DemoContractorsPage />;
 }

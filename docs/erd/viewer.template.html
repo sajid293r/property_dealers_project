@@ -49,6 +49,11 @@
   nav.tabs button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgb(0 0 0 / .08); }
   nav.tabs button[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
   nav.tabs i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .phase { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 1px 7px; line-height: 1.5; border: 1px solid transparent; }
+  .phase.mvp { background: color-mix(in oklab, var(--brand) 14%, transparent); color: var(--brand); border-color: color-mix(in oklab, var(--brand) 35%, transparent); }
+  .phase.phase2 { background: color-mix(in oklab, var(--gold) 20%, transparent); color: var(--ink); border-color: color-mix(in oklab, var(--gold) 60%, transparent); }
+  nav.tabs button[aria-selected="true"] .phase { background: rgb(255 255 255 / .18); color: inherit; border-color: rgb(255 255 255 / .35); }
+  .card h3 .phase { margin-left: auto; }
   nav.tabs em { font-style: normal; opacity: .7; font-size: 12px; font-variant-numeric: tabular-nums; }
   main { max-width: 1600px; margin: 0 auto; padding: 0 16px 40px; }
   .layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
@@ -145,13 +150,14 @@ DATA.modules.forEach((m) => m.tables.forEach((t) => tableIndex.set(t.name, { mod
 
 // ─────────────────────────────────────────── chips + tabs
 $("#chips").append(
-  ...[["tables", DATA.stats.tables], ["attributes", DATA.stats.columns], ["relationships", DATA.stats.relationships], ["feature areas", DATA.stats.modules]]
+  ...[["tables", DATA.stats.tables], ["MVP tables", DATA.stats.mvpTables], ["phase-2 tables (frozen)", DATA.stats.phase2Tables], ["relationships", DATA.stats.relationships], ["feature areas", DATA.stats.modules]]
     .map(([l, n]) => el("div", { class: "chip" }, el("b", {}, String(n)), el("span", {}, l))),
 );
-const tabs = [{ key: "overview", title: "Overview", color: "var(--gold)" }, ...DATA.modules.map((m) => ({ key: m.key, title: m.title, color: m.color, count: m.count }))];
+const phaseBadge = (phase, text) => el("span", { class: "phase " + phase, title: phase === "mvp" ? "Built for the first release" : "Designed and tested, but frozen until the pilot says otherwise" }, text || (phase === "mvp" ? "MVP" : "Phase 2"));
+const tabs = [{ key: "overview", title: "Overview", color: "var(--gold)" }, ...DATA.modules.map((m) => ({ key: m.key, title: m.title, color: m.color, count: m.count, phase: m.phase }))];
 const tabsEl = $("#tabs");
 tabs.forEach((t) => tabsEl.append(el("button", { role: "tab", id: "tab-" + t.key, "data-key": t.key, onclick: () => select(t.key) },
-  el("i", { style: `background:${t.color}` }), t.title, t.count ? el("em", {}, String(t.count)) : "")));
+  el("i", { style: `background:${t.color}` }), t.title, t.count ? el("em", {}, String(t.count)) : "", t.phase ? phaseBadge(t.phase) : "")));
 
 // ─────────────────────────────────────────── mermaid setup (re-initialised on theme change)
 const isDark = () => (document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
@@ -261,7 +267,7 @@ function tableList(mod, names) {
   const list = el("div", { class: "list" });
   mod.tables.filter((t) => names.includes(t.name)).forEach((t) => {
     const row = el("div", { class: "tbl", id: "row-" + t.name },
-      el("button", { onclick: () => { row.classList.toggle("open"); focusTable(t.name, false); } }, el("code", {}, t.name), el("span", { class: "n" }, t.columns.length + " attrs")),
+      el("button", { onclick: () => { row.classList.toggle("open"); focusTable(t.name, false); } }, el("code", {}, t.name), t.p2 ? phaseBadge("phase2", "P2") : "", el("span", { class: "n" }, t.columns.length + " attrs")),
       el("div", { class: "desc" }, t.desc),
       el("div", { class: "cols" },
         el("table", {}, ...t.columns.map((c) => el("tr", {},
@@ -287,7 +293,7 @@ function select(key, after, gi = 0) {
     ? el("div", { class: "groups", role: "group", "aria-label": "Diagrams in " + mod.title },
         ...mod.groups.map((g, i) => el("button", { "aria-pressed": String(i === gi), onclick: () => select(key, null, i) }, g.title, el("em", {}, String(g.count)))))
     : "";
-  const parts = diagramPanel(mod.title + " — " + group.title, mod.blurb + " (" + mod.count + " tables in this area)", bar);
+  const parts = diagramPanel(mod.title + " — " + group.title, (mod.phase === "mvp" ? "MVP. " : "Phase 2 (frozen). ") + mod.blurb + " (" + mod.count + " tables in this area" + (mod.p2Count && mod.phase === "mvp" ? ", " + mod.p2Count + " of them phase 2" : "") + ")", bar);
   const side = el("aside", { class: "panel side" }, el("div", { class: "panel-head" }, el("div", {}, el("h2", {}, "Tables in this diagram"), el("p", {}, "Click one to see its attributes and jump to it."))), tableList(mod, group.names));
   main.append(el("div", { class: "layout" }, parts.panel, side));
   mountDiagram(parts, key + ":" + gi, group.mermaid).then((ok) => { if (ok && after) after(); });
@@ -297,7 +303,7 @@ async function renderOverview() {
   const parts = diagramPanel("How the feature areas connect", "Numbers on the arrows = foreign-key links between areas (shared basics like users/companies omitted).");
   main.append(parts.panel);
   const cards = el("div", { class: "cards" }, ...DATA.modules.map((m) => el("button", { class: "card", onclick: () => select(m.key) },
-    el("h3", {}, el("i", { style: `background:${m.color}` }), m.title, el("b", {}, m.count + " tables")),
+    el("h3", {}, el("i", { style: `background:${m.color}` }), m.title, phaseBadge(m.phase), el("b", {}, m.count + " tables" + (m.p2Count && m.phase === "mvp" ? " · " + m.p2Count + " phase 2" : ""))),
     el("p", {}, m.blurb),
     el("div", { class: "names" }, ...m.tables.slice(0, 9).map((t) => el("span", {}, t.name)), m.tables.length > 9 ? el("span", {}, "+" + (m.tables.length - 9) + " more") : ""))));
   main.append(el("section", { class: "panel", style: "margin-top:16px" }, el("div", { class: "panel-head" }, el("div", {}, el("h2", {}, "All feature areas"), el("p", {}, "Open one to see its tables, attributes and relationships."))), cards));

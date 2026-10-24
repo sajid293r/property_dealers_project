@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useUnits } from "@/lib/hooks/use-data";
+import { useProjects, usePropertyTypes, useUnits } from "@/lib/hooks/use-data";
+import { useCompany } from "@/lib/providers/company-provider";
+import { createProperty } from "@/lib/api/live";
 import type { Unit, UnitPaymentType } from "@/lib/types";
 import { toast } from "sonner";
 
-const CATEGORIES = ["Residential Plot", "Commercial Plot", "House", "Apartment"] as const;
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80";
 
 export function NewUnitDialog({
@@ -27,9 +28,20 @@ export function NewUnitDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const { company, live } = useCompany();
   const { data: units } = useUnits();
+  const { data: realProjects } = useProjects();
+  const { data: types } = usePropertyTypes();
 
-  const projects = React.useMemo(() => Array.from(new Set((units ?? []).map((u) => u.project))), [units]);
+  // real company: choose from its projects (by id); demo: the project names already on the sample properties
+  const projectOptions = React.useMemo(
+    () =>
+      live
+        ? (realProjects ?? []).map((p) => ({ value: p.id, label: p.name }))
+        : Array.from(new Set((units ?? []).map((u) => u.project))).map((name) => ({ value: name, label: name })),
+    [live, realProjects, units],
+  );
+  const categoryOptions = React.useMemo(() => (types ?? []).map((t) => ({ value: t.id, label: t.name })), [types]);
 
   const [title, setTitle] = React.useState("");
   const [project, setProject] = React.useState("");
@@ -54,7 +66,25 @@ export function NewUnitDialog({
     onOpenChange(next);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (live) {
+      const typeName = categoryOptions.find((c) => c.value === category)?.label ?? "Property";
+      const created = await createProperty(company.id, {
+        title: title.trim() || `${typeName}${block.trim() ? `, Block ${block.trim()}` : ""}`,
+        typeId: category,
+        projectId: project,
+        block: block.trim() || undefined,
+        listPrice: price,
+        size: { value: Number(sizeMarla), unit: "marla" },
+        installmentsAvailable: paymentType === "installment",
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["units"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
+      toast.success(`Property ${created.code} added`, { description: `${created.title} · ${created.project}` });
+      return;
+    }
     const code = `PRP-${Math.floor(1000 + Math.random() * 8999)}`;
     const newUnit: Unit = {
       id: `unit-${Date.now()}`,
@@ -90,13 +120,19 @@ export function NewUnitDialog({
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Corner plot, Block A" />
       </Field>
 
+      {live && projectOptions.length === 0 && (
+        <p className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-sm">
+          Create a project first (Projects → New Project), then add properties to it.
+        </p>
+      )}
+
       <FieldRow>
         <Field label="Project">
           <Select value={project} onValueChange={setProject}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
             <SelectContent>
-              {projects.map((p) => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
+              {projectOptions.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -105,8 +141,8 @@ export function NewUnitDialog({
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Select category" /></SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+              {categoryOptions.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -115,7 +151,7 @@ export function NewUnitDialog({
 
       <FieldRow>
         <Field label="Block">
-          <Input value={block} onChange={(e) => setBlock(e.target.value)} placeholder="A" maxLength={2} />
+          <Input value={block} onChange={(e) => setBlock(e.target.value)} placeholder="A" maxLength={live ? 60 : 2} />
         </Field>
         <Field label="Size (Marla)">
           <Input type="number" value={sizeMarla} onChange={(e) => setSizeMarla(e.target.value)} placeholder="10" />

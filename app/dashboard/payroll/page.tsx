@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LivePayroll } from "@/components/live/payroll-live";
+
 import { Banknote as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -44,7 +47,7 @@ import type { Account, PayrollAdjustment, StaffMember, Transaction } from "@/lib
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export default function PayrollPage() {
+function DemoPayrollPage() {
   const { data: staff, isLoading } = useStaff();
   const { data: accounts } = useAccounts();
   const { data: adjustments, isLoading: adjustmentsLoading } = usePayrollAdjustments();
@@ -404,4 +407,9 @@ export default function PayrollPage() {
       <NewPayrollAdjustmentDialog open={adjustmentOpen} onOpenChange={setAdjustmentOpen} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LivePayroll /> : <DemoPayrollPage />;
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveServiceInvoices } from "@/components/live/service-invoices-live";
+
 import { Wrench as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -25,7 +28,7 @@ import { formatPkr } from "@/lib/format";
 import type { ServiceInvoice } from "@/lib/types";
 import { toast } from "sonner";
 
-export default function ServiceInvoicesPage() {
+function DemoServiceInvoicesPage() {
   const { data: invoices, isLoading } = useServiceInvoices();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -184,4 +187,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveServiceInvoices /> : <DemoServiceInvoicesPage />;
 }

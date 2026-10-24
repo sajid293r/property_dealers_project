@@ -68,7 +68,7 @@ Table role_permissions {
   can_edit boolean [not null]
   can_delete boolean [not null]
   can_approve boolean [not null]
-  data_scope text [not null, note: 'own|team|project|company']
+  data_scope text [not null, note: 'own|team|branch|project|company']
 
   indexes {
     (role_id, module) [pk]
@@ -76,11 +76,57 @@ Table role_permissions {
   Note: 'Module x action grid + data scope'
 }
 
+Table branches {
+  id uuid [pk]
+  company_id uuid [not null]
+  code text [not null, note: 'unique per company']
+  name text [not null]
+  city text
+  address text
+  phone text
+  is_head_office boolean [not null, note: 'one per company']
+  active boolean [not null]
+  Note: 'Offices of a company (head office, city branches)'
+}
+
+Table teams {
+  id uuid [pk]
+  company_id uuid [not null]
+  branch_id uuid
+  name text [not null]
+  lead_user_id uuid
+  active boolean [not null]
+  Note: 'Sales / recovery teams, optionally inside one branch'
+}
+
+Table team_members {
+  company_id uuid [not null]
+  company_id uuid
+  team_id uuid
+  user_id uuid
+  is_lead boolean [not null]
+
+  indexes {
+    (company_id, team_id, user_id) [pk]
+  }
+  Note: 'Who is on which team (only members of the company)'
+}
+
+Table state_transitions {
+  entity text [not null, note: 'booking|installment|receipt|property|voucher']
+  from_state text [not null]
+  to_state text [not null]
+  required_permission text [note: 'module.action; null = system-driven']
+  description text
+  Note: 'Which status changes are legal for each record type, and the permission each needs'
+}
+
 Table company_members {
   company_id uuid
   user_id uuid
   role_id uuid [not null]
   status text [not null]
+  branch_id uuid [note: 'the office this person works from']
 
   indexes {
     (company_id, user_id) [pk]
@@ -421,8 +467,9 @@ Table parties {
   display_name text [not null]
   legal_name text [not null]
   name_ur text [not null]
-  cnic text [unique, not null, note: 'encrypted at rest']
-  cnic_hash text [not null]
+  cnic_enc text [note: 'AES-GCM ciphertext made by the API; plain digits are never stored']
+  cnic_hash text [unique, note: 'keyed HMAC-SHA-256; unique per company']
+  cnic_last4 text [note: 'for display and support lookups']
   ntn text [not null]
   phone_e164 text [not null]
   email text [not null]
@@ -609,6 +656,7 @@ Table vouchers {
   approved_by uuid
   approval_note text [not null]
   recurring_rule jsonb [not null]
+  branch_id uuid
   created_by uuid [not null]
   Note: 'CPV / CRV / BPV / BRV / JV documents'
 }
@@ -704,8 +752,13 @@ Table combined_transaction_items {
   id uuid [pk]
   company_id uuid [not null]
   combined_txn_id uuid [not null]
-  item_type text [not null, note: 'receipt|voucher|bill_payment|invoice_settlement|cheque']
-  ref_id uuid [not null, note: 'the document it points to']
+  item_type text [not null, note: 'receipt|voucher|invoice_settlement (bill_payment, cheque join with their tables)']
+  receipt_id uuid [note: 'exactly one of these six is set, matching item_type']
+  voucher_id uuid
+  sales_invoice_id uuid
+  service_invoice_id uuid
+  bill_payment_id uuid
+  cheque_id uuid
   direction text [not null, note: 'in|out']
   amount numeric(18,2) [not null]
   Note: 'The receipts / vouchers / bill payments that make up a combined transaction'
@@ -1206,10 +1259,11 @@ Table property_status_history {
   id uuid [pk]
   company_id uuid [not null]
   property_id uuid [not null]
-  from_status text [not null]
+  from_status text
   to_status text [not null]
-  changed_by uuid [not null]
-  reason text [not null]
+  changed_by uuid
+  reason text
+  changed_at timestamptz [not null, note: 'append-only; written by trigger, status is derived from holds/bookings']
   Note: 'Every status change'
 }
 
@@ -1217,10 +1271,13 @@ Table property_holds {
   id uuid [pk]
   company_id uuid [not null]
   property_id uuid [not null]
-  held_for_party_id uuid
-  held_by uuid [not null]
+  held_for_party_id uuid [note: 'null = held by staff, no named customer']
+  held_by uuid
+  held_at timestamptz [not null]
   expires_at timestamptz [not null]
-  released_at timestamptz
+  released_at timestamptz [note: 'one un-released hold per property']
+  release_reason text [note: 'converted|cancelled|expired|manual']
+  converted_booking_id uuid
   Note: 'Temporary reservations with auto-expiry'
 }
 
@@ -1345,7 +1402,7 @@ Table budget_commitments {
   company_id uuid [not null]
   budget_line_id uuid [not null]
   source_type text [not null, note: 'purchase_order|construction_contract|ipc|vendor_bill|payroll|manual']
-  source_id uuid
+  source_id uuid [note: 'required unless source_type = manual; typed FKs added with the procurement tables']
   amount numeric(18,2) [not null]
   status text [not null, note: 'open|invoiced|released|cancelled']
   committed_on date [not null]
@@ -1501,8 +1558,16 @@ Table party_tax_exemptions {
 Table document_taxes {
   id uuid [pk]
   company_id uuid [not null]
-  doc_type text [not null]
-  doc_id uuid [not null]
+  doc_type text [not null, note: 'booking|receipt|sales_invoice|service_invoice|voucher (+ vendor_bill|payroll|transfer|commission in phase 2)']
+  booking_id uuid [note: 'exactly one of these is set, matching doc_type']
+  receipt_id uuid
+  sales_invoice_id uuid
+  service_invoice_id uuid
+  voucher_id uuid
+  vendor_bill_id uuid
+  payroll_run_id uuid
+  transfer_id uuid
+  commission_id uuid
   tax_code_id uuid [not null]
   tax_rate_id uuid
   base_amount numeric(18,2) [not null]
@@ -1840,6 +1905,8 @@ Table bookings {
   payment_type text [not null, note: 'cash|installment']
   status text [not null, note: 'pending|confirmed|completed|cancelled']
   approved_by uuid
+  branch_id uuid [note: 'which office made the sale']
+  idempotency_key text [note: 'retry-safe creation; unique per company when set']
   Note: 'Sale agreement for one property'
 }
 
@@ -1935,6 +2002,10 @@ Table receipts {
   status text [not null, note: 'posted|void']
   combined_txn_id uuid
   journal_entry_id uuid
+  branch_id uuid [note: 'which office took the money']
+  voided_at undefined
+  voided_by uuid
+  void_reason text [note: 'required to void; allocations + journal entry are reversed, never deleted']
   Note: 'Money received'
 }
 
@@ -1959,7 +2030,8 @@ Table receipt_allocations {
   penalty_id uuid
   sales_invoice_id uuid
   service_invoice_id uuid
-  amount numeric(18,2) [not null, note: 'exactly one target is set']
+  amount numeric(18,2) [not null, note: 'exactly one target is set; negative = reversal of an earlier row']
+  reverses_id uuid [unique, note: 'append-only: a void adds reversal rows instead of editing']
   Note: 'What a receipt settled — installments, penalties, invoices (one receipt can settle many)'
 }
 
@@ -2810,9 +2882,18 @@ Ref: org_members.org_id > organizations.id
 Ref: org_members.user_id > users.id
 Ref: roles.org_id > organizations.id
 Ref: role_permissions.role_id > roles.id
+Ref: branches.company_id > companies.id
+Ref: teams.company_id > companies.id
+Ref: teams.branch_id > branches.id
+Ref: teams.lead_user_id > users.id
+Ref: team_members.company_id > companies.id
+Ref: team_members.company_id > companies.id
+Ref: team_members.team_id > teams.id
+Ref: team_members.user_id > users.id
 Ref: company_members.company_id > companies.id
 Ref: company_members.user_id > users.id
 Ref: company_members.role_id > roles.id
+Ref: company_members.branch_id > branches.id
 Ref: invitations.company_id > companies.id
 Ref: invitations.role_id > roles.id
 Ref: invitations.invited_by > users.id
@@ -2911,6 +2992,7 @@ Ref: vouchers.party_id > parties.id
 Ref: vouchers.journal_entry_id > journal_entries.id
 Ref: vouchers.combined_txn_id > combined_transactions.id
 Ref: vouchers.approved_by > users.id
+Ref: vouchers.branch_id > branches.id
 Ref: vouchers.created_by > users.id
 Ref: voucher_lines.company_id > companies.id
 Ref: voucher_lines.voucher_id > vouchers.id
@@ -2939,6 +3021,12 @@ Ref: combined_transactions.reversal_of > combined_transactions.id
 Ref: combined_transactions.created_by > users.id
 Ref: combined_transaction_items.company_id > companies.id
 Ref: combined_transaction_items.combined_txn_id > combined_transactions.id
+Ref: combined_transaction_items.receipt_id > receipts.id
+Ref: combined_transaction_items.voucher_id > vouchers.id
+Ref: combined_transaction_items.sales_invoice_id > sales_invoices.id
+Ref: combined_transaction_items.service_invoice_id > service_invoices.id
+Ref: combined_transaction_items.bill_payment_id > bill_payments.id
+Ref: combined_transaction_items.cheque_id > cheques.id
 Ref: posting_rules.company_id > companies.id
 Ref: posting_rules.debit_account_id > gl_accounts.id
 Ref: posting_rules.credit_account_id > gl_accounts.id
@@ -3036,6 +3124,7 @@ Ref: property_holds.company_id > companies.id
 Ref: property_holds.property_id > properties.id
 Ref: property_holds.held_for_party_id > parties.id
 Ref: property_holds.held_by > users.id
+Ref: property_holds.converted_booking_id > bookings.id
 Ref: project_documents.company_id > companies.id
 Ref: project_documents.project_id > projects.id
 Ref: project_documents.file_id > documents.id
@@ -3102,6 +3191,15 @@ Ref: party_tax_exemptions.party_id > parties.id
 Ref: party_tax_exemptions.tax_code_id > tax_codes.id
 Ref: party_tax_exemptions.file_id > documents.id
 Ref: document_taxes.company_id > companies.id
+Ref: document_taxes.booking_id > bookings.id
+Ref: document_taxes.receipt_id > receipts.id
+Ref: document_taxes.sales_invoice_id > sales_invoices.id
+Ref: document_taxes.service_invoice_id > service_invoices.id
+Ref: document_taxes.voucher_id > vouchers.id
+Ref: document_taxes.vendor_bill_id > vendor_bills.id
+Ref: document_taxes.payroll_run_id > payroll_runs.id
+Ref: document_taxes.transfer_id > property_transfers.id
+Ref: document_taxes.commission_id > commissions.id
 Ref: document_taxes.tax_code_id > tax_codes.id
 Ref: document_taxes.tax_rate_id > tax_rates.id
 Ref: document_taxes.journal_entry_id > journal_entries.id
@@ -3190,6 +3288,7 @@ Ref: bookings.dealer_id > parties.id
 Ref: bookings.quotation_id > quotations.id
 Ref: bookings.plan_template_id > payment_plan_templates.id
 Ref: bookings.approved_by > users.id
+Ref: bookings.branch_id > branches.id
 Ref: booking_parties.company_id > companies.id
 Ref: booking_parties.booking_id > bookings.id
 Ref: booking_parties.party_id > parties.id
@@ -3216,6 +3315,8 @@ Ref: receipts.booking_id > bookings.id
 Ref: receipts.deposit_account_id > gl_accounts.id
 Ref: receipts.combined_txn_id > combined_transactions.id
 Ref: receipts.journal_entry_id > journal_entries.id
+Ref: receipts.branch_id > branches.id
+Ref: receipts.voided_by > users.id
 Ref: receipt_tenders.company_id > companies.id
 Ref: receipt_tenders.receipt_id > receipts.id
 Ref: receipt_tenders.deposit_account_id > gl_accounts.id
@@ -3226,6 +3327,7 @@ Ref: receipt_allocations.installment_id > installments.id
 Ref: receipt_allocations.penalty_id > penalty_charges.id
 Ref: receipt_allocations.sales_invoice_id > sales_invoices.id
 Ref: receipt_allocations.service_invoice_id > service_invoices.id
+Ref: receipt_allocations.reverses_id > receipt_allocations.id
 Ref: cheques.company_id > companies.id
 Ref: cheques.customer_id > parties.id
 Ref: cheques.booking_id > bookings.id
@@ -3435,6 +3537,10 @@ TableGroup "Platform & Tenancy" {
   org_members
   roles
   role_permissions
+  branches
+  teams
+  team_members
+  state_transitions
   company_members
   invitations
   sessions

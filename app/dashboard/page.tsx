@@ -1,5 +1,7 @@
 "use client";
 
+import { LiveDashboard } from "@/components/live/dashboard-live";
+
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -71,7 +73,7 @@ import { usePlanTier } from "@/lib/providers/plan-provider";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export default function DashboardPage() {
+function DemoDashboardPage() {
   const router = useRouter();
   const { company } = useCompany();
   const { tier } = usePlanTier();
@@ -104,9 +106,10 @@ export default function DashboardPage() {
     };
   }, [data, period]);
 
+  // null until the data has arrived, so the banner shows placeholders instead of "Rs 0 collected, 0%"
   const liveDeals = data?.deals.filter((d) => d.status !== "cancelled") ?? [];
-  const totalCollected = liveDeals.reduce((s, d) => s + d.paidAmount, 0);
-  const bookedValue = liveDeals.reduce((s, d) => s + d.totalAmount, 0);
+  const totalCollected = data ? liveDeals.reduce((s, d) => s + d.paidAmount, 0) : null;
+  const bookedValue = data ? liveDeals.reduce((s, d) => s + d.totalAmount, 0) : null;
   const isEmpty = !!data && data.units.length === 0 && data.deals.length === 0;
 
   const recentDeals = [...(data?.deals ?? [])].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 6);
@@ -240,7 +243,7 @@ export default function DashboardPage() {
                 <span className="flex size-11 shrink-0 animate-float items-center justify-center rounded-xl bg-gold text-gold-foreground shadow-lg shadow-gold/30"><Crown className="size-5" /></span>
                 <div>
                   <p className="font-heading text-base font-semibold">Unlock the CRM &amp; multi-account accounting</p>
-                  <p className="text-xs text-white/65">Upgrade to Moderate to manage leads, staff payroll and full accounting statements.</p>
+                  <p className="text-xs text-white/65">Upgrade to Professional to manage leads, quotations, cheques and contractors.</p>
                 </div>
               </div>
               <Button className="bg-gold text-gold-foreground hover:bg-gold/90" asChild><Link href="/dashboard/settings/billing">Upgrade plan</Link></Button>
@@ -314,4 +317,9 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: "bg-destructive/10 text-destructive border-destructive/30",
   };
   return <Badge variant="outline" className={cn("capitalize", variants[status])}>{status}</Badge>;
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveDashboard /> : <DemoDashboardPage />;
 }

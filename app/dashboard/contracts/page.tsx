@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveContracts } from "@/components/live/contracts-live";
+
 import { FileSignature as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -58,7 +61,7 @@ function expiryMeta(endDate: string, status: ContractStatus) {
   return { label: `Renews ${formatDate(endDate)}`, tone: STATUS_STYLES.active };
 }
 
-export default function ContractsPage() {
+function DemoContractsPage() {
   const { data: contracts, isLoading } = useContracts();
   const [search, setSearch] = React.useState("");
   const [type, setType] = React.useState("all");
@@ -252,4 +255,9 @@ function ContractRow({ contract, index }: { contract: Contract; index: number })
       </td>
     </motion.tr>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveContracts /> : <DemoContractsPage />;
 }

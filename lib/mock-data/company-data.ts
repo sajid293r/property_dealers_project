@@ -107,10 +107,35 @@ const PROFILES: Record<string, Profile | undefined> = {
   },
 };
 
+/**
+ * A company created at runtime with "start with sample data" gets an id ending in this suffix and is
+ * derived from the demo records (like the seeded companies); one without it starts empty.
+ */
+export const SAMPLE_SUFFIX = "-sample";
+
+const SAMPLE_PROFILE: Profile = {
+  prefix: "sm",
+  factor: 0.7,
+  nameShift: 3,
+  keepProjects: [0, 2],
+  keepCustomers: 16,
+  projectNames: {
+    "Green Valley Homes": "Sample Gardens",
+    "Al-Noor Heights": "Sample Heights",
+    "Riverside Enclave": "Sample Enclave",
+    "Emerald Gardens": "Sample Residency",
+  },
+  cities: {},
+};
+
+function profileFor(companyId: string): Profile | undefined {
+  return PROFILES[companyId] ?? (companyId.endsWith(SAMPLE_SUFFIX) ? SAMPLE_PROFILE : undefined);
+}
+
 /** Money factor used to scale chart series for a company (0 for an empty one). */
 export function companyScale(companyId: string) {
   if (companyId === "co-1") return 1;
-  return PROFILES[companyId]?.factor ?? 0;
+  return profileFor(companyId)?.factor ?? 0;
 }
 
 const ID_RE = /^[a-z]+(?:-[a-z]+)*-\d+$/;
@@ -231,7 +256,7 @@ export function getDataset(companyId: string): CompanyDataset {
   if (!ds) {
     if (companyId === "co-1") ds = BASE;
     else {
-      const profile = PROFILES[companyId];
+      const profile = profileFor(companyId);
       ds = profile ? deriveDataset(profile) : emptyDataset();
     }
     cache.set(companyId, ds);

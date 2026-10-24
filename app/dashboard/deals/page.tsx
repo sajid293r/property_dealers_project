@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveDeals } from "@/components/live/deals-live";
+
 import { Handshake as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -33,7 +36,7 @@ const STATUS_STYLES: Record<DealStatus, string> = {
   cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
-export default function DealsPage() {
+function DemoDealsPage() {
   const { data: deals, isLoading } = useDeals();
   const { data: units } = useUnits();
   const { data: customers } = useCustomers();
@@ -166,4 +169,9 @@ function DealRow({
       <td className="py-3 text-muted-foreground">{formatDate(deal.createdAt)}</td>
     </motion.tr>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveDeals /> : <DemoDealsPage />;
 }

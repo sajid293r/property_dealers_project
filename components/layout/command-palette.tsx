@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CornerDownLeft, Lock, Search, Sparkles, type LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { NAV_ITEMS, tierMeets } from "@/lib/plan";
+import { navAvailable, tierMeets } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
+import { useCompany } from "@/lib/providers/company-provider";
 import { cn } from "@/lib/utils";
 
 interface Entry {
@@ -27,13 +28,14 @@ export function CommandPalette({
 }) {
   const router = useRouter();
   const { tier } = usePlanTier();
+  const { live } = useCompany();
   const [query, setQuery] = React.useState("");
   const [active, setActive] = React.useState(0);
   const listRef = React.useRef<HTMLDivElement>(null);
 
   const entries = React.useMemo<Entry[]>(
     () =>
-      NAV_ITEMS.flatMap((item) => {
+      navAvailable(live).flatMap((item) => {
         const locked = !tierMeets(tier, item.minTier);
         if (item.children?.length) {
           return item.children.map((c) => ({
@@ -46,7 +48,7 @@ export function CommandPalette({
         }
         return [{ href: item.href, label: item.label, section: item.section, icon: item.icon, locked }];
       }),
-    [tier],
+    [tier, live],
   );
 
   const results = React.useMemo(() => {

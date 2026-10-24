@@ -1,6 +1,16 @@
+# The website AND the API are deployed together on Netlify.
+#   website  -> Next.js (Netlify's Next.js support)
+#   API      -> netlify/functions-src/api.mts, bundled at build time into netlify/functions/api.mjs and served at /api/*
+#               on the same address as the website (so there is no cross-site call and no CORS to configure).
+# Environment variables to set in Netlify (Site configuration -> Environment variables): see docs/GO_LIVE.md.
+
 [build]
-  command = "npm run build"
+  # install the API's own dependencies (fastify, pg, ...), bundle the API into one function file, then build the site
+  command = "npm --prefix api ci && npm --prefix api run build:function && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"

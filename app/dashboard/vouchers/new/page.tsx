@@ -1,3 +1,7 @@
+"use client";
+
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveVoucherForm } from "@/components/live/voucher-form";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NewVoucherForm } from "@/components/vouchers/new-voucher-form";
@@ -17,10 +21,15 @@ function NewVoucherFallback() {
   );
 }
 
-export default function NewVoucherPage() {
+function DemoNewVoucherPage() {
   return (
     <Suspense fallback={<NewVoucherFallback />}>
       <NewVoucherForm />
     </Suspense>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <Suspense fallback={null}><LiveVoucherForm /></Suspense> : <DemoNewVoucherPage />;
 }

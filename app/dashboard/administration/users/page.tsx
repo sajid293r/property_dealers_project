@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveUsers } from "@/components/live/admin-live";
+
 import { UserCog as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -35,7 +38,7 @@ function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
-export default function UsersPage() {
+function DemoUsersPage() {
   const { data: users, isLoading } = useSystemUsers();
   const { data: roles } = useRoles();
 
@@ -211,4 +214,9 @@ function StatTile({
       </div>
     </Card>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveUsers /> : <DemoUsersPage />;
 }

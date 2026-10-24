@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/lib/providers/company-provider";
+import { fetchPropertyTypes, type PropertyType } from "@/lib/api/live";
 import {
   unitsService,
   customersService,
@@ -58,3 +59,15 @@ export const useContractors = () => useCompanyQuery("contractors", contractorsSe
 export const useConstructionContracts = () => useCompanyQuery("constructionContracts", constructionContractsService.list);
 export const useBudgets = () => useCompanyQuery("budgets", budgetsService.list);
 export const useBudgetLines = () => useCompanyQuery("budgetLines", budgetsService.lines);
+
+const DEMO_PROPERTY_TYPES: PropertyType[] = ["Residential Plot", "Commercial Plot", "House", "Apartment"].map((name) => ({ id: name, code: name, name, group: "" }));
+
+/** The kinds of property this company sells: real ones from the API, a fixed list in the demo. */
+export function usePropertyTypes() {
+  const { company, live } = useCompany();
+  return useQuery({
+    queryKey: ["propertyTypes"],
+    queryFn: () => (live ? fetchPropertyTypes(company.id) : Promise.resolve(DEMO_PROPERTY_TYPES)),
+    staleTime: 5 * 60 * 1000,
+  });
+}

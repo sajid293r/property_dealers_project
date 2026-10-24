@@ -35,15 +35,17 @@ export function HeroBanner({
   onNewVoucher,
 }: {
   companyName: string;
-  collected: number;
-  /** Total value of all live bookings — what the collections are measured against. */
-  bookedValue: number;
+  /** null while the data is still loading: the banner shows placeholders, never a false "Rs 0". */
+  collected: number | null;
+  /** Total value of all live bookings — what the collections are measured against. null while loading. */
+  bookedValue: number | null;
   onNewBooking: () => void;
   onNewLead: () => void;
   onNewVoucher: () => void;
 }) {
   const now = React.useSyncExternalStore(subscribeNever, getNow, getNowServer);
-  const pct = Math.min(100, Math.round((collected / Math.max(bookedValue, 1)) * 100));
+  const loading = collected === null || bookedValue === null;
+  const pct = loading ? 0 : Math.min(100, Math.round((collected / Math.max(bookedValue, 1)) * 100));
   const circumference = 2 * Math.PI * 44;
 
   return (
@@ -88,14 +90,26 @@ export function HeroBanner({
             <span className="text-gradient-gold italic">Owner.</span>
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-white/70 md:text-base">
-            You&apos;ve collected{" "}
-            <AnimatedNumber
-              value={collected}
-              format={(n) => formatPkr(n, { compact: true })}
-              className="font-semibold text-gold"
-            />{" "}
-            so far — {pct}% of everything you&apos;ve booked. Here&apos;s everything moving across your
-            projects today.
+            {loading ? (
+              <>
+                Gathering your numbers
+                <span className="ml-2 inline-block h-3 w-24 animate-pulse rounded bg-white/20 align-middle" />
+                {" "}— everything moving across your projects today will appear in a moment.
+              </>
+            ) : bookedValue === 0 ? (
+              <>Nothing is booked yet. Add your first booking and your collections will start showing here.</>
+            ) : (
+              <>
+                You&apos;ve collected{" "}
+                <AnimatedNumber
+                  value={collected}
+                  format={(n) => formatPkr(n, { compact: true })}
+                  className="font-semibold text-gold"
+                />{" "}
+                so far — {pct}% of everything you&apos;ve booked. Here&apos;s everything moving across your
+                projects today.
+              </>
+            )}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Button
@@ -150,11 +164,15 @@ export function HeroBanner({
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-              <AnimatedNumber
-                value={pct}
-                format={(n) => `${n}%`}
-                className="font-heading text-3xl font-semibold"
-              />
+              {loading ? (
+                <span className="h-8 w-14 animate-pulse rounded bg-white/20" />
+              ) : (
+                <AnimatedNumber
+                  value={pct}
+                  format={(n) => `${n}%`}
+                  className="font-heading text-3xl font-semibold"
+                />
+              )}
               <span className="text-[10px] uppercase tracking-[0.16em] text-white/60">collected</span>
             </div>
           </div>

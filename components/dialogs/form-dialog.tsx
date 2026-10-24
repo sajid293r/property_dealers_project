@@ -38,26 +38,38 @@ export function FormDialog({
   title: string;
   description: string;
   submitLabel: string;
-  onSubmit: () => void;
+  /** May return a promise: the dialog waits for it, and stays open showing the error if it fails. */
+  onSubmit: () => void | Promise<void>;
   submitDisabled?: boolean;
   children: React.ReactNode;
 }) {
   const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setSubmitting(true);
-    window.setTimeout(() => {
-      onSubmit();
-      setSubmitting(false);
+    setError(null);
+    try {
+      const result = onSubmit();
+      // a real save: wait for the server; a demo save: a short pause so it feels like one
+      if (result instanceof Promise) await result;
+      else await new Promise((resolve) => window.setTimeout(resolve, 500));
       onOpenChange(false);
-    }, 500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!submitting) onOpenChange(next);
+        if (!submitting) {
+          if (!next) setError(null);
+          onOpenChange(next);
+        }
       }}
     >
       <DialogContent className="overflow-hidden p-0 sm:max-w-md" showCloseButton={false}>
@@ -89,7 +101,14 @@ export function FormDialog({
           </div>
         </div>
 
-        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
+          {children}
+          {error && (
+            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          )}
+        </div>
 
         <DialogFooter className="mx-0 mb-0 rounded-b-xl border-t border-border bg-muted/40 px-6 py-4">
           <DialogClose asChild>

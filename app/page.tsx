@@ -36,7 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { AnimatedNumber } from "@/components/animated-number";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
-import { PRICING } from "@/lib/plan";
+import { PRICING, SEAT_PACKS } from "@/lib/plan";
 import { formatPkr } from "@/lib/format";
 import { monthlyCollections } from "@/lib/mock-data/trends";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
@@ -722,6 +722,17 @@ function PricingSection() {
             </motion.div>
           );
         })}
+      </div>
+      <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-border/70 bg-card/60 p-5 text-center">
+        <p className="font-heading text-lg font-semibold">Need more users?</p>
+        <p className="mt-1 text-sm text-muted-foreground">Add seats to any plan, billed monthly.</p>
+        <div className="mt-3 flex flex-wrap justify-center gap-3">
+          {SEAT_PACKS.map((p) => (
+            <span key={p.seats} className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-sm">
+              <span className="font-semibold">+{p.seats} seats</span> · {formatPkr(p.priceMonthlyPkr)}/month
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );

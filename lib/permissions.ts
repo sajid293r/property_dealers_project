@@ -13,6 +13,8 @@ import {
   Wallet,
   ShieldCheck,
   PiggyBank,
+  HardHat,
+  Palmtree,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +36,8 @@ export const PERMISSION_MODULES = [
   { key: "reports", label: "Reports", icon: FileText },
   { key: "staff", label: "Staff", icon: UserSquare2 },
   { key: "payroll", label: "Payroll", icon: Banknote },
+  { key: "contractors", label: "Contractors", icon: HardHat },
+  { key: "leave", label: "Leave", icon: Palmtree },
   { key: "customers", label: "Customers", icon: Wallet },
   { key: "administration", label: "Administration", icon: ShieldCheck },
 ] as const satisfies { key: string; label: string; icon: LucideIcon }[];

@@ -1,0 +1,10 @@
+import puppeteer from "puppeteer-core";
+const b = await puppeteer.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: "new", args: ["--no-sandbox"], defaultViewport: { width: 1440, height: 1300 } });
+const p = await b.newPage();
+await p.goto("http://localhost:3000/login", { waitUntil: "networkidle2" });
+await p.type("#email", "owner@bytecraft.local"); await p.type("#password", "sandbox-pass");
+await p.click("button[type=submit]");
+await p.waitForFunction(() => location.pathname.startsWith("/dashboard"), { timeout: 20000 });
+await new Promise((r) => setTimeout(r, 4000));
+await p.screenshot({ path: "shots/dashboard-live.png" });
+await b.close();

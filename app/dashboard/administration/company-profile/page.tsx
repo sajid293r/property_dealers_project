@@ -1,5 +1,7 @@
 "use client";
 
+import { LiveCompanyProfile } from "@/components/live/admin-live";
+
 import { ClipboardList as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -23,7 +25,7 @@ import { CompanyAvatar } from "@/components/company-avatar";
 const PROVINCES = ["Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan", "Islamabad Capital Territory"] as const;
 const BUSINESS_TYPES = ["Independent dealer", "Agency", "Developer / housing scheme", "Dealer network"] as const;
 
-export default function CompanyProfilePage() {
+function DemoCompanyProfilePage() {
   const { company } = useCompany();
   const [bilingual, setBilingual] = React.useState(false);
   const [whatsappFirst, setWhatsappFirst] = React.useState(true);
@@ -161,4 +163,9 @@ function Field({
       <Input type={type} defaultValue={defaultValue} />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveCompanyProfile /> : <DemoCompanyProfilePage />;
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { useCompany } from "@/lib/providers/company-provider";
+import { LiveRoles } from "@/components/live/admin-live";
+
 import { ShieldCheck as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import * as React from "react";
@@ -15,7 +18,7 @@ import { ROLE_COLOR_CLASSES, moduleCount, PERMISSION_MODULES } from "@/lib/permi
 import type { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export default function RolesPage() {
+function DemoRolesPage() {
   const { data: roles, isLoading } = useRoles();
   const { data: users } = useSystemUsers();
 
@@ -107,4 +110,9 @@ export default function RolesPage() {
       />
     </div>
   );
+}
+
+export default function Page() {
+  const { live } = useCompany();
+  return live ? <LiveRoles /> : <DemoRolesPage />;
 }
