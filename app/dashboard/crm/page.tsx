@@ -215,7 +215,7 @@ function DemoCrmPage() {
                 <div className="mb-3 flex items-center gap-2 px-1">
                   <span className={cn("size-2 rounded-full", STAGE_DOT[col.id])} />
                   <h3 className="font-heading text-sm font-semibold">{col.label}</h3>
-                  <Badge variant="secondary" className="ml-auto text-[10px] tabular-nums">
+                  <Badge variant="secondary" className="ms-auto text-[10px] tabular-nums">
                     {col.leads.length}
                   </Badge>
                 </div>
@@ -293,7 +293,7 @@ function LeadCard({
               <Button
                 variant="ghost"
                 size="icon-xs"
-                className="-mr-1 -mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+                className="-me-1 -mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
               >
                 <MoreHorizontal className="size-3.5" />
               </Button>
@@ -302,7 +302,7 @@ function LeadCard({
               <DropdownMenuLabel className="text-[11px]">Move to</DropdownMenuLabel>
               {STAGES.filter((s) => s.id !== status).map((s) => (
                 <DropdownMenuItem key={s.id} onClick={() => onMove(s.id)}>
-                  <ArrowRight className="size-3.5" />
+                  <ArrowRight className="size-3.5 rtl:-scale-x-100" />
                   {s.label}
                 </DropdownMenuItem>
               ))}

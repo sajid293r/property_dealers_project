@@ -1,16 +1,20 @@
 "use client"
 
 import { useTheme } from "next-themes"
+import { useLanguage } from "@/lib/i18n/provider"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  const { dir } = useLanguage()
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      dir={dir}
+      position={dir === "rtl" ? "top-left" : "top-right"}
       icons={{
         success: (
           <CircleCheckIcon className="size-4" />

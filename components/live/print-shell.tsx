@@ -51,7 +51,7 @@ export function PrintShell({
             <p className="mt-1 text-neutral-600">{[p?.address, p?.city].filter(Boolean).join(", ")}</p>
             <p className="text-neutral-600">{[p?.phone && `Tel: ${p.phone}`, p?.email, p?.ntn && `NTN: ${p.ntn}`, p?.strn && `STRN: ${p.strn}`].filter(Boolean).join("  ·  ")}</p>
           </div>
-          <div className="text-right">
+          <div className="text-end">
             <p className="font-heading text-xl font-semibold uppercase tracking-wide">{title}</p>
             {number && <p className="font-mono text-base">{number}</p>}
             {date && <p className="text-neutral-600">{date}</p>}
@@ -65,7 +65,7 @@ export function PrintShell({
             ))}
           </footer>
         )}
-        <p className="mt-8 text-center text-[10px] text-neutral-400 print:fixed print:bottom-2 print:left-0 print:right-0">Computer generated document · {company.name}</p>
+        <p className="mt-8 text-center text-[10px] text-neutral-400 print:fixed print:bottom-2 print:start-0 print:end-0">Computer generated document · {company.name}</p>
       </article>
     </div>
   );
@@ -85,20 +85,20 @@ export function PrintTable({ head, rows, right = [], foot }: { head: string[]; r
     <table className="w-full border-collapse text-[12px]">
       <thead>
         <tr className="border-y border-neutral-800 bg-neutral-50">
-          {head.map((h, i) => <th key={h} className={`px-2 py-1.5 font-semibold ${right.includes(i) ? "text-right" : "text-left"}`}>{h}</th>)}
+          {head.map((h, i) => <th key={h} className={`px-2 py-1.5 font-semibold ${right.includes(i) ? "text-end" : "text-start"}`}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
         {rows.map((r, i) => (
           <tr key={i} className="border-b border-neutral-200">
-            {r.map((c, j) => <td key={j} className={`px-2 py-1.5 ${right.includes(j) ? "text-right font-mono tabular-nums" : ""}`}>{c}</td>)}
+            {r.map((c, j) => <td key={j} className={`px-2 py-1.5 ${right.includes(j) ? "text-end font-mono tabular-nums" : ""}`}>{c}</td>)}
           </tr>
         ))}
       </tbody>
       {foot && (
         <tfoot>
           <tr className="border-t-2 border-neutral-800 font-semibold">
-            {foot.map((c, j) => <td key={j} className={`px-2 py-1.5 ${right.includes(j) ? "text-right font-mono tabular-nums" : ""}`}>{c}</td>)}
+            {foot.map((c, j) => <td key={j} className={`px-2 py-1.5 ${right.includes(j) ? "text-end font-mono tabular-nums" : ""}`}>{c}</td>)}
           </tr>
         </tfoot>
       )}

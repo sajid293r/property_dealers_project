@@ -5,6 +5,7 @@ import { Info } from "lucide-react";
 import { AnimatedNumber } from "@/components/animated-number";
 import type { HealthFactor } from "@/lib/dashboard-insights";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 function tone(score: number) {
   if (score >= 80) return { bar: "bg-[oklch(0.78_0.15_160)]", text: "text-[oklch(0.82_0.14_160)]" };
@@ -15,17 +16,18 @@ function tone(score: number) {
 
 /** One number for "how is the business doing", with the four things it is made of. */
 export function HealthScore({ overall, grade, factors }: { overall: number; grade: string; factors: HealthFactor[] }) {
+  const tr = useT();
   const r = 52;
   const c = 2 * Math.PI * r * 0.75; // 270° gauge
   const t = tone(overall);
 
   return (
     <div className="surface-hero sheen relative isolate h-full overflow-hidden rounded-xl p-5 shadow-xl shadow-primary/15 ring-1 ring-white/10">
-      <div className="pointer-events-none absolute -right-10 -top-12 -z-10 size-48 animate-aurora rounded-full bg-gold/25 blur-3xl" />
+      <div className="pointer-events-none absolute -end-10 -top-12 -z-10 size-48 animate-aurora rounded-full bg-gold/25 blur-3xl" />
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-heading text-base font-semibold text-white">Business health</h3>
-          <p className="text-xs text-white/60">One score from four signals</p>
+          <h3 className="font-heading text-base font-semibold text-white">{tr("dashboard.health.title")}</h3>
+          <p className="text-xs text-white/60">{tr("dashboard.health.note")}</p>
         </div>
         <span className={cn("rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold", t.text)}>{grade}</span>
       </div>
@@ -56,7 +58,7 @@ export function HealthScore({ overall, grade, factors }: { overall: number; grad
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
           <AnimatedNumber value={overall} format={(n) => String(n)} className="font-heading text-5xl font-semibold leading-none tabular-nums" />
-          <span className="mt-1 text-[10px] uppercase tracking-[0.18em] text-white/55">out of 100</span>
+          <span className="mt-1 text-[10px] uppercase tracking-[0.18em] text-white/55">{tr("dashboard.health.outOf")}</span>
         </div>
       </div>
 

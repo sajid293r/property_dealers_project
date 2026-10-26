@@ -195,7 +195,7 @@ function SiteNav() {
           <Button asChild>
             <Link href="/dashboard">
               Try the demo
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-4 rtl:-scale-x-100" />
             </Link>
           </Button>
         </div>
@@ -213,7 +213,7 @@ function SiteNav() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="w-72">
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2 text-left">
+            <SheetTitle className="flex items-center gap-2 text-start">
               <Logomark className="size-7" />
               {APP_NAME}
             </SheetTitle>
@@ -241,7 +241,7 @@ function SiteNav() {
             <Button asChild>
               <Link href="/dashboard">
                 Try the demo
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
           </div>
@@ -318,7 +318,7 @@ function Hero() {
             <Button size="lg" asChild>
               <Link href="/dashboard">
                 Explore the prototype
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
@@ -341,7 +341,7 @@ function Hero() {
           initial={{ opacity: 0, y: -10, rotate: -6 }}
           animate={{ opacity: 1, y: 0, rotate: -6 }}
           transition={{ duration: 0.5, delay: 0.9 }}
-          className="absolute -right-3 -top-5 z-10 hidden items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-md sm:flex"
+          className="absolute -end-3 -top-5 z-10 hidden items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium shadow-md sm:flex"
         >
           <span className="relative flex size-1.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
@@ -353,7 +353,7 @@ function Hero() {
           initial={{ opacity: 0, y: -10, rotate: 5 }}
           animate={{ opacity: 1, y: 0, rotate: 5 }}
           transition={{ duration: 0.5, delay: 1.05 }}
-          className="absolute -left-3 -bottom-4 z-10 hidden items-center gap-1.5 rounded-full border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-medium text-gold shadow-md sm:flex"
+          className="absolute -start-3 -bottom-4 z-10 hidden items-center gap-1.5 rounded-full border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-medium text-gold shadow-md sm:flex"
         >
           <Sparkles className="size-3" />
           3 subscription tiers
@@ -363,13 +363,13 @@ function Hero() {
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute -left-6 top-24 z-20 hidden xl:block"
+          className="absolute -start-6 top-24 z-20 hidden xl:block"
         >
           <div className="glass animate-float flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-primary/10">
             <span className="flex size-9 items-center justify-center rounded-full bg-success/15 text-success">
               <HandCoins className="size-4.5" />
             </span>
-            <div className="text-left">
+            <div className="text-start">
               <p className="text-xs font-semibold">Installment received</p>
               <p className="text-[11px] text-muted-foreground">Rs 450,000 · PRP-1042</p>
             </div>
@@ -379,13 +379,13 @@ function Hero() {
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute -right-6 top-56 z-20 hidden xl:block"
+          className="absolute -end-6 top-56 z-20 hidden xl:block"
         >
           <div className="glass animate-float-slow flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-primary/10 [animation-delay:-3s]">
             <span className="flex size-9 items-center justify-center rounded-full bg-gold/20 text-gold">
               <MapPinned className="size-4.5" />
             </span>
-            <div className="text-left">
+            <div className="text-start">
               <p className="text-xs font-semibold">Plot B-14 booked</p>
               <p className="text-[11px] text-muted-foreground">Emerald Gardens · just now</p>
             </div>
@@ -413,7 +413,7 @@ function Hero() {
               { label: "Pending Installments", value: "PKR 6.1M", delta: "-3.1%" },
               { label: "Active Deals", value: "37", delta: "+7.5%" },
             ].map((tile) => (
-              <div key={tile.label} className="rounded-xl border border-border/60 bg-background p-4 text-left">
+              <div key={tile.label} className="rounded-xl border border-border/60 bg-background p-4 text-start">
                 <p className="text-[11px] text-muted-foreground">{tile.label}</p>
                 <p className="mt-1 font-heading text-xl font-semibold">{tile.value}</p>
                 <span
@@ -532,7 +532,7 @@ function FeaturesSection() {
               f.big && "lg:col-span-2",
             )}
           >
-            <div className="absolute -right-8 -top-8 size-28 rounded-full bg-primary/5 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute -end-8 -top-8 size-28 rounded-full bg-primary/5 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
             <div className="relative flex items-start justify-between gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
                 <f.icon className="size-5" />
@@ -593,7 +593,7 @@ function HowItWorks() {
           </p>
         </div>
         <div className="relative mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="pointer-events-none absolute left-0 right-0 top-6 hidden h-px bg-border md:block">
+          <div className="pointer-events-none absolute start-0 end-0 top-6 hidden h-px bg-border md:block">
             <motion.div
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
@@ -610,7 +610,7 @@ function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: i * 0.12 }}
-              className="group relative flex flex-col items-center text-center md:items-start md:text-left"
+              className="group relative flex flex-col items-center text-center md:items-start md:text-start"
             >
               <div className="relative z-10 flex size-12 items-center justify-center rounded-full border-2 border-primary bg-background font-heading text-lg font-semibold text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
                 {i + 1}
@@ -679,7 +679,7 @@ function PricingSection() {
             >
               {tier.highlight && <PlotGridMotif className="rounded-2xl opacity-60" />}
               {tier.highlight && (
-                <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
+                <span className="absolute -top-3 start-7 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
                   Most popular
                 </span>
               )}
@@ -742,7 +742,7 @@ function CtaBanner() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24 md:px-6">
       <div className="surface-hero sheen relative isolate overflow-hidden rounded-3xl px-8 py-16 text-primary-foreground shadow-2xl shadow-primary/25">
-        <div className="pointer-events-none absolute -left-10 bottom-0 size-64 animate-aurora rounded-full bg-[oklch(0.55_0.12_165/0.4)] blur-3xl" />
+        <div className="pointer-events-none absolute -start-10 bottom-0 size-64 animate-aurora rounded-full bg-[oklch(0.55_0.12_165/0.4)] blur-3xl" />
         <PlotGridMotif variant="inverted" className="opacity-70" />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.15]"
@@ -751,8 +751,8 @@ function CtaBanner() {
             backgroundSize: "18px 18px",
           }}
         />
-        <div className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full bg-gold/25 blur-3xl" />
-        <div className="relative flex flex-col items-center gap-5 text-center md:flex-row md:justify-between md:text-left">
+        <div className="pointer-events-none absolute -end-10 -top-16 size-56 rounded-full bg-gold/25 blur-3xl" />
+        <div className="relative flex flex-col items-center gap-5 text-center md:flex-row md:justify-between md:text-start">
           <div>
             <h3 className="font-heading text-3xl font-semibold md:text-4xl">Ready to modernize <span className="text-gradient-gold italic">your agency?</span></h3>
             <p className="mt-1.5 text-primary-foreground/80">
@@ -762,7 +762,7 @@ function CtaBanner() {
           <Button size="lg" className="h-11 bg-gold px-6 text-gold-foreground shadow-lg shadow-gold/30 transition-transform hover:-translate-y-0.5 hover:bg-gold/90" asChild>
             <Link href="/dashboard">
               Open the demo
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-4 rtl:-scale-x-100" />
             </Link>
           </Button>
         </div>

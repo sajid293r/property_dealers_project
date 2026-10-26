@@ -129,11 +129,11 @@ export function LiveAccounts() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2 font-medium">Code</th>
                     <th className="pb-2 font-medium">Name</th>
                     <th className="pb-2 font-medium">Type</th>
-                    <th className="pb-2 pr-3 text-right font-medium">Balance</th>
+                    <th className="pb-2 pe-3 text-end font-medium">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -151,7 +151,7 @@ export function LiveAccounts() {
                             <td className="whitespace-nowrap py-2 font-mono text-xs text-muted-foreground">{a.code}</td>
                             <td className="py-2" style={{ paddingLeft: depth * 12 }}>{a.name}</td>
                             <td className="py-2 text-muted-foreground">{CLASS_LABEL[a.class]}</td>
-                            <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{bal !== undefined && bal !== 0 ? formatMoney(bal) : ""}</td>
+                            <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{bal !== undefined && bal !== 0 ? formatMoney(bal) : ""}</td>
                           </tr>
                         );
                       })}

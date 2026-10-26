@@ -171,7 +171,7 @@ export default function PlotMapPage() {
             </Button>
           )}
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ms-auto flex items-center gap-1.5">
             <div className="flex items-center overflow-hidden rounded-md border border-border">
               <Button
                 variant={viewMode === "scheme" ? "secondary" : "ghost"}
@@ -226,7 +226,7 @@ export default function PlotMapPage() {
               <span className="font-medium tabular-nums">{counts[s]}</span>
             </div>
           ))}
-          <div className="ml-auto hidden h-2 w-56 overflow-hidden rounded-full bg-secondary sm:flex">
+          <div className="ms-auto hidden h-2 w-56 overflow-hidden rounded-full bg-secondary sm:flex">
             {(["available", "reserved", "sold"] as const).map((s) => (
               <motion.div
                 key={s}
@@ -390,7 +390,7 @@ export default function PlotMapPage() {
                   <Button variant="outline" asChild>
                     <Link href="/dashboard/properties">
                       View in properties
-                      <ArrowRight className="size-3.5" />
+                      <ArrowRight className="size-3.5 rtl:-scale-x-100" />
                     </Link>
                   </Button>
                 </div>

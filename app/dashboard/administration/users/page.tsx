@@ -113,7 +113,7 @@ function DemoUsersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">User</th>
                 <th className="pb-2.5 font-medium">Role</th>
                 <th className="pb-2.5 font-medium">Department</th>
@@ -156,7 +156,7 @@ function DemoUsersPage() {
                         <td className="py-2.5 text-muted-foreground">{u.department}</td>
                         <td className="py-2.5"><UserStatusBadge status={u.status} /></td>
                         <td className="py-2.5 text-muted-foreground">{formatDate(u.lastActiveAt)}</td>
-                        <td className="py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 text-end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">

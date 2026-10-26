@@ -52,7 +52,7 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-3 border-b border-border/40 py-1.5 text-sm last:border-0">
       <span className="text-muted-foreground">{k}</span>
-      <span className="text-right font-medium">{v || "—"}</span>
+      <span className="text-end font-medium">{v || "—"}</span>
     </div>
   );
 }
@@ -129,8 +129,8 @@ export function LivePropertyDetail() {
           {(det?.ownership ?? []).length === 0 ? <p className="py-3 text-sm text-muted-foreground">No owner recorded.</p> : (
             <ol className="space-y-2.5">
               {det!.ownership.map((o) => (
-                <li key={o.id} className="border-l-2 border-gold/50 pl-3 text-sm">
-                  <p className="font-medium">{o.ownerName} {!o.toDate && <Badge variant="outline" className="ml-1 bg-success/12 text-success">Current</Badge>}</p>
+                <li key={o.id} className="border-s-2 border-gold/50 ps-3 text-sm">
+                  <p className="font-medium">{o.ownerName} {!o.toDate && <Badge variant="outline" className="ms-1 bg-success/12 text-success">Current</Badge>}</p>
                   <p className="text-xs text-muted-foreground">{label(ACQ, o.acquisitionType)} · {formatDate(o.fromDate)}{o.toDate ? ` – ${formatDate(o.toDate)}` : ""}{o.price ? ` · ${formatMoney(num(o.price), { compact: true })}` : ""}{o.deedRef ? ` · ${o.deedRef}` : ""}</p>
                 </li>
               ))}

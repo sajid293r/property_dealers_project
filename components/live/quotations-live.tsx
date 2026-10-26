@@ -68,21 +68,21 @@ export function LiveQuotations() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Quotation</th><th className="pb-2.5 font-medium">For</th><th className="pb-2.5 font-medium">Property</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Price</th><th className="pb-2.5 font-medium">Valid until</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
+                <th className="pb-2.5 pe-3 text-end font-medium">Price</th><th className="pb-2.5 font-medium">Valid until</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
               </tr>
             </thead>
             <tbody>
               {q.isLoading ? Array.from({ length: 4 }).map((_, i) => <tr key={i}><td colSpan={7} className="py-1.5"><Skeleton className="h-10 w-full" /></td></tr>) : shown.map((x) => (
                 <tr key={x.id} className="border-b border-border/40 last:border-0 hover:bg-secondary/40">
                   <td className="py-2.5"><p className="font-mono font-medium">{x.quoteNo}</p><p className="text-xs text-muted-foreground">{formatDate(x.quoteDate)}</p></td>
-                  <td className="py-2.5">{x.customerName ?? x.leadName}{!x.customerName && <span className="ml-1 text-xs text-muted-foreground">(lead)</span>}</td>
+                  <td className="py-2.5">{x.customerName ?? x.leadName}{!x.customerName && <span className="ms-1 text-xs text-muted-foreground">(lead)</span>}</td>
                   <td className="py-2.5"><p>{x.propertyCode} · {x.propertyTitle}</p><p className="text-xs text-muted-foreground">{x.installments > 0 ? `${formatMoney(num(x.downPayment), { compact: true })} down + ${x.installments} installments` : "Full payment"}</p></td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(x.netPrice))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(x.netPrice))}</td>
                   <td className="py-2.5 text-muted-foreground">{formatDate(x.validUntil)}</td>
                   <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_CLASS[label(x)]}`}>{label(x)}</span></td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-end">
                     <PrintLink kind="quotation" id={x.id} iconOnly label="Print quotation" variant="ghost" />
                     {x.status === "accepted" && x.bookingId ? <Button size="sm" variant="outline" asChild><Link href={`/dashboard/deals/${x.bookingId}`}>View booking</Link></Button> : (x.status === "draft" || x.status === "sent") && !x.expired && (
                       <div className="flex justify-end gap-1.5">

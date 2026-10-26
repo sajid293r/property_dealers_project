@@ -144,7 +144,7 @@ function SalesTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Project</th>
                 <th className="pb-2.5 font-medium">Bookings</th>
                 <th className="pb-2.5 font-medium">Total Value</th>
@@ -205,7 +205,7 @@ function StockTab() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Project</th>
                     <th className="pb-2.5 font-medium">Total</th>
                     <th className="pb-2.5 font-medium">Available</th>
@@ -275,7 +275,7 @@ function ExpensesTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Type</th>
                 <th className="pb-2.5 font-medium">Count</th>
                 <th className="pb-2.5 font-medium">Paid</th>

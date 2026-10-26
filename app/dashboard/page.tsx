@@ -1,6 +1,7 @@
 "use client";
 
 import { LiveDashboard } from "@/components/live/dashboard-live";
+import { useLanguage, useSlide } from "@/lib/i18n/provider";
 
 import * as React from "react";
 import Link from "next/link";
@@ -48,7 +49,7 @@ import { CollectionsChart } from "@/components/charts/collections-chart";
 import { NewBookingDialog } from "@/components/dialogs/new-booking-dialog";
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
 import {
-  PERIOD_LABEL,
+  periodLabel,
   agentLeaderboard,
   attentionItems,
   cashFlowWeekly,
@@ -76,6 +77,8 @@ import { cn } from "@/lib/utils";
 function DemoDashboardPage() {
   const router = useRouter();
   const { company } = useCompany();
+  const { t, lang } = useLanguage();
+  const slide = useSlide();
   const { tier } = usePlanTier();
   const { data, isLoading } = useDashboardData();
   const [bookingOpen, setBookingOpen] = React.useState(false);
@@ -104,7 +107,9 @@ function DemoDashboardPage() {
       activity: recentActivity(data),
       spark: collectionsByMonth(data),
     };
-  }, [data, period]);
+    // lang: the insights engine writes its sentences in the language on screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, period, lang]);
 
   // null until the data has arrived, so the banner shows placeholders instead of "Rs 0 collected, 0%"
   const liveDeals = data?.deals.filter((d) => d.status !== "cancelled") ?? [];
@@ -140,24 +145,24 @@ function DemoDashboardPage() {
           </div>
 
           {/* ─────────── key numbers */}
-          <SectionTitle eyebrow="At a glance" title="Key numbers" right={<PeriodToggle value={period} onChange={setPeriod} />} />
+          <SectionTitle eyebrow={t("dashboard.section.glance")} title={t("dashboard.section.keyNumbers")} right={<PeriodToggle value={period} onChange={setPeriod} />} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label={`Collected · ${PERIOD_LABEL[period].toLowerCase()}`} value={model.stats.collected} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} accent="gold" delta={model.stats.collectedDelta} index={0} href="/dashboard/accounts" trend={model.spark} />
-            <KpiCard label={`New bookings · ${PERIOD_LABEL[period].toLowerCase()}`} value={model.stats.bookings} format={(n) => n.toString()} icon={Handshake} delta={model.stats.bookingsDelta} index={1} href="/dashboard/deals" />
-            <KpiCard label="Overdue receivables" value={model.rec.overdueAmount} format={(n) => formatPkr(n, { compact: true })} icon={Scale} accent="gold" index={2} href="/dashboard/deals" />
-            <KpiCard label="Properties available" value={model.inv.available} format={(n) => n.toString()} icon={Building2} index={3} href="/dashboard/properties" />
+            <KpiCard label={t("dashboard.kpi.collectedPeriod", { period: periodLabel(period, "inline") })} value={model.stats.collected} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} accent="gold" delta={model.stats.collectedDelta} index={0} href="/dashboard/accounts" trend={model.spark} />
+            <KpiCard label={t("dashboard.kpi.bookingsPeriod", { period: periodLabel(period, "inline") })} value={model.stats.bookings} format={(n) => n.toString()} icon={Handshake} delta={model.stats.bookingsDelta} index={1} href="/dashboard/deals" />
+            <KpiCard label={t("dashboard.kpi.overdueReceivables")} value={model.rec.overdueAmount} format={(n) => formatPkr(n, { compact: true })} icon={Scale} accent="gold" index={2} href="/dashboard/deals" />
+            <KpiCard label={t("dashboard.kpi.propertiesAvailable")} value={model.inv.available} format={(n) => n.toString()} icon={Building2} index={3} href="/dashboard/properties" />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label="Cash & bank in hand" value={model.cash.total} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} index={4} href="/dashboard/accounts" />
-            <KpiCard label="Receivable outstanding" value={model.rec.totalOutstanding} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} accent="gold" index={5} href="/dashboard/deals" />
-            <KpiCard label="Unpaid bills" value={model.pay.amount} format={(n) => formatPkr(n, { compact: true })} icon={Receipt} index={6} href="/dashboard/expenses" />
-            <KpiCard label="Unsold stock value" value={model.inv.availableValue} format={(n) => formatPkr(n, { compact: true })} icon={PackageOpen} accent="gold" index={7} href="/dashboard/properties" />
+            <KpiCard label={t("dashboard.kpi.cashBank")} value={model.cash.total} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} index={4} href="/dashboard/accounts" />
+            <KpiCard label={t("dashboard.kpi.receivable")} value={model.rec.totalOutstanding} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} accent="gold" index={5} href="/dashboard/deals" />
+            <KpiCard label={t("dashboard.kpi.unpaidBills")} value={model.pay.amount} format={(n) => formatPkr(n, { compact: true })} icon={Receipt} index={6} href="/dashboard/expenses" />
+            <KpiCard label={t("dashboard.kpi.unsoldValue")} value={model.inv.availableValue} format={(n) => formatPkr(n, { compact: true })} icon={PackageOpen} accent="gold" index={7} href="/dashboard/properties" />
           </div>
 
           <SmartInsights insights={model.insights} />
 
           {/* ─────────── money */}
-          <SectionTitle eyebrow="Money" title="Collections, cash & costs" />
+          <SectionTitle eyebrow={t("dashboard.section.money")} title={t("dashboard.section.moneyTitle")} />
           <div className="grid gap-4 xl:grid-cols-12">
             <div className="xl:col-span-8"><CollectionSchedule schedule={model.schedule} /></div>
             <div className="xl:col-span-4"><ReceivableAging rec={model.rec} customers={data.customers} /></div>
@@ -168,7 +173,7 @@ function DemoDashboardPage() {
           </div>
 
           {/* ─────────── sales */}
-          <SectionTitle eyebrow="Sales & projects" title="How the portfolio is performing" />
+          <SectionTitle eyebrow={t("dashboard.section.sales")} title={t("dashboard.section.salesTitle")} />
           <div className="grid gap-4 xl:grid-cols-12">
             <div className="xl:col-span-8"><PortfolioTable rows={model.port} /></div>
             <div className="xl:col-span-4"><AgentLeaderboard rows={model.agents} /></div>
@@ -179,7 +184,7 @@ function DemoDashboardPage() {
           </div>
 
           {/* ─────────── operations */}
-          <SectionTitle eyebrow="Operations" title="What's coming and what just happened" />
+          <SectionTitle eyebrow={t("dashboard.section.operations")} title={t("dashboard.section.operationsTitle")} />
           <div className="grid gap-4 xl:grid-cols-12">
             <div className="xl:col-span-5"><UpcomingTimeline events={model.events} /></div>
             <SpotlightCard className="p-5 xl:col-span-4"><ActivityFeed events={model.activity} /></SpotlightCard>
@@ -189,34 +194,34 @@ function DemoDashboardPage() {
           <SpotlightCard className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="font-heading text-base font-semibold">Recent bookings</h3>
-                <p className="text-xs text-muted-foreground">Latest deals across all projects</p>
+                <h3 className="font-heading text-base font-semibold">{t("dashboard.recent.title")}</h3>
+                <p className="text-xs text-muted-foreground">{t("dashboard.recent.note")}</p>
               </div>
               <Button variant="ghost" size="sm" className="group gap-1" asChild>
                 <Link href="/dashboard/deals">
-                  View all
-                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                  {t("common.viewAll")}
+                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
                 </Link>
               </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Voucher</th>
-                    <th className="pb-2.5 font-medium">Customer</th>
-                    <th className="pb-2.5 font-medium">Property</th>
-                    <th className="pb-2.5 font-medium">Amount</th>
-                    <th className="pb-2.5 font-medium">Status</th>
-                    <th className="pb-2.5 font-medium">Date</th>
+                  <tr className="border-b border-border/70 text-start text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="pb-2.5 font-medium">{t("common.voucher")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.customer")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.property")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.date")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentDeals.map((deal, i) => {
                     const name = customerName(deal.customerId);
                     return (
-                      <motion.tr key={deal.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="border-b border-border/40 transition-colors last:border-0 hover:bg-secondary/50">
-                        <td className="py-3 font-mono text-xs text-muted-foreground">{deal.voucherNo}</td>
+                      <motion.tr key={deal.id} initial={{ opacity: 0, x: slide(8) }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="border-b border-border/40 transition-colors last:border-0 hover:bg-secondary/50">
+                        <td className="py-3 font-mono text-xs text-muted-foreground"><bdi dir="ltr">{deal.voucherNo}</bdi></td>
                         <td className="py-3">
                           <div className="flex items-center gap-2.5">
                             <span className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-gold/25 text-[10px] font-semibold text-primary">
@@ -225,10 +230,10 @@ function DemoDashboardPage() {
                             <span className="font-medium">{name}</span>
                           </div>
                         </td>
-                        <td className="py-3 text-muted-foreground">{unitCode(deal.unitId)}</td>
-                        <td className="py-3 font-medium tabular-nums">{formatPkr(deal.totalAmount)}</td>
+                        <td className="py-3 text-muted-foreground"><bdi dir="ltr">{unitCode(deal.unitId)}</bdi></td>
+                        <td className="py-3 font-medium tabular-nums"><bdi dir="ltr">{formatPkr(deal.totalAmount)}</bdi></td>
                         <td className="py-3"><StatusBadge status={deal.status} /></td>
-                        <td className="py-3 text-muted-foreground">{formatDate(deal.createdAt)}</td>
+                        <td className="py-3 text-muted-foreground"><bdi dir="ltr">{formatDate(deal.createdAt)}</bdi></td>
                       </motion.tr>
                     );
                   })}
@@ -242,11 +247,11 @@ function DemoDashboardPage() {
               <div className="flex items-center gap-4">
                 <span className="flex size-11 shrink-0 animate-float items-center justify-center rounded-xl bg-gold text-gold-foreground shadow-lg shadow-gold/30"><Crown className="size-5" /></span>
                 <div>
-                  <p className="font-heading text-base font-semibold">Unlock the CRM &amp; multi-account accounting</p>
-                  <p className="text-xs text-white/65">Upgrade to Professional to manage leads, quotations, cheques and contractors.</p>
+                  <p className="font-heading text-base font-semibold">{t("dashboard.upsell.title")}</p>
+                  <p className="text-xs text-white/65">{t("dashboard.upsell.text")}</p>
                 </div>
               </div>
-              <Button className="bg-gold text-gold-foreground hover:bg-gold/90" asChild><Link href="/dashboard/settings/billing">Upgrade plan</Link></Button>
+              <Button className="bg-gold text-gold-foreground hover:bg-gold/90" asChild><Link href="/dashboard/settings/billing">{t("dashboard.upsell.button")}</Link></Button>
             </Card>
           )}
         </>
@@ -274,17 +279,18 @@ function DashboardSkeleton() {
 
 /** A brand-new company has no data yet: show how to get going instead of a wall of zeros. */
 function GettingStarted({ companyName, onBooking }: { companyName: string; onBooking: () => void }) {
+  const { t } = useLanguage();
   const steps = [
-    { icon: FolderPlus, title: "Create your first project", text: "A housing scheme, tower or plot development.", href: "/dashboard/projects", done: false },
-    { icon: Building2, title: "Add properties", text: "Plots, houses, apartments or shops with size and price.", href: "/dashboard/properties", done: false },
-    { icon: Users2, title: "Add customers", text: "Buyers, investors and dealers in one address book.", href: "/dashboard/customers", done: false },
-    { icon: Handshake, title: "Record a booking", text: "Reserve a property and set its installment plan.", onClick: onBooking, done: false },
-    { icon: CalendarCheck, title: "Set up your budget", text: "Give each project a spending limit before money moves.", href: "/dashboard/budgets", done: false },
+    { icon: FolderPlus, title: t("dashboard.start.project.title"), text: t("dashboard.start.project.text"), href: "/dashboard/projects", done: false },
+    { icon: Building2, title: t("dashboard.start.properties.title"), text: t("dashboard.start.properties.text"), href: "/dashboard/properties", done: false },
+    { icon: Users2, title: t("dashboard.start.customers.title"), text: t("dashboard.start.customers.text"), href: "/dashboard/customers", done: false },
+    { icon: Handshake, title: t("dashboard.start.booking.title"), text: t("dashboard.start.booking.text"), onClick: onBooking, done: false },
+    { icon: CalendarCheck, title: t("dashboard.start.budget.title"), text: t("dashboard.start.budget.text"), href: "/dashboard/budgets", done: false },
   ];
   return (
     <SpotlightCard className="p-6">
-      <h2 className="font-heading text-xl font-semibold">Welcome to {companyName}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">This workspace is empty. Five steps and your dashboard comes alive with live collections, receivables, budgets and more.</p>
+      <h2 className="font-heading text-xl font-semibold">{t("dashboard.start.welcome", { name: companyName })}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.start.emptyDemo")}</p>
       <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {steps.map((s, i) => {
           const inner = (
@@ -297,7 +303,7 @@ function GettingStarted({ companyName, onBooking }: { companyName: string; onBoo
               <CheckCircle2 className={cn("size-5 shrink-0", s.done ? "text-success" : "text-border")} />
             </>
           );
-          const cls = "group flex items-center gap-3 rounded-xl border border-border/70 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md";
+          const cls = "group flex items-center gap-3 rounded-xl border border-border/70 p-4 text-start transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md";
           return (
             <motion.li key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
               {s.href ? <Link href={s.href} className={cls}>{inner}</Link> : <button type="button" onClick={s.onClick} className={cn(cls, "w-full")}>{inner}</button>}
@@ -310,13 +316,14 @@ function GettingStarted({ companyName, onBooking }: { companyName: string; onBoo
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useLanguage();
   const variants: Record<string, string> = {
     pending: "bg-warning/15 text-warning border-warning/30",
     confirmed: "bg-primary/10 text-primary border-primary/30",
     completed: "bg-success/15 text-success border-success/30",
     cancelled: "bg-destructive/10 text-destructive border-destructive/30",
   };
-  return <Badge variant="outline" className={cn("capitalize", variants[status])}>{status}</Badge>;
+  return <Badge variant="outline" className={cn(variants[status])}>{t(`status.${status}`)}</Badge>;
 }
 
 export default function Page() {

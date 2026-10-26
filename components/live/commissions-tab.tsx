@@ -46,7 +46,7 @@ export function CommissionsTab() {
         <div className="mb-3 flex justify-end"><ExportButton name="commissions" headers={["Commission", "Date", "Dealer", "Booking", "Rate %", "Amount", "Status"]} rows={rows.map((r) => [r.commissionNo, r.accruedOn, r.dealerName, r.bookingNo, num(r.ratePct), num(r.amount), r.status])} /></div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
-            <thead><tr className="border-b border-border/70 text-left text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Commission</th><th className="pb-2.5 font-medium">Dealer</th><th className="pb-2.5 font-medium">Booking</th><th className="pb-2.5 font-medium">Rate</th><th className="pb-2.5 pr-3 text-right font-medium">Amount</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
+            <thead><tr className="border-b border-border/70 text-start text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Commission</th><th className="pb-2.5 font-medium">Dealer</th><th className="pb-2.5 font-medium">Booking</th><th className="pb-2.5 font-medium">Rate</th><th className="pb-2.5 pe-3 text-end font-medium">Amount</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
             <tbody>
               {q.isLoading ? Array.from({ length: 3 }).map((_, i) => <tr key={i}><td colSpan={6} className="py-1.5"><Skeleton className="h-9 w-full" /></td></tr>) : rows.map((r) => (
                 <tr key={r.id} className="border-b border-border/40 last:border-0">
@@ -54,7 +54,7 @@ export function CommissionsTab() {
                   <td className="py-2.5">{r.dealerName}</td>
                   <td className="py-2.5"><Link href={`/dashboard/deals/${r.bookingId}`} className="font-mono text-primary hover:underline">{r.bookingNo}</Link></td>
                   <td className="py-2.5">{num(r.ratePct)}%</td>
-                  <td className={`whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums ${r.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatMoney(num(r.amount))}</td>
+                  <td className={`whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums ${r.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatMoney(num(r.amount))}</td>
                   <td className="py-2.5 capitalize">{r.status}</td>
                 </tr>
               ))}

@@ -51,7 +51,7 @@ export function AmountInput({
   const size = shown.length > 22 ? "text-[11px]" : shown.length > 18 ? "text-xs" : shown.length > 14 ? "text-sm" : "text-base";
   return (
     <div className={cn("relative min-w-[11rem]", className)}>
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">Rs</span>
+      <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">Rs</span>
       <input
         id={id}
         inputMode="decimal"
@@ -67,7 +67,7 @@ export function AmountInput({
           else if (value === "-") onChange("");
         }}
         className={cn(
-          "h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-right font-mono tabular-nums shadow-xs outline-none transition-[color,box-shadow,font-size]",
+          "h-9 w-full rounded-md border border-input bg-transparent ps-9 pe-3 text-end font-mono tabular-nums shadow-xs outline-none transition-[color,box-shadow,font-size]",
           "placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30",
           size,
         )}

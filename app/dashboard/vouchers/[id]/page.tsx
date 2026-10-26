@@ -77,7 +77,7 @@ function DemoVoucherDetailPage() {
     return (
       <div className="mx-auto max-w-[1200px] space-y-4">
         <Link href="/dashboard/vouchers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
           Back to vouchers
         </Link>
         <Card className="p-10 text-center">
@@ -141,13 +141,13 @@ function DemoVoucherDetailPage() {
             <div className="overflow-x-auto rounded-lg border border-border/70">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 bg-muted/50 text-left text-xs text-muted-foreground">
-                    <th className="py-2 pl-3 font-medium">Account</th>
-                    <th className="py-2 pr-2 font-medium">Remarks</th>
-                    <th className="py-2 pr-2 font-medium">Cost Center</th>
-                    <th className="py-2 pr-2 font-medium">Project</th>
-                    <th className="py-2 pr-3 text-right font-medium">Debit</th>
-                    <th className="py-2 pr-3 text-right font-medium">Credit</th>
+                  <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
+                    <th className="py-2 ps-3 font-medium">Account</th>
+                    <th className="py-2 pe-2 font-medium">Remarks</th>
+                    <th className="py-2 pe-2 font-medium">Cost Center</th>
+                    <th className="py-2 pe-2 font-medium">Project</th>
+                    <th className="py-2 pe-3 text-end font-medium">Debit</th>
+                    <th className="py-2 pe-3 text-end font-medium">Credit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -155,17 +155,17 @@ function DemoVoucherDetailPage() {
                     const account = leafAccounts.find((a) => a.id === line.accountId);
                     return (
                       <tr key={line.id} className="border-b border-border/40 last:border-0">
-                        <td className="py-2.5 pl-3">
+                        <td className="py-2.5 ps-3">
                           <span className="flex items-center gap-1.5">
                             <span className="font-mono text-[10px] text-muted-foreground">{account?.code}</span>
                             {account?.name ?? "Unknown account"}
                           </span>
                         </td>
-                        <td className="py-2.5 pr-2 text-muted-foreground">{line.remarks || "—"}</td>
-                        <td className="py-2.5 pr-2 text-muted-foreground">{line.costCenter || "—"}</td>
-                        <td className="py-2.5 pr-2 text-muted-foreground">{line.project || "—"}</td>
-                        <td className="py-2.5 pr-3 text-right tabular-nums">{line.debit ? formatPkr(line.debit) : "—"}</td>
-                        <td className="py-2.5 pr-3 text-right tabular-nums">{line.credit ? formatPkr(line.credit) : "—"}</td>
+                        <td className="py-2.5 pe-2 text-muted-foreground">{line.remarks || "—"}</td>
+                        <td className="py-2.5 pe-2 text-muted-foreground">{line.costCenter || "—"}</td>
+                        <td className="py-2.5 pe-2 text-muted-foreground">{line.project || "—"}</td>
+                        <td className="py-2.5 pe-3 text-end tabular-nums">{line.debit ? formatPkr(line.debit) : "—"}</td>
+                        <td className="py-2.5 pe-3 text-end tabular-nums">{line.credit ? formatPkr(line.credit) : "—"}</td>
                       </tr>
                     );
                   })}

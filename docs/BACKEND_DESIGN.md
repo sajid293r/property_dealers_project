@@ -275,6 +275,7 @@ For each module: **what the prototype has → what production must record (new d
 ### 6.1 Platform (tenancy, users, roles, settings)
 - **Has:** company switcher, users, roles/permission matrix, company profile, plan tiers.
 - **Record:** organizations, companies (legal name, NTN, **STRN**, address, logo, letterhead, bank accounts), users (MFA, last login, device sessions), invitations (token, expiry), `company_members(role)`, roles + `role_permissions(…, data_scope)`, `api_keys*`, `feature_flags`, per-company `settings` (numbering formats, marla→sqft, rounding, revenue-recognition policy, late-fee policy, default accounts for posting rules, working week/holidays, language, timezone).
+- **Language:** `users.preferred_language` (`en ur ps zh fr de ja ar`, null = not chosen; migration 0016, changed with `PATCH /v1/me`) and the company default in `companies.settings.default_language` (`PATCH /v1/company`). Resolution: the person's choice, then the company default, then the browser's last choice, then English. Server messages stay English with a stable `code`; the website translates by code.
 - **Rules:** one owner minimum; cannot delete the last admin; role changes are audited; invitations expire; plan limits (seats, companies, projects, storage) checked on create.
 - **Tables:** `organizations, companies, users, org_members, roles, role_permissions, company_members, invitations, sessions, api_keys, settings, feature_flags, posting_rules, numbering_formats`.
 

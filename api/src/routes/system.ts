@@ -4,6 +4,7 @@ import type { Db } from "../db.js";
 import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { parse } from "../http.js";
+import { LANGUAGES } from "../languages.js";
 
 const ENTITIES = ["booking", "installment", "receipt", "property", "voucher"] as const;
 
@@ -17,7 +18,8 @@ export function systemRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const user = req.auth!;
     const companies = await db.asUser(user.userId, async (q) => {
       const r = await q.query(
-        `select c.id as "companyId", c.name, c.short_name as "shortName", cm.status, r.name as "role", app.company_plan(c.id) as "plan"
+        `select c.id as "companyId", c.name, c.short_name as "shortName", cm.status, r.name as "role", app.company_plan(c.id) as "plan",
+              c.settings ->> 'default_language' as "defaultLanguage"
            from company_members cm
            join companies c on c.id = cm.company_id
            join roles r on r.id = cm.role_id
@@ -26,16 +28,27 @@ export function systemRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       );
       return r.rows;
     });
-    const profile = await db.asUser(user.userId, async (q) => (await q.query<{ full_name: string }>(`select full_name from users where id = $1`, [user.userId])).rows[0]);
-    return { user: { id: user.userId, email: user.email, fullName: profile?.full_name ?? user.fullName }, companies };
+    const profile = await db.asUser(user.userId, async (q) => (await q.query<{ full_name: string; preferred_language: string | null }>(`select full_name, preferred_language from users where id = $1`, [user.userId])).rows[0]);
+    return { user: { id: user.userId, email: user.email, fullName: profile?.full_name ?? user.fullName, language: profile?.preferred_language ?? null }, companies };
   });
 
-  // Change my own display name (it is what colleagues see on records and in the users list).
+  // Change my own display name and/or my interface language (null clears the choice, so the company default applies).
   app.patch("/v1/me", { preHandler: guards.signedIn }, async (req) => {
     const user = req.auth!;
-    const b = parse(z.object({ fullName: z.string().trim().min(2).max(80) }), req.body);
-    await db.asUser(user.userId, (q) => q.query(`update users set full_name = $2 where id = $1`, [user.userId, b.fullName]));
-    return { user: { id: user.userId, email: user.email, fullName: b.fullName } };
+    const b = parse(
+      z
+        .object({ fullName: z.string().trim().min(2).max(80).optional(), language: z.enum(LANGUAGES).nullable().optional() })
+        .refine((v) => v.fullName !== undefined || v.language !== undefined, { message: "Nothing to change" }),
+      req.body,
+    );
+    const sets: string[] = [];
+    const vals: unknown[] = [user.userId];
+    if (b.fullName !== undefined) { vals.push(b.fullName); sets.push(`full_name = $${vals.length}`); }
+    if (b.language !== undefined) { vals.push(b.language); sets.push(`preferred_language = $${vals.length}`); }
+    const row = await db.asUser(user.userId, async (q) =>
+      (await q.query<{ full_name: string; preferred_language: string | null }>(`update users set ${sets.join(", ")} where id = $1 returning full_name, preferred_language`, vals)).rows[0],
+    );
+    return { user: { id: user.userId, email: user.email, fullName: row?.full_name ?? b.fullName ?? user.fullName, language: row?.preferred_language ?? null } };
   });
 
   // What may the signed-in person do in this company? (the screens use it to hide buttons that would be refused)

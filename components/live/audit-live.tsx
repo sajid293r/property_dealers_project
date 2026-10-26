@@ -64,7 +64,7 @@ export function LiveAudit() {
           const isOpen = open === r.id;
           return (
             <div key={r.id}>
-              <button type="button" onClick={() => setOpen(isOpen ? null : r.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-secondary/40">
+              <button type="button" onClick={() => setOpen(isOpen ? null : r.id)} className="flex w-full items-center gap-3 px-4 py-3 text-start text-sm hover:bg-secondary/40">
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${a.cls}`}>{a.text}</span>
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{LABEL[r.entityType] ?? pretty(r.entityType)}</span>
@@ -80,8 +80,8 @@ export function LiveAudit() {
                     <tbody>
                       {r.changes.map((c) => (
                         <tr key={c.field} className="border-b border-border/40 last:border-0">
-                          <td className="w-40 py-1.5 pr-3 font-medium">{pretty(c.field)}</td>
-                          <td className="py-1.5 pr-3 text-muted-foreground">{r.action === "create" ? "" : show(c.from)}</td>
+                          <td className="w-40 py-1.5 pe-3 font-medium">{pretty(c.field)}</td>
+                          <td className="py-1.5 pe-3 text-muted-foreground">{r.action === "create" ? "" : show(c.from)}</td>
                           <td className="py-1.5">{r.action === "delete" ? "" : `→ ${show(c.to)}`}</td>
                         </tr>
                       ))}

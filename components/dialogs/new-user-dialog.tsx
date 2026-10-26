@@ -128,7 +128,7 @@ export function NewUserDialog({
 
       {roleId && roles && (
         <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
-          <span className="mr-1.5">Will be added as</span>
+          <span className="me-1.5">Will be added as</span>
           <RoleBadge role={roles.find((r) => r.id === roleId)!} />
         </div>
       )}

@@ -47,6 +47,26 @@ export interface NavItem {
   liveOnly?: boolean;
 }
 
+/** Dictionary key of a menu section, e.g. "Sales & CRM" -> nav.section.sales */
+const SECTION_KEYS: Record<string, string> = {
+  Overview: "overview",
+  Projects: "projects",
+  "Sales & CRM": "sales",
+  Portfolio: "portfolio",
+  Finance: "finance",
+  People: "people",
+  Administration: "administration",
+  Configuration: "configuration",
+};
+export const navSectionKey = (section: string) => `nav.section.${SECTION_KEYS[section] ?? section}`;
+/** Dictionary key of a menu item: /dashboard/crm -> nav.item.crm. A parent with sub-pages is named after its folder. */
+export function navItemKey(item: { href: string; children?: unknown[] }) {
+  const path = item.href.replace(/^\/dashboard\/?/, "");
+  if (!path) return "nav.item.dashboard";
+  return `nav.item.${item.children ? path.split("/")[0] : path.replace(/\//g, ".")}`;
+}
+export const navChildKey = (child: { href: string }) => `nav.item.${child.href.replace(/^\/dashboard\//, "").replace(/\//g, ".")}`;
+
 const TIER_RANK: Record<PlanTier, number> = { basic: 0, moderate: 1, premium: 2 };
 
 export function tierMeets(current: PlanTier, minimum: PlanTier) {

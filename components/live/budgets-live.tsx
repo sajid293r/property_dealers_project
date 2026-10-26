@@ -86,7 +86,7 @@ function LinesEditor({ lines, setLines }: { lines: DraftLine[]; setLines: (l: Dr
   const set = (i: number, patch: Partial<DraftLine>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   return (
     <div className="space-y-2">
-      <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
+      <div className="max-h-[260px] space-y-2 overflow-y-auto pe-1">
         {lines.map((l, i) => (
           <div key={i} className="grid grid-cols-[1fr_1.2fr_130px_32px] items-center gap-2">
             <Input value={l.category} onChange={(e) => set(i, { category: e.target.value })} placeholder="e.g. Earthwork" aria-label="Category" />
@@ -193,7 +193,7 @@ function BudgetSheet({ id, onClose }: { id: string | null; onClose: () => void }
                 const pct = l.utilizationPct ? num(l.utilizationPct) : 0;
                 return (
                   <div key={l.id}>
-                    <div className="flex items-baseline justify-between gap-3 text-sm"><span className="font-medium">{l.category}<span className="ml-2 text-xs font-normal text-muted-foreground">{l.accountCode} {l.accountName}</span></span><span className="font-mono text-xs">{formatMoney(num(l.actual) + num(l.committed), { compact: true })} / {formatMoney(num(l.budgetAmount), { compact: true })}</span></div>
+                    <div className="flex items-baseline justify-between gap-3 text-sm"><span className="font-medium">{l.category}<span className="ms-2 text-xs font-normal text-muted-foreground">{l.accountCode} {l.accountName}</span></span><span className="font-mono text-xs">{formatMoney(num(l.actual) + num(l.committed), { compact: true })} / {formatMoney(num(l.budgetAmount), { compact: true })}</span></div>
                     <Progress value={Math.min(100, pct)} className={`mt-1 h-1.5 ${pct > 100 ? "[&>div]:bg-destructive" : pct > 85 ? "[&>div]:bg-warning" : ""}`} />
                   </div>
                 );

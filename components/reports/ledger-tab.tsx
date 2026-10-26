@@ -83,19 +83,19 @@ export function LedgerTab() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Date</th>
                     <th className="pb-2.5 font-medium">Voucher</th>
                     <th className="pb-2.5 font-medium">Description</th>
-                    <th className="pb-2.5 pr-3 text-right font-medium">Debit</th>
-                    <th className="pb-2.5 pr-3 text-right font-medium">Credit</th>
-                    <th className="pb-2.5 text-right font-medium">Balance</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">Debit</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">Credit</th>
+                    <th className="pb-2.5 text-end font-medium">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/40 bg-muted/30">
                     <td colSpan={5} className="py-2 font-medium text-muted-foreground">Opening balance</td>
-                    <td className="py-2 text-right tabular-nums font-medium">{formatLedgerBalance(openingBalance)}</td>
+                    <td className="py-2 text-end tabular-nums font-medium">{formatLedgerBalance(openingBalance)}</td>
                   </tr>
                   {displayed.map((e, i) => (
                     <motion.tr
@@ -113,9 +113,9 @@ export function LedgerTab() {
                         </div>
                       </td>
                       <td className="py-2.5 text-muted-foreground">{e.description}</td>
-                      <td className="py-2.5 pr-3 text-right tabular-nums">{e.debit ? formatPkr(e.debit) : "—"}</td>
-                      <td className="py-2.5 pr-3 text-right tabular-nums">{e.credit ? formatPkr(e.credit) : "—"}</td>
-                      <td className={cn("py-2.5 text-right tabular-nums font-medium", e.balance < 0 && "text-destructive")}>
+                      <td className="py-2.5 pe-3 text-end tabular-nums">{e.debit ? formatPkr(e.debit) : "—"}</td>
+                      <td className="py-2.5 pe-3 text-end tabular-nums">{e.credit ? formatPkr(e.credit) : "—"}</td>
+                      <td className={cn("py-2.5 text-end tabular-nums font-medium", e.balance < 0 && "text-destructive")}>
                         {formatLedgerBalance(e.balance)}
                       </td>
                     </motion.tr>
@@ -131,9 +131,9 @@ export function LedgerTab() {
                 <tfoot>
                   <tr className="border-t-2 border-border">
                     <td colSpan={3} className="py-2.5 font-semibold">Closing balance</td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums font-semibold">{formatPkr(totalDebit)}</td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums font-semibold">{formatPkr(totalCredit)}</td>
-                    <td className="py-2.5 text-right tabular-nums font-semibold">{formatLedgerBalance(closingBalance)}</td>
+                    <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatPkr(totalDebit)}</td>
+                    <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatPkr(totalCredit)}</td>
+                    <td className="py-2.5 text-end tabular-nums font-semibold">{formatLedgerBalance(closingBalance)}</td>
                   </tr>
                 </tfoot>
               </table>

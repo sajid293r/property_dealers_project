@@ -15,12 +15,12 @@ export function DataTableSearch({
 }) {
   return (
     <div className="relative w-full max-w-xs">
-      <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pl-8"
+        className="ps-8"
       />
     </div>
   );

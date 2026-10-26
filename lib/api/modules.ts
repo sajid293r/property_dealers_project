@@ -34,10 +34,10 @@ export const deleteRole = (companyId: string, id: string) => api<void>(`/v1/role
 
 export interface CompanyProfile {
   id: string; name: string; shortName: string | null; ntn: string | null; strn: string | null; city: string | null; province: string | null; address: string | null;
-  phone: string | null; email: string | null; currency: string; fiscalYearStart: number; marlaSqft: string | null; voucherSelfApproval: boolean; penaltyRatePctMonth: string; penaltyGraceDays: number;
+  phone: string | null; email: string | null; currency: string; fiscalYearStart: number; marlaSqft: string | null; voucherSelfApproval: boolean; penaltyRatePctMonth: string; penaltyGraceDays: number; defaultLanguage: string | null;
 }
 export const fetchCompanyProfile = (companyId: string) => api<CompanyProfile>("/v1/company", { companyId });
-export const saveCompanyProfile = (companyId: string, body: Partial<Omit<CompanyProfile, "id" | "currency" | "fiscalYearStart" | "marlaSqft" | "penaltyRatePctMonth" | "penaltyGraceDays">> & { marlaSqft?: number; penaltyRatePctMonth?: number; penaltyGraceDays?: number }) =>
+export const saveCompanyProfile = (companyId: string, body: Partial<Omit<CompanyProfile, "id" | "currency" | "fiscalYearStart" | "marlaSqft" | "penaltyRatePctMonth" | "penaltyGraceDays" | "defaultLanguage">> & { marlaSqft?: number; penaltyRatePctMonth?: number; penaltyGraceDays?: number; defaultLanguage?: string }) =>
   api<CompanyProfile>("/v1/company", { method: "PATCH", companyId, body });
 
 // ───────────────────────────────────────────── leads and quotations

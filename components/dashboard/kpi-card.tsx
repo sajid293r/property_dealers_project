@@ -7,6 +7,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, type LucideIcon } from "lucid
 import { AnimatedNumber } from "@/components/animated-number";
 import { Sparkline } from "@/components/sparkline";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 const MotionLink = motion.create(Link);
 
@@ -36,12 +37,13 @@ export function KpiCard({
   /** Optional series drawn as a sparkline along the card bottom. */
   trend?: number[];
 }) {
+  const t = useT();
   const positive = (delta ?? 0) >= 0;
   const interactive = Boolean(href || onClick);
-  const resolvedHint = hintLabel ?? (href ? "View" : "Filter");
+  const resolvedHint = hintLabel ?? (href ? t("dashboard.kpi.hintView") : t("dashboard.kpi.hintFilter"));
 
   const cardClassName = cn(
-    "spotlight group relative block w-full overflow-hidden rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.08]",
+    "spotlight group relative block w-full overflow-hidden rounded-xl border border-border/70 bg-card p-4 text-start shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.08]",
     interactive && "cursor-pointer hover:border-gold/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   );
 
@@ -62,7 +64,7 @@ export function KpiCard({
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div
         className={cn(
-          "absolute -right-6 -top-6 size-24 rounded-full opacity-[0.08] blur-[2px] transition-transform duration-500 group-hover:scale-125",
+          "absolute -end-6 -top-6 size-24 rounded-full opacity-[0.08] blur-[2px] transition-transform duration-500 group-hover:scale-125",
           accent === "gold" ? "bg-gold" : "bg-primary",
         )}
       />
@@ -96,15 +98,15 @@ export function KpiCard({
               )}
             >
               {positive ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-              {Math.abs(delta)}%
+              <bdi dir="ltr">{Math.abs(delta)}%</bdi>
             </span>
-            <span className="text-muted-foreground">vs last period</span>
+            <span className="text-muted-foreground">{t("dashboard.kpi.vsLast")}</span>
           </>
         )}
         {interactive && (
-          <span className="ml-auto flex items-center gap-0.5 font-medium text-muted-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <span className="ms-auto flex items-center gap-0.5 font-medium text-muted-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             {resolvedHint}
-            <ArrowRight className="size-3" />
+            <ArrowRight className="size-3 rtl:-scale-x-100" />
           </span>
         )}
       </div>

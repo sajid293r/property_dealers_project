@@ -1,8 +1,8 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PLAN_LABEL } from "@/lib/plan";
 import { usePlanTier } from "@/lib/providers/plan-provider";
+import { useT } from "@/lib/i18n/provider";
 import type { PlanTier } from "@/lib/types";
 import { Sparkles } from "lucide-react";
 
@@ -10,6 +10,7 @@ const TIERS: PlanTier[] = ["basic", "moderate", "premium"];
 
 export function PlanSwitcher() {
   const { tier, setTier } = usePlanTier();
+  const t = useT();
 
   return (
     <Select value={tier} onValueChange={(v) => setTier(v as PlanTier)}>
@@ -18,9 +19,9 @@ export function PlanSwitcher() {
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
-        {TIERS.map((t) => (
-          <SelectItem key={t} value={t}>
-            {PLAN_LABEL[t]} plan
+        {TIERS.map((p) => (
+          <SelectItem key={p} value={p}>
+            {t("plan.named", { name: t(`plan.${p}`) })}
           </SelectItem>
         ))}
       </SelectContent>

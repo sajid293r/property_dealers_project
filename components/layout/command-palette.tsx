@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CornerDownLeft, Lock, Search, Sparkles, type LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { navAvailable, tierMeets } from "@/lib/plan";
+import { navAvailable, navChildKey, navItemKey, navSectionKey, tierMeets } from "@/lib/plan";
+import { useT } from "@/lib/i18n/provider";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { useCompany } from "@/lib/providers/company-provider";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export function CommandPalette({
   onOpenChange: (o: boolean) => void;
 }) {
   const router = useRouter();
+  const t = useT();
   const { tier } = usePlanTier();
   const { live } = useCompany();
   const [query, setQuery] = React.useState("");
@@ -40,15 +42,15 @@ export function CommandPalette({
         if (item.children?.length) {
           return item.children.map((c) => ({
             href: c.href,
-            label: c.label,
-            section: item.section,
+            label: t(navChildKey(c)),
+            section: t(navSectionKey(item.section)),
             icon: item.icon,
             locked,
           }));
         }
-        return [{ href: item.href, label: item.label, section: item.section, icon: item.icon, locked }];
+        return [{ href: item.href, label: t(navItemKey(item)), section: t(navSectionKey(item.section)), icon: item.icon, locked }];
       }),
-    [tier, live],
+    [tier, live, t],
   );
 
   const results = React.useMemo(() => {
@@ -92,8 +94,8 @@ export function CommandPalette({
         className="top-[18%] max-w-[calc(100%-2rem)] translate-y-0 gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl shadow-primary/20 sm:max-w-xl"
         onKeyDown={onKeyDown}
       >
-        <DialogTitle className="sr-only">Command palette</DialogTitle>
-        <DialogDescription className="sr-only">Search and jump to any module</DialogDescription>
+        <DialogTitle className="sr-only">{t("shell.palette.title")}</DialogTitle>
+        <DialogDescription className="sr-only">{t("shell.palette.description")}</DialogDescription>
         <div className="relative flex items-center gap-3 border-b px-4">
           <Search className="size-4.5 text-muted-foreground" />
           <input
@@ -103,7 +105,7 @@ export function CommandPalette({
               setQuery(e.target.value);
               setActive(0);
             }}
-            placeholder="Jump to a module…  try “vouchers”, “plot map”, “payroll”"
+            placeholder={t("shell.palette.placeholder")}
             className="h-14 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
           />
           <kbd className="rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">ESC</kbd>
@@ -113,7 +115,7 @@ export function CommandPalette({
           {results.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-12 text-center text-sm text-muted-foreground">
               <Sparkles className="size-6 text-gold" />
-              Nothing matches “{query}”
+              {t("shell.palette.noMatch", { query })}
             </div>
           )}
           {results.map((e, i) => {
@@ -132,14 +134,14 @@ export function CommandPalette({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => go(e)}
                   className={cn(
-                    "relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                    "relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-start text-sm transition-colors",
                     i === active ? "bg-primary/10 text-foreground" : "text-foreground/80",
                   )}
                 >
                   {i === active && (
                     <motion.span
                       layoutId="cmdk-active"
-                      className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-gold"
+                      className="absolute inset-y-1.5 start-0 w-[3px] rounded-full bg-gold"
                       transition={{ type: "spring", stiffness: 500, damping: 36 }}
                     />
                   )}
@@ -155,7 +157,7 @@ export function CommandPalette({
                   {e.locked ? (
                     <Lock className="size-3.5 text-muted-foreground" />
                   ) : (
-                    i === active && <CornerDownLeft className="size-3.5 text-muted-foreground" />
+                    i === active && <CornerDownLeft className="size-3.5 text-muted-foreground rtl:-scale-x-100" />
                   )}
                 </button>
               </React.Fragment>
@@ -163,9 +165,9 @@ export function CommandPalette({
           })}
         </div>
         <div className="flex items-center gap-4 border-t bg-muted/40 px-4 py-2 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1"><kbd className="rounded border bg-background px-1 font-mono">↑↓</kbd> navigate</span>
-          <span className="flex items-center gap-1"><kbd className="rounded border bg-background px-1 font-mono">↵</kbd> open</span>
-          <span className="ml-auto">{results.length} results</span>
+          <span className="flex items-center gap-1"><kbd className="rounded border bg-background px-1 font-mono">↑↓</kbd> {t("shell.palette.navigate")}</span>
+          <span className="flex items-center gap-1"><kbd className="rounded border bg-background px-1 font-mono">↵</kbd> {t("shell.palette.openHint")}</span>
+          <span className="ms-auto">{t("shell.palette.results", { count: results.length })}</span>
         </div>
       </DialogContent>
     </Dialog>

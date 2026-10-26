@@ -43,13 +43,13 @@ function TrialBalanceTab({ from, to }: { from: string; to: string }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+            <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
               <th className="pb-2 font-medium">Code</th>
               <th className="pb-2 font-medium">Account</th>
-              <th className="pb-2 pr-3 text-right font-medium">Opening</th>
-              <th className="pb-2 pr-3 text-right font-medium">Debit</th>
-              <th className="pb-2 pr-3 text-right font-medium">Credit</th>
-              <th className="pb-2 pr-3 text-right font-medium">Closing</th>
+              <th className="pb-2 pe-3 text-end font-medium">Opening</th>
+              <th className="pb-2 pe-3 text-end font-medium">Debit</th>
+              <th className="pb-2 pe-3 text-end font-medium">Credit</th>
+              <th className="pb-2 pe-3 text-end font-medium">Closing</th>
             </tr>
           </thead>
           <tbody>
@@ -57,16 +57,16 @@ function TrialBalanceTab({ from, to }: { from: string; to: string }) {
               <tr key={r.id} className="border-b border-border/40">
                 <td className="py-2 font-mono text-xs text-muted-foreground">{r.code}</td>
                 <td className="py-2">{r.name}</td>
-                <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{money(r.opening)}</td>
-                <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{money(r.debit)}</td>
-                <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{money(r.credit)}</td>
-                <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums font-medium">{money(r.closing)}</td>
+                <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{money(r.opening)}</td>
+                <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{money(r.debit)}</td>
+                <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{money(r.credit)}</td>
+                <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums font-medium">{money(r.closing)}</td>
               </tr>
             ))}
             <tr className="font-semibold">
               <td className="pt-3" colSpan={3}>Totals</td>
-              <td className="whitespace-nowrap pt-3 pr-3 text-right font-mono tabular-nums">{formatMoney(t.debit)}</td>
-              <td className="whitespace-nowrap pt-3 pr-3 text-right font-mono tabular-nums">{formatMoney(t.credit)}</td>
+              <td className="whitespace-nowrap pt-3 pe-3 text-end font-mono tabular-nums">{formatMoney(t.debit)}</td>
+              <td className="whitespace-nowrap pt-3 pe-3 text-end font-mono tabular-nums">{formatMoney(t.credit)}</td>
               <td />
             </tr>
           </tbody>
@@ -149,12 +149,12 @@ function PartyTab({ from, to }: { from: string; to: string }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-sm">
               <thead>
-                <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                   <th className="pb-2 font-medium">Date</th>
                   <th className="pb-2 font-medium">Entry</th>
-                  <th className="pb-2 pr-3 text-right font-medium">Debit</th>
-                  <th className="pb-2 pr-3 text-right font-medium">Credit</th>
-                  <th className="pb-2 pr-3 text-right font-medium">Balance</th>
+                  <th className="pb-2 pe-3 text-end font-medium">Debit</th>
+                  <th className="pb-2 pe-3 text-end font-medium">Credit</th>
+                  <th className="pb-2 pe-3 text-end font-medium">Balance</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,9 +162,9 @@ function PartyTab({ from, to }: { from: string; to: string }) {
                   <tr key={i} className="border-b border-border/40">
                     <td className="whitespace-nowrap py-2 text-muted-foreground">{formatDate(l.date)}</td>
                     <td className="py-2"><span className="font-mono text-xs">{l.number}</span> <span className="text-muted-foreground">{l.accountName}</span></td>
-                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{money(num(l.debit))}</td>
-                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{money(num(l.credit))}</td>
-                    <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums font-medium">{formatMoney(num(l.balance))}</td>
+                    <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{money(num(l.debit))}</td>
+                    <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{money(num(l.credit))}</td>
+                    <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums font-medium">{formatMoney(num(l.balance))}</td>
                   </tr>
                 ))}
               </tbody>

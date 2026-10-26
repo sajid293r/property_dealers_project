@@ -103,11 +103,11 @@ export function LiveDeals() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[860px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Booking</th>
                     <th className="pb-2.5 font-medium">Customer</th>
                     <th className="pb-2.5 font-medium">Property</th>
-                    <th className="pb-2.5 pr-3 text-right font-medium">Price</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">Price</th>
                     <th className="pb-2.5 font-medium">Paid</th>
                     <th className="pb-2.5 font-medium">Status</th>
                   </tr>
@@ -123,11 +123,11 @@ export function LiveDeals() {
                             <td className="py-2.5"><p className="font-mono font-medium">{b.bookingNo}</p><p className="text-xs text-muted-foreground">{formatDate(b.bookingDate)}</p></td>
                             <td className="py-2.5 font-medium">{b.customerName}</td>
                             <td className="py-2.5"><p>{b.propertyCode} · {b.propertyTitle}</p><p className="text-xs text-muted-foreground">{b.projectName ?? "—"}</p></td>
-                            <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(b.netPrice))}</td>
+                            <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(b.netPrice))}</td>
                             <td className="min-w-[150px] py-2.5">
                               <Progress value={pct} className="h-1.5" />
                               <p className="mt-1 text-xs text-muted-foreground">{formatMoney(num(b.paidAmount), { compact: true })} of {formatMoney(num(b.netPrice), { compact: true })}
-                                {num(b.overdueAmount) > 0 && <span className="ml-1 font-medium text-warning">· overdue</span>}</p>
+                                {num(b.overdueAmount) > 0 && <span className="ms-1 font-medium text-warning">· overdue</span>}</p>
                             </td>
                             <td className="py-2.5"><StatusPill status={b.status} /></td>
                           </motion.tr>
@@ -150,12 +150,12 @@ export function LiveDeals() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[780px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Receipt</th>
                     <th className="pb-2.5 font-medium">Customer</th>
                     <th className="pb-2.5 font-medium">Booking</th>
                     <th className="pb-2.5 font-medium">Paid by</th>
-                    <th className="pb-2.5 pr-3 text-right font-medium">Amount</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">Amount</th>
                     <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
@@ -168,8 +168,8 @@ export function LiveDeals() {
                           <td className="py-2.5">{r.customerName}</td>
                           <td className="py-2.5">{r.bookingId ? <Link href={`/dashboard/deals/${r.bookingId}`} className="font-mono text-primary hover:underline">{r.bookingNo}</Link> : "—"}</td>
                           <td className="py-2.5"><p>{methodLabel(r.method)}</p><p className="text-xs text-muted-foreground">{[r.instrumentRef, r.depositAccountName].filter(Boolean).join(" · ")}</p></td>
-                          <td className={`whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums ${r.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatMoney(num(r.amount))}</td>
-                          <td className="py-2.5 text-right">
+                          <td className={`whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums ${r.status === "void" ? "text-muted-foreground line-through" : ""}`}>{formatMoney(num(r.amount))}</td>
+                          <td className="py-2.5 text-end">
                             <PrintLink kind="receipt" id={r.id} iconOnly label="Print receipt" variant="ghost" />{r.status === "void" ? <Badge variant="outline">Void</Badge> : can("accounts.approve") && (
                               <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setVoiding({ id: r.id, no: r.receiptNo })}>Void</Button>
                             )}

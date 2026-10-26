@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, Lightbulb, ShieldAlert, Sparkles, TrendingUp, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { SmartInsight } from "@/lib/dashboard-insights";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 const TONE: Record<SmartInsight["tone"], { icon: LucideIcon; tile: string; ring: string }> = {
   bad: { icon: ShieldAlert, tile: "bg-destructive/12 text-destructive", ring: "hover:border-destructive/40" },
@@ -15,6 +16,7 @@ const TONE: Record<SmartInsight["tone"], { icon: LucideIcon; tile: string; ring:
 
 /** Plain-language findings the system works out from the data — what changed, what is risky, what is going well. */
 export function SmartInsights({ insights }: { insights: SmartInsight[] }) {
+  const tr = useT();
   if (insights.length === 0) return null;
   return (
     <div>
@@ -23,8 +25,8 @@ export function SmartInsights({ insights }: { insights: SmartInsight[] }) {
           <Sparkles className="size-4" />
         </span>
         <div>
-          <h2 className="font-heading text-lg font-semibold">What the numbers are telling you</h2>
-          <p className="text-xs text-muted-foreground">Worked out automatically from your live records</p>
+          <h2 className="font-heading text-lg font-semibold">{tr("dashboard.insights.title")}</h2>
+          <p className="text-xs text-muted-foreground">{tr("dashboard.insights.note")}</p>
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -45,7 +47,7 @@ export function SmartInsights({ insights }: { insights: SmartInsight[] }) {
               {ins.cta && (
                 <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-70 transition-all group-hover:gap-1.5 group-hover:opacity-100">
                   {ins.cta}
-                  <ArrowUpRight className="size-3.5" />
+                  <ArrowUpRight className="size-3.5 rtl:-scale-x-100" />
                 </span>
               )}
             </>

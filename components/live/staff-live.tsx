@@ -50,9 +50,9 @@ export function LiveStaff() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Employee</th><th className="pb-2.5 font-medium">Role</th><th className="pb-2.5 font-medium">Joined</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Monthly pay</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
+                <th className="pb-2.5 pe-3 text-end font-medium">Monthly pay</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -61,9 +61,9 @@ export function LiveStaff() {
                   <td className="py-2.5"><p className="font-medium">{e.fullName}</p><p className="text-xs text-muted-foreground"><span className="font-mono">{e.empNo}</span>{e.phone ? ` · ${e.phone}` : ""}</p></td>
                   <td className="py-2.5"><p>{e.designation ?? "—"}</p><p className="text-xs text-muted-foreground">{e.department}</p></td>
                   <td className="py-2.5 text-muted-foreground">{formatDate(e.joinDate)}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(e.grossSalary))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(e.grossSalary))}</td>
                   <td className="py-2.5"><Badge variant="outline" className={e.status === "active" ? "bg-success/12 text-success" : "bg-muted text-muted-foreground"}>{e.status === "active" ? "Active" : e.status === "resigned" ? "Resigned" : "Terminated"}</Badge></td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-end">
                     {can("staff.edit") && <div className="flex justify-end gap-1.5"><AttachmentsButton entityType="employee" entityId={e.id} title={e.fullName} iconOnly canEdit categories={["CNIC copy", "Contract", "Qualification", "Other"]} /><Button size="sm" variant="outline" onClick={() => setEditing(e)}>Edit</Button>{e.status === "active" && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setLeaving(e)}>Left</Button>}</div>}
                   </td>
                 </tr>

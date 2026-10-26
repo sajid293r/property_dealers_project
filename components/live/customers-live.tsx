@@ -62,12 +62,12 @@ export function LiveCustomers() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Name</th>
                 <th className="pb-2.5 font-medium">Role</th>
                 <th className="pb-2.5 font-medium">Phone</th>
                 <th className="pb-2.5 font-medium">City</th>
-                <th className="pb-2.5 pr-1" /><th className="pb-2.5 pr-3 text-right font-medium">Balance</th>
+                <th className="pb-2.5 pe-1" /><th className="pb-2.5 pe-3 text-end font-medium">Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -84,8 +84,8 @@ export function LiveCustomers() {
                         <td className="py-2.5"><div className="flex flex-wrap gap-1">{p.roles.map((r) => <Badge key={r} variant="outline" className="text-[10.5px]">{ROLE_LABEL[r] ?? r}</Badge>)}</div></td>
                         <td className="whitespace-nowrap py-2.5 text-muted-foreground">{p.phone ?? "—"}</td>
                         <td className="py-2.5 text-muted-foreground">{p.city ?? "—"}</td>
-                        <td className="py-2.5 text-right"><AttachmentsButton entityType="party" entityId={p.id} title={p.name} iconOnly canEdit={can("customers.edit")} categories={["CNIC copy", "Agreement", "Photo", "Other"]} /></td>
-                        <td className={`whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums ${bal > 0 ? "text-success" : bal < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        <td className="py-2.5 text-end"><AttachmentsButton entityType="party" entityId={p.id} title={p.name} iconOnly canEdit={can("customers.edit")} categories={["CNIC copy", "Agreement", "Photo", "Other"]} /></td>
+                        <td className={`whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums ${bal > 0 ? "text-success" : bal < 0 ? "text-destructive" : "text-muted-foreground"}`}>
                           {bal === 0 ? "—" : `${formatMoney(Math.abs(bal))} ${bal > 0 ? "Dr" : "Cr"}`}
                         </td>
                       </motion.tr>

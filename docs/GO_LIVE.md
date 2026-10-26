@@ -55,7 +55,7 @@ Check it: open `https://<your-site>.netlify.app/api/health` → `{"ok":true}`, t
 - **Free plan allowance:** 125,000 function calls and 100 hours of run time a month. A busy team clicking all day stays well inside it; watch *Usage* on the Netlify dashboard.
 - **Not on Netlify?** `api/Dockerfile` runs the same API as a normal server (any container host); then set `NEXT_PUBLIC_API_URL` to its address and `CORS_ORIGIN` to the website's address.
 
-**Database changes:** run `cd api && npm run migrate` with `MIGRATION_DATABASE_URL` (the owner login) *before* deploying code that needs them. Migrations 0001–0015 are applied on the Supabase project today; after a migration that adds roles or permission areas run `cd api && npm run setup` once to top up the standard roles (Owner, Administrator, Sales Agent, Accountant, Viewer).
+**Database changes:** run `cd api && npm run migrate` with `MIGRATION_DATABASE_URL` (the owner login) *before* deploying code that needs them. Migrations 0001–0015 are applied on the Supabase project today; **0016 (interface language) must be applied before the multilingual release is deployed** (`cd api && npm run migrate`, then push; never put `MIGRATION_DATABASE_URL` on Netlify); after a migration that adds roles or permission areas run `cd api && npm run setup` once to top up the standard roles (Owner, Administrator, Sales Agent, Accountant, Viewer).
 
 ## 4. Smoke test after each deploy
 

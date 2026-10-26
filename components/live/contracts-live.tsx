@@ -61,9 +61,9 @@ export function LiveContracts() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Contract</th><th className="pb-2.5 font-medium">Party</th><th className="pb-2.5 font-medium">Period</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Value</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
+                <th className="pb-2.5 pe-3 text-end font-medium">Value</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -72,9 +72,9 @@ export function LiveContracts() {
                   <td className="py-2.5"><p className="font-medium">{c.title}</p><p className="text-xs text-muted-foreground"><span className="font-mono">{c.contractNo}</span> · {KINDS.find((k) => k[0] === c.kind)?.[1]}</p></td>
                   <td className="py-2.5">{c.partyName ?? "—"}{c.bookingNo && <p className="text-xs text-muted-foreground">{c.bookingNo}</p>}</td>
                   <td className="py-2.5"><p>{formatDate(c.startDate)}{c.endDate ? ` – ${formatDate(c.endDate)}` : ""}</p>{c.daysLeft !== null && c.effectiveStatus === "active" && <p className={`text-xs ${c.daysLeft <= 30 ? "font-medium text-warning" : "text-muted-foreground"}`}>{c.daysLeft} days left</p>}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{num(c.value) ? formatMoney(num(c.value)) : "—"}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{num(c.value) ? formatMoney(num(c.value)) : "—"}</td>
                   <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${CLS[c.effectiveStatus]}`}>{c.effectiveStatus}</span></td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-end">
                     <AttachmentsButton entityType="contract" entityId={c.id} title={c.title} iconOnly canEdit={can("contracts.edit")} categories={["Signed copy", "Annexure", "Other"]} /><PrintLink kind="contract" id={c.id} iconOnly label="Print contract" variant="ghost" />
                     {can("contracts.edit") && (
                       <div className="flex justify-end gap-1.5">

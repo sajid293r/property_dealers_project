@@ -48,8 +48,8 @@ export function PermissionMatrix({
     <div className="overflow-x-auto rounded-lg border border-border/70">
       <table className="w-full min-w-[340px] text-sm">
         <thead>
-          <tr className="border-b border-border/70 bg-muted/50 text-left text-xs text-muted-foreground">
-            <th className={cn("font-medium", compact ? "py-2 pl-3" : "py-2.5 pl-4")}>Module</th>
+          <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
+            <th className={cn("font-medium", compact ? "py-2 ps-3" : "py-2.5 ps-4")}>Module</th>
             {PERMISSION_ACTIONS.map((action) => (
               <th
                 key={action}
@@ -67,13 +67,13 @@ export function PermissionMatrix({
             const level = accessLevel(perm);
             return (
               <tr key={mod.key} className="border-b border-border/40 last:border-0 hover:bg-muted/30">
-                <td className={cn("flex items-center gap-2", compact ? "py-2 pl-3" : "py-2.5 pl-4")}>
+                <td className={cn("flex items-center gap-2", compact ? "py-2 ps-3" : "py-2.5 ps-4")}>
                   <mod.icon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className={cn("whitespace-nowrap", level === "none" && "text-muted-foreground")}>
                     {mod.label}
                   </span>
                   {level === "full" && (
-                    <span className="ml-1 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                    <span className="ms-1 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
                       <Check className="size-2.5" />
                     </span>
                   )}

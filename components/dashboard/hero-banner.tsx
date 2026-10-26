@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { CalendarDays, FileText, PlusCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/animated-number";
-import { formatPkr } from "@/lib/format";
+import { formatDayLong, formatPkr } from "@/lib/format";
+import { useT } from "@/lib/i18n/provider";
 
 /** 7×4 mini plot-map: tiles ripple in a wave, colored available / reserved / sold. */
 const TILE_PATTERN = "1102101201121001211021210011";
@@ -20,10 +21,10 @@ let cachedNow: Date | null = null;
 const getNow = () => (cachedNow ??= new Date());
 const getNowServer = () => null;
 
-function greeting(hour: number) {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+function greetingKey(hour: number) {
+  if (hour < 12) return "dashboard.hero.morning";
+  if (hour < 17) return "dashboard.hero.afternoon";
+  return "dashboard.hero.evening";
 }
 
 export function HeroBanner({
@@ -43,10 +44,13 @@ export function HeroBanner({
   onNewLead: () => void;
   onNewVoucher: () => void;
 }) {
+  const t = useT();
   const now = React.useSyncExternalStore(subscribeNever, getNow, getNowServer);
   const loading = collected === null || bookedValue === null;
   const pct = loading ? 0 : Math.min(100, Math.round((collected / Math.max(bookedValue, 1)) * 100));
   const circumference = 2 * Math.PI * 44;
+  // the sentence has the animated amount in the middle; the position of the amount differs between languages
+  const [before = "", after = ""] = t("dashboard.hero.collected", { amount: "\u0000", pct }).split("\u0000");
 
   return (
     <motion.section
@@ -56,8 +60,8 @@ export function HeroBanner({
       className="surface-hero sheen relative isolate overflow-hidden rounded-3xl p-6 shadow-2xl shadow-primary/20 ring-1 ring-white/10 md:p-8"
     >
       {/* drifting aurora blobs */}
-      <div className="pointer-events-none absolute -left-10 top-0 -z-10 size-72 animate-aurora rounded-full bg-[oklch(0.55_0.12_165/0.35)] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 right-1/4 -z-10 size-64 animate-aurora rounded-full bg-gold/25 blur-3xl [animation-delay:-6s]" />
+      <div className="pointer-events-none absolute -start-10 top-0 -z-10 size-72 animate-aurora rounded-full bg-[oklch(0.55_0.12_165/0.35)] blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 end-1/4 -z-10 size-64 animate-aurora rounded-full bg-gold/25 blur-3xl [animation-delay:-6s]" />
       <div
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]"
         style={{
@@ -79,35 +83,32 @@ export function HeroBanner({
             <CalendarDays className="size-3.5 text-gold" />
             <span suppressHydrationWarning>
               {now
-                ? now.toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long" })
-                : "Today"}
+                ? formatDayLong(now)
+                : t("common.today")}
             </span>
           </div>
           </div>
           <h1 className="font-heading text-3xl font-semibold leading-tight text-white md:text-[2.6rem]">
-            <span suppressHydrationWarning>{now ? greeting(now.getHours()) : "Welcome back"}</span>,
+            <span suppressHydrationWarning>{now ? t(greetingKey(now.getHours())) : t("dashboard.hero.welcomeBack")}</span>,
             <br />
-            <span className="text-gradient-gold italic">Owner.</span>
+            <span className="text-gradient-gold italic">{t("dashboard.hero.owner")}</span>
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-white/70 md:text-base">
             {loading ? (
-              <>
-                Gathering your numbers
-                <span className="ml-2 inline-block h-3 w-24 animate-pulse rounded bg-white/20 align-middle" />
-                {" "}— everything moving across your projects today will appear in a moment.
-              </>
+              t("dashboard.hero.loading")
             ) : bookedValue === 0 ? (
-              <>Nothing is booked yet. Add your first booking and your collections will start showing here.</>
+              t("dashboard.hero.nothingBooked")
             ) : (
               <>
-                You&apos;ve collected{" "}
-                <AnimatedNumber
-                  value={collected}
-                  format={(n) => formatPkr(n, { compact: true })}
-                  className="font-semibold text-gold"
-                />{" "}
-                so far — {pct}% of everything you&apos;ve booked. Here&apos;s everything moving across your
-                projects today.
+                {before}
+                <bdi dir="ltr">
+                  <AnimatedNumber
+                    value={collected}
+                    format={(n) => formatPkr(n, { compact: true })}
+                    className="font-semibold text-gold"
+                  />
+                </bdi>
+                {after}
               </>
             )}
           </p>
@@ -117,7 +118,7 @@ export function HeroBanner({
               className="h-10 gap-2 bg-gold px-4 text-gold-foreground shadow-lg shadow-gold/30 transition-transform hover:-translate-y-0.5 hover:bg-gold/90"
             >
               <PlusCircle className="size-4" />
-              New Booking
+              {t("dashboard.hero.newBooking")}
             </Button>
             <Button
               onClick={onNewLead}
@@ -125,7 +126,7 @@ export function HeroBanner({
               className="glass-dark h-10 gap-2 px-4 text-white hover:bg-white/15 hover:text-white"
             >
               <UserPlus className="size-4" />
-              Add Lead
+              {t("dashboard.hero.addLead")}
             </Button>
             <Button
               onClick={onNewVoucher}
@@ -133,7 +134,7 @@ export function HeroBanner({
               className="glass-dark h-10 gap-2 px-4 text-white hover:bg-white/15 hover:text-white"
             >
               <FileText className="size-4" />
-              New Voucher
+              {t("dashboard.hero.newVoucher")}
             </Button>
           </div>
         </div>
@@ -170,10 +171,10 @@ export function HeroBanner({
                 <AnimatedNumber
                   value={pct}
                   format={(n) => `${n}%`}
-                  className="font-heading text-3xl font-semibold"
+                  className="font-heading text-3xl font-semibold [unicode-bidi:isolate]"
                 />
               )}
-              <span className="text-[10px] uppercase tracking-[0.16em] text-white/60">collected</span>
+              <span className="text-[10px] uppercase tracking-[0.16em] text-white/60">{t("dashboard.hero.collectedLabel")}</span>
             </div>
           </div>
 
@@ -199,7 +200,7 @@ export function HeroBanner({
               ))}
             </div>
             <p className="mt-2 text-center text-[10px] uppercase tracking-[0.16em] text-white/50">
-              Live plot availability
+              {t("dashboard.hero.plotAvailability")}
             </p>
           </div>
         </div>

@@ -49,15 +49,15 @@ export function LivePayroll() {
       <Card className="p-4">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
-            <thead><tr className="border-b border-border/70 text-left text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Month</th><th className="pb-2.5 font-medium">People</th><th className="pb-2.5 pr-3 text-right font-medium">Gross</th><th className="pb-2.5 pr-3 text-right font-medium">Tax</th><th className="pb-2.5 pr-3 text-right font-medium">Net pay</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
+            <thead><tr className="border-b border-border/70 text-start text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Month</th><th className="pb-2.5 font-medium">People</th><th className="pb-2.5 pe-3 text-end font-medium">Gross</th><th className="pb-2.5 pe-3 text-end font-medium">Tax</th><th className="pb-2.5 pe-3 text-end font-medium">Net pay</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
             <tbody>
               {q.isLoading ? Array.from({ length: 3 }).map((_, i) => <tr key={i}><td colSpan={6} className="py-1.5"><Skeleton className="h-10 w-full" /></td></tr>) : runs.map((r) => (
                 <tr key={r.id} className="cursor-pointer border-b border-border/40 last:border-0 hover:bg-secondary/40" onClick={() => setOpenId(r.id)}>
                   <td className="py-2.5"><p className="font-medium">{monthLabel(r.month)}</p><p className="font-mono text-xs text-muted-foreground">{r.runNo}</p></td>
                   <td className="py-2.5">{r.employees ?? ""}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{r.status === "draft" ? "—" : formatMoney(num(r.totalGross))}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{r.status === "draft" ? "—" : formatMoney(num(r.totalTax))}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums font-medium">{r.status === "draft" ? "—" : formatMoney(num(r.totalNet))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{r.status === "draft" ? "—" : formatMoney(num(r.totalGross))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{r.status === "draft" ? "—" : formatMoney(num(r.totalTax))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums font-medium">{r.status === "draft" ? "—" : formatMoney(num(r.totalNet))}</td>
                   <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${CLS[r.status]}`}>{STATUS_LABEL[r.status]}</span></td>
                 </tr>
               ))}
@@ -105,20 +105,20 @@ function PayrollSheet({ id, onClose }: { id: string | null; onClose: () => void 
           <div className="space-y-4 px-4 pb-6">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[620px] text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="pb-2 font-medium">Employee</th><th className="pb-2 pr-2 text-right font-medium">Basic</th><th className="pb-2 pr-2 text-right font-medium">Allowances</th><th className="pb-2 pr-2 text-right font-medium">Bonus</th><th className="pb-2 pr-2 text-right font-medium">Unpaid leave</th><th className="pb-2 pr-2 text-right font-medium">Tax</th><th className="pb-2 pr-2 text-right font-medium">Net</th></tr></thead>
+                <thead><tr className="border-b text-start text-xs text-muted-foreground"><th className="pb-2 font-medium">Employee</th><th className="pb-2 pe-2 text-end font-medium">Basic</th><th className="pb-2 pe-2 text-end font-medium">Allowances</th><th className="pb-2 pe-2 text-end font-medium">Bonus</th><th className="pb-2 pe-2 text-end font-medium">Unpaid leave</th><th className="pb-2 pe-2 text-end font-medium">Tax</th><th className="pb-2 pe-2 text-end font-medium">Net</th></tr></thead>
                 <tbody>
                   {r.lines.map((l) => (
                     <tr key={l.id} className="border-b border-border/40">
                       <td className="py-2"><p className="font-medium">{l.fullName}</p><p className="text-xs text-muted-foreground">{l.designation}</p>{r.status !== "draft" && <a className="text-xs text-primary hover:underline" href={`/print/payslip/${r.id}?line=${l.id}`} target="_blank" rel="noopener">Payslip</a>}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums">{formatMoney(num(l.basic))}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums">{formatMoney(num(l.allowances))}</td>
-                      <td className="py-2 pr-2 text-right">{r.status === "draft" && can("payroll.edit") ? <LineInput value={l.bonus} onSave={(v) => void run(() => editPayrollLine(company.id, r.id, l.id, { bonus: v }), "Saved")} /> : <span className="font-mono tabular-nums">{num(l.bonus) ? formatMoney(num(l.bonus)) : ""}</span>}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums text-muted-foreground">{num(l.unpaidDeduction) ? `−${formatMoney(num(l.unpaidDeduction))} (${num(l.unpaidLeaveDays)}d)` : ""}</td>
-                      <td className="py-2 pr-2 text-right">{r.status === "draft" && can("payroll.edit") ? <LineInput value={l.tax} onSave={(v) => void run(() => editPayrollLine(company.id, r.id, l.id, { tax: v }), "Saved")} /> : <span className="font-mono tabular-nums">{formatMoney(num(l.tax))}</span>}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono font-medium tabular-nums">{formatMoney(num(l.net))}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums">{formatMoney(num(l.basic))}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums">{formatMoney(num(l.allowances))}</td>
+                      <td className="py-2 pe-2 text-end">{r.status === "draft" && can("payroll.edit") ? <LineInput value={l.bonus} onSave={(v) => void run(() => editPayrollLine(company.id, r.id, l.id, { bonus: v }), "Saved")} /> : <span className="font-mono tabular-nums">{num(l.bonus) ? formatMoney(num(l.bonus)) : ""}</span>}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums text-muted-foreground">{num(l.unpaidDeduction) ? `−${formatMoney(num(l.unpaidDeduction))} (${num(l.unpaidLeaveDays)}d)` : ""}</td>
+                      <td className="py-2 pe-2 text-end">{r.status === "draft" && can("payroll.edit") ? <LineInput value={l.tax} onSave={(v) => void run(() => editPayrollLine(company.id, r.id, l.id, { tax: v }), "Saved")} /> : <span className="font-mono tabular-nums">{formatMoney(num(l.tax))}</span>}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono font-medium tabular-nums">{formatMoney(num(l.net))}</td>
                     </tr>
                   ))}
-                  <tr className="font-semibold"><td className="pt-3" colSpan={6}>Total net pay</td><td className="whitespace-nowrap pt-3 pr-2 text-right font-mono tabular-nums">{formatMoney(r.lines.reduce((s, l) => s + num(l.net), 0))}</td></tr>
+                  <tr className="font-semibold"><td className="pt-3" colSpan={6}>Total net pay</td><td className="whitespace-nowrap pt-3 pe-2 text-end font-mono tabular-nums">{formatMoney(r.lines.reduce((s, l) => s + num(l.net), 0))}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -150,7 +150,7 @@ function LineInput({ value, onSave }: { value: string; onSave: (v: string) => vo
   const [v, setV] = React.useState(String(num(value)));
   return (
     <Input
-      className="ml-auto h-7 w-24 text-right font-mono text-xs"
+      className="ms-auto h-7 w-24 text-end font-mono text-xs"
       inputMode="decimal"
       value={v}
       onChange={(e) => setV(e.target.value.replace(/[^\d.]/g, ""))}

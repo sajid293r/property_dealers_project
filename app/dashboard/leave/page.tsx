@@ -116,7 +116,7 @@ function DemoLeavePage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Staff</th>
                 <th className="pb-2.5 font-medium">Type</th>
                 <th className="pb-2.5 font-medium">Dates</th>
@@ -151,7 +151,7 @@ function DemoLeavePage() {
                         <td className="py-2.5 tabular-nums">{r.days}</td>
                         <td className="py-2.5 max-w-[220px] truncate text-muted-foreground">{r.reason}</td>
                         <td className="py-2.5"><LeaveStatusBadge status={r.status} /></td>
-                        <td className="py-2.5 text-right">
+                        <td className="py-2.5 text-end">
                           {r.status === "pending" ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

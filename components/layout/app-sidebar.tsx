@@ -21,10 +21,11 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { PLAN_LABEL, navForTier } from "@/lib/plan";
+import { navChildKey, navForTier, navItemKey, navSectionKey } from "@/lib/plan";
+import { useLanguage } from "@/lib/i18n/provider";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { useCompany } from "@/lib/providers/company-provider";
-import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { APP_NAME } from "@/lib/brand";
 import { CompanySwitcher } from "@/components/layout/company-switcher";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { cn } from "@/lib/utils";
@@ -41,7 +42,7 @@ function ActiveRail() {
   return (
     <motion.span
       layoutId="sidebar-active"
-      className="pointer-events-none absolute inset-0 -z-10 rounded-md bg-gradient-to-r from-sidebar-primary/25 via-sidebar-primary/8 to-transparent before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary before:shadow-[0_0_10px_var(--sidebar-primary)]"
+      className="pointer-events-none absolute inset-0 -z-10 rounded-md bg-gradient-to-r from-sidebar-primary/25 via-sidebar-primary/8 to-transparent before:absolute before:start-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-sidebar-primary before:shadow-[0_0_10px_var(--sidebar-primary)]"
       transition={{ type: "spring", stiffness: 420, damping: 34 }}
     />
   );
@@ -51,6 +52,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { tier } = usePlanTier();
   const { live } = useCompany();
+  const { t } = useLanguage();
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
 
   const { visible, moreCount } = navForTier(tier, { live });
@@ -73,7 +75,7 @@ export function AppSidebar() {
               {APP_NAME}
             </span>
             <span className="text-[11px] text-sidebar-foreground/60">
-              {APP_TAGLINE}
+              {t("shell.tagline")}
             </span>
           </div>
         </Link>
@@ -86,7 +88,7 @@ export function AppSidebar() {
         {sections.map((section) => (
           <SidebarGroup key={section}>
             <SidebarGroupLabel className="text-[10.5px] font-semibold tracking-wider text-sidebar-foreground/45">
-              {section}
+              {t(navSectionKey(section))}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -104,7 +106,7 @@ export function AppSidebar() {
                           aria-expanded={isOpen}
                           className={cn(
                             "relative transition-colors duration-150",
-                            "isolate hover:translate-x-0.5",
+                            "isolate hover:translate-x-0.5 rtl:hover:-translate-x-0.5",
                           )}
                           onClick={() =>
                             setOpenGroups((prev) => ({ ...prev, [item.href]: !isOpen }))
@@ -112,10 +114,10 @@ export function AppSidebar() {
                         >
                           {active && <ActiveRail />}
                           <item.icon />
-                          <span>{item.label}</span>
+                          <span>{t(navItemKey(item))}</span>
                           <ChevronDown
                             className={cn(
-                              "ml-auto size-3.5 shrink-0 text-sidebar-foreground/50 transition-transform duration-200",
+                              "ms-auto size-3.5 shrink-0 text-sidebar-foreground/50 transition-transform duration-200",
                               isOpen && "rotate-180",
                             )}
                           />
@@ -128,7 +130,7 @@ export function AppSidebar() {
                                 <SidebarMenuSubItem key={child.href}>
                                   <SidebarMenuSubButton asChild isActive={childOneActive}>
                                     <Link href={child.href}>
-                                      <span>{child.label}</span>
+                                      <span>{t(navChildKey(child))}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
@@ -147,13 +149,13 @@ export function AppSidebar() {
                         isActive={active}
                         className={cn(
                           "relative transition-colors duration-150",
-                          "isolate hover:translate-x-0.5",
+                          "isolate hover:translate-x-0.5 rtl:hover:-translate-x-0.5",
                         )}
                       >
                         <Link href={item.href}>
                           {active && <ActiveRail />}
                           <item.icon />
-                          <span>{item.label}</span>
+                          <span>{t(navItemKey(item))}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -168,10 +170,10 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="More features" className="isolate hover:translate-x-0.5">
+                  <SidebarMenuButton asChild tooltip={t("shell.sidebar.moreFeatures")} className="isolate hover:translate-x-0.5 rtl:hover:-translate-x-0.5">
                     <Link href="/dashboard/settings/billing">
                       <Sparkles className="text-sidebar-primary" />
-                      <span>More features</span>
+                      <span>{t("shell.sidebar.moreFeatures")}</span>
                     </Link>
                   </SidebarMenuButton>
                   <SidebarMenuBadge className="text-[10px] font-semibold text-sidebar-primary">+{moreCount}</SidebarMenuBadge>
@@ -184,22 +186,22 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-3">
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-sidebar-primary/25 via-sidebar-accent/70 to-sidebar-accent/30 p-3.5 ring-1 ring-sidebar-primary/25 group-data-[collapsible=icon]:hidden">
-          <div className="absolute -right-6 -top-8 size-24 animate-float-slow rounded-full bg-sidebar-primary/30 blur-2xl" />
+          <div className="absolute -end-6 -top-8 size-24 animate-float-slow rounded-full bg-sidebar-primary/30 blur-2xl" />
           <div className="relative mb-1.5 flex items-center gap-2 text-sidebar-accent-foreground">
             <span className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
               {tier === "premium" ? <Crown className="size-3.5" /> : <Sparkles className="size-3.5" />}
             </span>
-            <span className="text-xs font-semibold">{PLAN_LABEL[tier]} plan</span>
-            <span className="ml-auto flex size-2 rounded-full bg-success animate-pulse-ring" />
+            <span className="text-xs font-semibold">{t("plan.named", { name: t(`plan.${tier}`) })}</span>
+            <span className="ms-auto flex size-2 rounded-full bg-success animate-pulse-ring" />
           </div>
           <p className="relative text-[11px] leading-snug text-sidebar-foreground/65">
-            {live ? "Your plan decides which sections are available." : "Switch tiers from Settings to preview what each plan unlocks."}
+            {live ? t("shell.sidebar.planHintLive") : t("shell.sidebar.planHintDemo")}
           </p>
           <Link
             href="/dashboard/settings/billing"
             className="relative mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-sidebar-primary transition-all hover:gap-2"
           >
-            Compare plans →
+            {t("shell.sidebar.comparePlans")} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span>
           </Link>
         </div>
       </SidebarFooter>

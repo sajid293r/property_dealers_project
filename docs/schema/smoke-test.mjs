@@ -1851,6 +1851,13 @@ console.log("\nAttachments, late charges, refunds, transfers, dealer commission"
   await expectError("a booking without a dealer has no commission", () => q(`select app.accrue_commission('${BT}', 1, '${U}')`), "no dealer");
   await q(`select app.void_commission('${CM}', '${U}', 'Rate was wrong')`);
   (await account("05.02.03.0003")) === 0 ? ok("voiding a commission reverses its entry") : bad("void commission");
+  // — interface language (migration 0016) —
+  (await q(`select preferred_language from users where id='${U}'`)).rows[0].preferred_language === null ? ok("a person starts with no language chosen of their own (null)") : bad("language default");
+  await q(`update users set preferred_language = 'ur' where id='${U}'`);
+  (await q(`select preferred_language from users where id='${U}'`)).rows[0].preferred_language === "ur" ? ok("a supported language (Urdu) can be saved on a person") : bad("save language");
+  await expectError("an unsupported language code is refused", () => q(`update users set preferred_language = 'xx' where id='${U}'`), "preferred_language");
+  await q(`update users set preferred_language = null where id='${U}'`);
+  (await q(`select preferred_language from users where id='${U}'`)).rows[0].preferred_language === null ? ok("clearing the choice puts the person back to null (the company default applies)") : bad("clear language");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -1,3 +1,5 @@
+import type { LanguageCode } from "@/lib/i18n/config";
+
 /**
  * A tenant of the platform. One login (the group owner) can operate several
  * companies; every project, property, customer, ledger and staff record
@@ -17,6 +19,8 @@ export interface Company {
   accent: string;
   /** The subscription plan of a real company (basic | moderate | premium). */
   plan?: "basic" | "moderate" | "premium";
+  /** The language new people in a real company start with (set by an administrator); undefined = not set. */
+  defaultLanguage?: LanguageCode;
   /** True for companies created at runtime. */
   custom?: boolean;
   /** True when a runtime company was created pre-filled with sample data (otherwise it starts empty). */

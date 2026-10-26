@@ -105,7 +105,7 @@ export function NewCompanyDialog({
               aria-checked={sample === o.value}
               onClick={() => setSample(o.value)}
               className={cn(
-                "flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5",
+                "flex flex-col items-start gap-1 rounded-xl border p-3 text-start transition-all hover:-translate-y-0.5",
                 sample === o.value ? "border-primary/60 bg-primary/5 ring-1 ring-primary/30" : "border-border/70 hover:border-gold/50",
               )}
             >

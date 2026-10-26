@@ -159,7 +159,7 @@ function DemoVouchersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Voucher</th>
                 <th className="pb-2.5 font-medium">Date</th>
                 <th className="pb-2.5 font-medium">Party / Description</th>
@@ -199,7 +199,7 @@ function DemoVouchersPage() {
                         </td>
                         <td className="py-2.5 tabular-nums font-medium">{formatPkr(voucherTotal(v.lines))}</td>
                         <td className="py-2.5"><VoucherStatusBadge status={v.status} /></td>
-                        <td className="py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 text-end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">

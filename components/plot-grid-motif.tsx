@@ -34,15 +34,15 @@ export function PlotGridMotif({
         }}
       />
       <span
-        className="absolute left-[38%] top-[18%] size-[22px] rounded-[3px] opacity-[0.14]"
+        className="absolute start-[38%] top-[18%] size-[22px] rounded-[3px] opacity-[0.14]"
         style={{ backgroundColor: marks[0] }}
       />
       <span
-        className="absolute left-[58%] top-[34%] size-[22px] rounded-[3px] opacity-[0.16]"
+        className="absolute start-[58%] top-[34%] size-[22px] rounded-[3px] opacity-[0.16]"
         style={{ backgroundColor: marks[1] }}
       />
       <span
-        className="absolute left-[46%] top-[46%] size-[22px] rounded-[3px] opacity-[0.1]"
+        className="absolute start-[46%] top-[46%] size-[22px] rounded-[3px] opacity-[0.1]"
         style={{ backgroundColor: marks[0] }}
       />
     </div>

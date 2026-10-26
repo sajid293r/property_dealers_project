@@ -181,11 +181,11 @@ export function ChartOfAccountsView() {
         <div className="overflow-x-auto rounded-lg border border-border/60">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 bg-secondary/40 text-left text-xs text-muted-foreground">
-                <th className="py-2.5 pl-3 font-medium">Code</th>
+              <tr className="border-b border-border/70 bg-secondary/40 text-start text-xs text-muted-foreground">
+                <th className="py-2.5 ps-3 font-medium">Code</th>
                 <th className="py-2.5 font-medium">Account</th>
                 <th className="py-2.5 font-medium">Class</th>
-                <th className="py-2.5 pr-3 text-right font-medium">Balance</th>
+                <th className="py-2.5 pe-3 text-end font-medium">Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -216,7 +216,7 @@ export function ChartOfAccountsView() {
                       )}
                       onClick={() => !hasChildren && setSelected(n)}
                     >
-                      <td className="py-2 pl-3 font-mono text-xs text-muted-foreground">{n.code}</td>
+                      <td className="py-2 ps-3 font-mono text-xs text-muted-foreground">{n.code}</td>
                       <td className="py-2">
                         <div className="flex items-center gap-1.5">
                           {Array.from({ length: n.depth }).map((_, d) => (
@@ -233,7 +233,7 @@ export function ChartOfAccountsView() {
                               }}
                               className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
                             >
-                              {isCollapsed ? <ChevronRight className="size-3.5 shrink-0" /> : <ChevronDown className="size-3.5 shrink-0" />}
+                              {isCollapsed ? <ChevronRight className="size-3.5 shrink-0 rtl:-scale-x-100" /> : <ChevronDown className="size-3.5 shrink-0" />}
                               {isCollapsed ? (
                                 <Folder className="size-3.5 shrink-0 text-primary/70" />
                               ) : (
@@ -241,7 +241,7 @@ export function ChartOfAccountsView() {
                               )}
                             </button>
                           ) : (
-                            <span className="flex items-center gap-1.5 pl-[19px] text-muted-foreground/60">
+                            <span className="flex items-center gap-1.5 ps-[19px] text-muted-foreground/60">
                               <FileText className="size-3.5 shrink-0" />
                             </span>
                           )}
@@ -262,7 +262,7 @@ export function ChartOfAccountsView() {
                       </td>
                       <td
                         className={cn(
-                          "py-2 pr-3 text-right tabular-nums",
+                          "py-2 pe-3 text-end tabular-nums",
                           hasChildren ? "font-semibold" : "font-medium",
                           negative && "text-destructive",
                         )}

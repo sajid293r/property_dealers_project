@@ -109,7 +109,7 @@ export function ServiceInvoiceDoc({ id }: { id: string }) {
       <div className="mt-5">
         <PrintTable head={["Description", "Amount"]} right={[1]} rows={[[i.description || i.periodLabel || "Service charges", m(i.amount)]]} foot={["Total", m(i.amount)]} />
       </div>
-      <div className="mt-4 ml-auto w-64 space-y-1 text-right">
+      <div className="mt-4 ms-auto w-64 space-y-1 text-end">
         <p>Paid: <span className="font-mono">{m(i.paidAmount)}</span></p>
         <p className="font-semibold">Balance due: <span className="font-mono">{m(i.balance)}</span></p>
       </div>

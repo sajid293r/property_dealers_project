@@ -82,9 +82,9 @@ export function LiveCheques() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Cheque</th><th className="pb-2.5 font-medium">{dir === "received" ? "From" : "To"}</th><th className="pb-2.5 font-medium">Cheque date</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Amount</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
+                <th className="pb-2.5 pe-3 text-end font-medium">Amount</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -95,13 +95,13 @@ export function LiveCheques() {
                     <td className="py-2.5"><p className="font-mono font-medium">{c.chequeNo}</p><p className="text-xs text-muted-foreground">{c.bankName}</p></td>
                     <td className="py-2.5"><p>{c.partyName}</p>{c.bookingNo && <p className="text-xs text-muted-foreground">{c.bookingNo}</p>}</td>
                     <td className={`py-2.5 ${ready ? "font-medium text-warning" : "text-muted-foreground"}`}>{formatDate(c.chequeDate)}{ready && " · ready"}</td>
-                    <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(c.amount))}</td>
+                    <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(c.amount))}</td>
                     <td className="py-2.5">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS[c.status].cls}`}>{STATUS[c.status].label}</span>
                       {c.status === "bounced" && c.bounceReason && <p className="mt-0.5 text-xs text-destructive">{c.bounceReason}</p>}
                       {c.status === "deposited" && c.depositBank && <p className="mt-0.5 text-xs text-muted-foreground">in {c.depositBank} {c.depositAccountNo}</p>}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-end">
                       {can("deals.edit") && (
                         <div className="flex justify-end gap-1.5">
                           <AttachmentsButton entityType="cheque" entityId={c.id} title={`Cheque ${c.chequeNo}`} iconOnly canEdit categories={["Cheque image", "Deposit slip", "Bank advice"]} />

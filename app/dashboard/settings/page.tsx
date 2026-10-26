@@ -54,7 +54,7 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <ArrowRight className="size-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground" />
+          <ArrowRight className="size-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />
         </Card>
       </Link>
     </div>
@@ -84,7 +84,7 @@ function SettingsLink({
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
-        <ArrowRight className="size-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground" />
+        <ArrowRight className="size-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />
       </Card>
     </Link>
   );

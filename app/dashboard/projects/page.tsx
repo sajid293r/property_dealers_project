@@ -75,7 +75,7 @@ export default function ProjectsPage() {
                   <Link href={`/dashboard/projects/${p.id}`} className="group block">
                     <Card className="spotlight gap-0 p-0 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary/[0.1] group-hover:ring-gold/40">
                       <div className="surface-hero relative overflow-hidden px-5 pb-4 pt-5">
-                        <div className="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-gold/25 blur-3xl transition-transform duration-500 group-hover:scale-125" />
+                        <div className="pointer-events-none absolute -end-8 -top-10 size-40 rounded-full bg-gold/25 blur-3xl transition-transform duration-500 group-hover:scale-125" />
                         <div
                           className="pointer-events-none absolute inset-0 opacity-[0.1]"
                           style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "18px 18px" }}

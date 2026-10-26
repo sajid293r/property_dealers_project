@@ -96,11 +96,11 @@ export function TrialBalanceTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Code</th>
                 <th className="pb-2.5 font-medium">Account</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Debit</th>
-                <th className="pb-2.5 text-right font-medium">Credit</th>
+                <th className="pb-2.5 pe-3 text-end font-medium">Debit</th>
+                <th className="pb-2.5 text-end font-medium">Credit</th>
               </tr>
             </thead>
             <tbody>
@@ -116,8 +116,8 @@ export function TrialBalanceTab() {
                   >
                     <td className="py-2 font-mono text-xs text-muted-foreground">{n.code}</td>
                     <td className="py-2 font-medium">{n.name}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{side === "debit" ? formatLedgerBalance(n.balance) : "—"}</td>
-                    <td className="py-2 text-right tabular-nums">{side === "credit" ? formatLedgerBalance(n.balance) : "—"}</td>
+                    <td className="py-2 pe-3 text-end tabular-nums">{side === "debit" ? formatLedgerBalance(n.balance) : "—"}</td>
+                    <td className="py-2 text-end tabular-nums">{side === "credit" ? formatLedgerBalance(n.balance) : "—"}</td>
                   </motion.tr>
                 );
               })}
@@ -125,8 +125,8 @@ export function TrialBalanceTab() {
             <tfoot>
               <tr className="border-t-2 border-border">
                 <td colSpan={2} className="py-2.5 font-semibold">Total</td>
-                <td className="py-2.5 pr-3 text-right tabular-nums font-semibold">{formatLedgerBalance(totalDebit)}</td>
-                <td className="py-2.5 text-right tabular-nums font-semibold">{formatLedgerBalance(totalCredit)}</td>
+                <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatLedgerBalance(totalDebit)}</td>
+                <td className="py-2.5 text-end tabular-nums font-semibold">{formatLedgerBalance(totalCredit)}</td>
               </tr>
             </tfoot>
           </table>

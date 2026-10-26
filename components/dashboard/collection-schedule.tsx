@@ -5,11 +5,13 @@ import { SpotlightCard } from "@/components/spotlight-card";
 import { WidgetHead } from "@/components/dashboard/section-title";
 import { formatPkr, formatAxis } from "@/lib/format";
 import type { collectionSchedule } from "@/lib/dashboard-insights";
+import { useT } from "@/lib/i18n/provider";
 
 type Schedule = ReturnType<typeof collectionSchedule>;
 
 /** Installments by the month they fall due: what came in, what is late, and what is still to come. */
 export function CollectionSchedule({ schedule }: { schedule: Schedule }) {
+  const t = useT();
   const data = schedule.map((m) => ({
     label: m.label,
     Collected: m.collected,
@@ -22,12 +24,12 @@ export function CollectionSchedule({ schedule }: { schedule: Schedule }) {
   return (
     <SpotlightCard className="p-5">
       <WidgetHead
-        title="Collection schedule"
-        note="Installments by the month they fall due — collected, late, and still to come"
+        title={t("dashboard.schedule.title")}
+        note={t("dashboard.schedule.note")}
         right={
-          <div className="text-right">
+          <div className="text-end">
             <p className="font-heading text-xl font-semibold tabular-nums">{formatPkr(upcoming, { compact: true })}</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">expected ahead</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("dashboard.schedule.expectedAhead")}</p>
           </div>
         }
       />
@@ -59,15 +61,15 @@ export function CollectionSchedule({ schedule }: { schedule: Schedule }) {
               ) : null
             }
           />
-          {current && <ReferenceLine x={current} stroke="var(--gold)" strokeDasharray="3 3" label={{ value: "Today", position: "insideTopRight", fill: "var(--gold)", fontSize: 11 }} />}
-          <Bar dataKey="Collected" stackId="a" fill="url(#csCollected)" animationDuration={900} />
-          <Bar dataKey="Overdue" stackId="a" fill="var(--destructive)" animationDuration={900} />
-          <Bar dataKey="Expected" stackId="a" fill="url(#csExpected)" radius={[6, 6, 0, 0]} animationDuration={900} />
+          {current && <ReferenceLine x={current} stroke="var(--gold)" strokeDasharray="3 3" label={{ value: t("dashboard.schedule.today"), position: "insideTopRight", fill: "var(--gold)", fontSize: 11 }} />}
+          <Bar dataKey="Collected" name={t("dashboard.schedule.collected")} stackId="a" fill="url(#csCollected)" animationDuration={900} />
+          <Bar dataKey="Overdue" name={t("dashboard.schedule.overdue")} stackId="a" fill="var(--destructive)" animationDuration={900} />
+          <Bar dataKey="Expected" name={t("dashboard.schedule.expected")} stackId="a" fill="url(#csExpected)" radius={[6, 6, 0, 0]} animationDuration={900} />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-2 flex flex-wrap gap-4 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[var(--chart-1)]" />Collected</span>
-        <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-destructive" />Overdue</span>
+        <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[var(--chart-1)]" />{t("dashboard.schedule.collected")}</span>
+        <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-destructive" />{t("dashboard.schedule.overdue")}</span>
         <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[repeating-linear-gradient(135deg,var(--gold)_0_3px,color-mix(in_oklch,var(--gold),white_55%)_3px_6px)]" />Expected</span>
       </div>
     </SpotlightCard>

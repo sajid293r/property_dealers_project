@@ -117,7 +117,7 @@ export default function GroupOverviewPage() {
                     background: `linear-gradient(135deg, color-mix(in oklch, ${r.company.accent}, black 20%), color-mix(in oklch, ${r.company.accent}, black 62%))`,
                   }}
                 >
-                  <div className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover/co:scale-125" />
+                  <div className="pointer-events-none absolute -end-10 -top-12 size-40 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover/co:scale-125" />
                   <div
                     className="pointer-events-none absolute inset-0 opacity-[0.1]"
                     style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "16px 16px" }}
@@ -170,7 +170,7 @@ export default function GroupOverviewPage() {
                   </div>
                   <Button size="sm" variant={isActive ? "outline" : "default"} className="group gap-1" onClick={() => open(r.company.id)}>
                     {isActive ? "Go to dashboard" : "Open workspace"}
-                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
                   </Button>
                 </div>
               </SpotlightCard>

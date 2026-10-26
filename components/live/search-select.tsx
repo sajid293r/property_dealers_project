@@ -87,7 +87,7 @@ export function SearchSelect({
           aria-expanded={open}
           aria-controls={listId}
           className={cn(
-            "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm shadow-xs outline-none transition-[color,box-shadow]",
+            "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-start text-sm shadow-xs outline-none transition-[color,box-shadow]",
             "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30",
             className,
           )}
@@ -134,7 +134,7 @@ export function SearchSelect({
         </div>
         <div ref={listRef} id={listId} role="listbox" className="max-h-72 overflow-y-auto p-1">
           {clearable && value && (
-            <button type="button" className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-secondary" onClick={() => { onChange(""); setOpen(false); }}>
+            <button type="button" className="w-full rounded-md px-2 py-1.5 text-start text-xs text-muted-foreground hover:bg-secondary" onClick={() => { onChange(""); setOpen(false); }}>
               Clear selection
             </button>
           )}
@@ -153,7 +153,7 @@ export function SearchSelect({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(o)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm disabled:opacity-40",
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm disabled:opacity-40",
                     i === active && "bg-secondary",
                   )}
                 >
@@ -172,7 +172,7 @@ export function SearchSelect({
               setOpen(false);
               onCreate();
             }}
-            className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-left text-sm font-medium text-primary hover:bg-secondary"
+            className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-start text-sm font-medium text-primary hover:bg-secondary"
           >
             <Plus className="size-3.5" />
             {createLabel ?? "Add new"}

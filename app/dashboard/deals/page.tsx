@@ -102,7 +102,7 @@ function DemoDealsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Voucher</th>
                 <th className="pb-2.5 font-medium">Customer</th>
                 <th className="pb-2.5 font-medium">Property</th>

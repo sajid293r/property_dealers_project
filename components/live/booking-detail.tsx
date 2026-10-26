@@ -104,12 +104,12 @@ export function LiveBookingDetail() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead>
-                    <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                    <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                       <th className="pb-2 font-medium">#</th>
                       <th className="pb-2 font-medium">What</th>
                       <th className="pb-2 font-medium">Due</th>
-                      <th className="pb-2 pr-3 text-right font-medium">Amount</th>
-                      <th className="pb-2 pr-3 text-right font-medium">Paid</th>
+                      <th className="pb-2 pe-3 text-end font-medium">Amount</th>
+                      <th className="pb-2 pe-3 text-end font-medium">Paid</th>
                       <th className="pb-2 font-medium">Status</th>
                     </tr>
                   </thead>
@@ -121,8 +121,8 @@ export function LiveBookingDetail() {
                           <td className="py-2 text-muted-foreground">{i.seq}</td>
                           <td className="py-2">{INSTALLMENT_KIND_LABEL[i.kind] ?? i.kind}</td>
                           <td className={`py-2 ${late ? "font-medium text-warning" : "text-muted-foreground"}`}>{formatDate(i.dueDate)}{late && " · overdue"}</td>
-                          <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{formatMoney(num(i.amount))}</td>
-                          <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(i.paidAmount) ? formatMoney(num(i.paidAmount)) : ""}</td>
+                          <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{formatMoney(num(i.amount))}</td>
+                          <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(i.paidAmount) ? formatMoney(num(i.paidAmount)) : ""}</td>
                           <td className="py-2"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${INSTALLMENT_STATUS_CLASS[i.status]}`}>{INSTALLMENT_STATUS_LABEL[i.status]}</span></td>
                         </tr>
                       );

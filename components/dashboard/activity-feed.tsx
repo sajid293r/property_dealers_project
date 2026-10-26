@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BadgeCheck, CalendarClock, HandCoins, Handshake, UserPlus, type LucideIcon } from "lucide-react";
 import { relativeDay, type ActivityEvent } from "@/lib/dashboard-insights";
 import { cn } from "@/lib/utils";
+import { useSlide, useT } from "@/lib/i18n/provider";
 
 const KIND: Record<ActivityEvent["kind"], { icon: LucideIcon; tone: string }> = {
   payment: { icon: HandCoins, tone: "bg-success/15 text-success" },
@@ -15,29 +16,31 @@ const KIND: Record<ActivityEvent["kind"], { icon: LucideIcon; tone: string }> = 
 
 /** The latest real events across payments, bookings, leads, vouchers and cheques. */
 export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
+  const t = useT();
+  const slide = useSlide();
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="font-heading text-base font-semibold">Recent activity</h3>
-          <p className="text-xs text-muted-foreground">The latest things that happened in your business</p>
+          <h3 className="font-heading text-base font-semibold">{t("dashboard.activity.title")}</h3>
+          <p className="text-xs text-muted-foreground">{t("dashboard.activity.note")}</p>
         </div>
         <span className="flex items-center gap-1.5 rounded-full bg-success/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-success">
           <span className="relative flex size-1.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/70" />
             <span className="relative inline-flex size-1.5 rounded-full bg-success" />
           </span>
-          Live
+          {t("common.live")}
         </span>
       </div>
       {events.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Activity will appear here as soon as you record your first booking or payment.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{t("dashboard.activity.empty")}</p>
       ) : (
-        <ol className="relative space-y-4 before:absolute before:bottom-2 before:left-[15px] before:top-2 before:w-px before:bg-gradient-to-b before:from-border before:via-border before:to-transparent">
+        <ol className="relative space-y-4 before:absolute before:bottom-2 before:start-[15px] before:top-2 before:w-px before:bg-gradient-to-b before:from-border before:via-border before:to-transparent">
           {events.map((it, i) => {
             const k = KIND[it.kind];
             return (
-              <motion.li key={it.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="group relative flex gap-3">
+              <motion.li key={it.id} initial={{ opacity: 0, x: slide(12) }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="group relative flex gap-3">
                 <span className={cn("relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-card transition-transform group-hover:scale-110", k.tone)}>
                   <k.icon className="size-3.5" />
                 </span>

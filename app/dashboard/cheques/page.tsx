@@ -92,7 +92,7 @@ function DemoChequesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Cheque</th>
                 <th className="pb-2.5 font-medium">Bank</th>
                 <th className="pb-2.5 font-medium">Customer</th>
@@ -125,7 +125,7 @@ function DemoChequesPage() {
                         <td className="py-2.5 tabular-nums font-medium">{formatPkr(c.amount)}</td>
                         <td className="py-2.5 text-muted-foreground">{formatDate(c.chequeDate)}</td>
                         <td className="py-2.5"><ChequeStatusBadge status={c.status} /></td>
-                        <td className="py-2.5 text-right">
+                        <td className="py-2.5 text-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">

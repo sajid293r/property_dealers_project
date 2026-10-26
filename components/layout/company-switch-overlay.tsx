@@ -3,10 +3,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { CompanyAvatar } from "@/components/company-avatar";
 import { useCompany } from "@/lib/providers/company-provider";
+import { useT } from "@/lib/i18n/provider";
 
 /** Brief full-screen curtain that plays while the workspace swaps companies. */
 export function CompanySwitchOverlay() {
   const { switching } = useCompany();
+  const t = useT();
   return (
     <AnimatePresence>
       {switching && (
@@ -31,7 +33,7 @@ export function CompanySwitchOverlay() {
             transition={{ delay: 0.15 }}
             className="text-center"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">Opening workspace</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/55">{t("shell.company.opening")}</p>
             <p className="mt-1 font-heading text-2xl font-semibold text-white">{switching.name}</p>
           </motion.div>
           <motion.div className="mt-2 h-[3px] w-40 overflow-hidden rounded-full bg-white/15">

@@ -113,7 +113,7 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
             return (
               <li key={f.id} className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm">
                 <Icon className="size-5 shrink-0 text-muted-foreground" />
-                <button type="button" className="min-w-0 flex-1 text-left" onClick={() => void open(f)}>
+                <button type="button" className="min-w-0 flex-1 text-start" onClick={() => void open(f)}>
                   <span className="block truncate font-medium hover:text-primary hover:underline">{f.fileName}</span>
                   <span className="block truncate text-xs text-muted-foreground">{[f.category, kb(f.sizeBytes), formatDate(f.createdAt), f.uploadedBy, f.note].filter(Boolean).join(" · ")}</span>
                 </button>

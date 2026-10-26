@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-heading);
+  --font-heading: var(--font-display);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
   --color-success: var(--success);
@@ -314,3 +314,32 @@ table thead th:first-child { padding-left: 0.5rem; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ───────────────────────── Languages ─────────────────────────
+   next/font (app/layout.tsx) defines --font-latin, --font-heading-latin and one variable per other script.
+   The stacks below put the Latin face first (codes, amounts and names in Latin letters stay as designed) and
+   fall through to the script font for everything the Latin face has no glyph for. */
+html {
+  --font-ui: var(--font-latin), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading-latin), Georgia, serif;
+}
+html:lang(ur), html:lang(ps), html:lang(ar) {
+  --font-ui: var(--font-latin), var(--font-naskh), "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-display: var(--font-heading-latin), var(--font-naskh), "Noto Naskh Arabic", "Segoe UI", Tahoma, serif;
+}
+html:lang(zh) {
+  --font-ui: var(--font-latin), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-display: var(--font-heading-latin), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+html:lang(ja) {
+  --font-ui: var(--font-latin), "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  --font-display: var(--font-heading-latin), "Noto Sans JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+}
+/* Arabic-script letters join each other: spacing between letters breaks the words, and these scripts are taller. */
+html:lang(ur) *, html:lang(ps) *, html:lang(ar) * { letter-spacing: 0 !important; }
+html:lang(ur) body, html:lang(ps) body, html:lang(ar) body { line-height: 1.75; }
+html:lang(ur) :is(h1, h2, h3, h4) { line-height: 1.6; }
+/* Chinese and Japanese read better a little looser than the Latin defaults. */
+html:lang(zh) body, html:lang(ja) body { line-height: 1.7; }
+/* Money, codes, phone numbers and the like are written left to right inside right-to-left text. */
+.ltr-run { direction: ltr; unicode-bidi: isolate; display: inline-block; }

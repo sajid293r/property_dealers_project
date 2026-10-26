@@ -6,6 +6,7 @@ import { ctxOf } from "../context.js";
 import { idParams, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
 import { MODULE_KEYS } from "../roles.js";
+import { LANGUAGES } from "../languages.js";
 import { FEATURES, PLAN_LIMITS, PLAN_NAME, PLAN_RANK, SEAT_PACKS, requirePlan } from "../plans.js";
 
 const grantSchema = z.object({ view: z.boolean(), create: z.boolean(), edit: z.boolean(), delete: z.boolean(), approve: z.boolean() });
@@ -69,7 +70,7 @@ export function adminRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     return db.inTenant(ctxOf(req), async (c) => {
       const r = await c.query(
         `select id, name, short_name as "shortName", ntn, strn, city, province, address, phone, email, base_currency as "currency", fiscal_year_start as "fiscalYearStart",
-                (settings ->> 'marla_sqft')::numeric as "marlaSqft", coalesce((settings ->> 'penalty_rate_pct_month')::numeric, 0) as "penaltyRatePctMonth", coalesce((settings ->> 'penalty_grace_days')::int, 0) as "penaltyGraceDays", coalesce((settings ->> 'voucher_self_approval')::boolean, true) as "voucherSelfApproval"
+                (settings ->> 'marla_sqft')::numeric as "marlaSqft", coalesce((settings ->> 'penalty_rate_pct_month')::numeric, 0) as "penaltyRatePctMonth", coalesce((settings ->> 'penalty_grace_days')::int, 0) as "penaltyGraceDays", coalesce((settings ->> 'voucher_self_approval')::boolean, true) as "voucherSelfApproval", settings ->> 'default_language' as "defaultLanguage"
            from companies where id = app.current_company()`,
       );
       return r.rows[0];
@@ -92,6 +93,7 @@ export function adminRoutes(app: FastifyInstance, db: Db, guards: Guards) {
         voucherSelfApproval: z.boolean().optional(),
         penaltyRatePctMonth: z.number().min(0).max(20).optional(),
         penaltyGraceDays: z.number().int().min(0).max(120).optional(),
+        defaultLanguage: z.enum(LANGUAGES).optional(),
       }),
       req.body,
     );
@@ -109,11 +111,12 @@ export function adminRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     if (b.marlaSqft !== undefined) patch.marla_sqft = b.marlaSqft;
     if (b.penaltyRatePctMonth !== undefined) patch.penalty_rate_pct_month = b.penaltyRatePctMonth;
     if (b.penaltyGraceDays !== undefined) patch.penalty_grace_days = b.penaltyGraceDays;
+    if (b.defaultLanguage !== undefined) patch.default_language = b.defaultLanguage;
     if (b.voucherSelfApproval !== undefined) patch.voucher_self_approval = b.voucherSelfApproval;
     if (Object.keys(patch).length) { vals.push(JSON.stringify(patch)); sets.push(`settings = settings || $${vals.length}::jsonb`); }
     return db.inTenant(ctxOf(req), async (c) => {
       if (sets.length) await c.query(`update companies set ${sets.join(", ")} where id = app.current_company()`, vals);
-      const r = await c.query(`select id, name, short_name as "shortName", ntn, strn, city, province, address, phone, email from companies where id = app.current_company()`);
+      const r = await c.query(`select id, name, short_name as "shortName", ntn, strn, city, province, address, phone, email, settings ->> 'default_language' as "defaultLanguage" from companies where id = app.current_company()`);
       return r.rows[0];
     });
   });

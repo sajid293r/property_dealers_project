@@ -21,6 +21,7 @@ import { SpotlightCard } from "@/components/spotlight-card";
 import { WidgetHead } from "@/components/dashboard/section-title";
 import type { AttentionItem, Severity } from "@/lib/dashboard-insights";
 import { cn } from "@/lib/utils";
+import { useSlide, useT } from "@/lib/i18n/provider";
 
 const ICON: Record<AttentionItem["icon"], LucideIcon> = {
   overdue: AlarmClock,
@@ -34,21 +35,23 @@ const ICON: Record<AttentionItem["icon"], LucideIcon> = {
   leave: Palmtree,
 };
 
-const SEV: Record<Severity, { tile: string; pill: string; label: string }> = {
-  high: { tile: "bg-destructive/12 text-destructive", pill: "bg-destructive/12 text-destructive", label: "Urgent" },
-  medium: { tile: "bg-warning/15 text-warning", pill: "bg-warning/15 text-warning", label: "Soon" },
-  low: { tile: "bg-primary/10 text-primary", pill: "bg-secondary text-muted-foreground", label: "Routine" },
+const SEV: Record<Severity, { tile: string; pill: string }> = {
+  high: { tile: "bg-destructive/12 text-destructive", pill: "bg-destructive/12 text-destructive" },
+  medium: { tile: "bg-warning/15 text-warning", pill: "bg-warning/15 text-warning" },
+  low: { tile: "bg-primary/10 text-primary", pill: "bg-secondary text-muted-foreground" },
 };
 
 /** The ERP's to-do list: everything across modules that is waiting on a person, most urgent first. */
 export function AttentionCenter({ items }: { items: AttentionItem[] }) {
+  const t = useT();
+  const slide = useSlide();
   const urgent = items.filter((i) => i.severity === "high").length;
 
   return (
     <SpotlightCard className="h-full p-5">
       <WidgetHead
-        title="Needs your attention"
-        note={items.length ? `${items.length} item${items.length > 1 ? "s" : ""} across Sales, Finance and People` : "Nothing is waiting on you"}
+        title={t("dashboard.todo.title")}
+        note={items.length ? t("dashboard.todo.note", { count: items.length }) : t("dashboard.todo.noteEmpty")}
         right={
           urgent > 0 ? (
             <span className="flex items-center gap-1.5 rounded-full bg-destructive/12 px-2.5 py-1 text-[11px] font-semibold text-destructive">
@@ -56,7 +59,7 @@ export function AttentionCenter({ items }: { items: AttentionItem[] }) {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive/70" />
                 <span className="relative inline-flex size-1.5 rounded-full bg-destructive" />
               </span>
-              {urgent} urgent
+              {t("dashboard.todo.urgent", { count: urgent })}
             </span>
           ) : undefined
         }
@@ -66,8 +69,8 @@ export function AttentionCenter({ items }: { items: AttentionItem[] }) {
           <span className="flex size-12 items-center justify-center rounded-2xl bg-success/12 text-success">
             <CircleCheck className="size-6" />
           </span>
-          <p className="font-heading font-semibold">You&apos;re all caught up</p>
-          <p className="text-xs text-muted-foreground">No overdue payments, approvals or follow-ups.</p>
+          <p className="font-heading font-semibold">{t("dashboard.todo.caughtUp")}</p>
+          <p className="text-xs text-muted-foreground">{t("dashboard.todo.caughtUpText")}</p>
         </div>
       ) : (
         <ul className="space-y-2">
@@ -77,7 +80,7 @@ export function AttentionCenter({ items }: { items: AttentionItem[] }) {
             return (
               <motion.li
                 key={it.id}
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: slide(10) }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
@@ -92,8 +95,8 @@ export function AttentionCenter({ items }: { items: AttentionItem[] }) {
                     <span className="block truncate text-sm font-medium">{it.title}</span>
                     <span className="block truncate text-xs text-muted-foreground">{it.detail}</span>
                   </span>
-                  <span className={cn("hidden rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide sm:inline", s.pill)}>{s.label}</span>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                  <span className={cn("hidden rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide sm:inline", s.pill)}>{t(`dashboard.todo.severity.${it.severity}`)}</span>
+                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
                 </Link>
               </motion.li>
             );

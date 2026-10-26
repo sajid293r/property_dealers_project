@@ -190,7 +190,7 @@ function DemoPayrollPage() {
           <TabsTrigger value="adjustments">
             Adjustments
             {pendingAdjustments > 0 && (
-              <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 px-1 text-[10px]">{pendingAdjustments}</Badge>
+              <Badge variant="secondary" className="ms-1.5 h-4 min-w-4 px-1 text-[10px]">{pendingAdjustments}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -225,7 +225,7 @@ function DemoPayrollPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Staff</th>
                     <th className="pb-2.5 font-medium">Role</th>
                     <th className="pb-2.5 font-medium">Base Salary</th>
@@ -289,7 +289,7 @@ function DemoPayrollPage() {
                                 </Badge>
                               )}
                             </td>
-                            <td className="py-2.5 text-right">
+                            <td className="py-2.5 text-end">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -330,7 +330,7 @@ function DemoPayrollPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Staff</th>
                     <th className="pb-2.5 font-medium">Type</th>
                     <th className="pb-2.5 font-medium">Reason</th>
@@ -363,7 +363,7 @@ function DemoPayrollPage() {
                             <td className="py-2.5 tabular-nums font-medium">{formatPkr(a.amount)}</td>
                             <td className="py-2.5 text-muted-foreground">{formatDate(a.effectiveDate)}</td>
                             <td className="py-2.5"><AdjustmentStatusBadge status={a.status} /></td>
-                            <td className="py-2.5 text-right">
+                            <td className="py-2.5 text-end">
                               {a.status === "pending" ? (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>

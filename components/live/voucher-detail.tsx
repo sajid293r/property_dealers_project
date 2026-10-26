@@ -177,12 +177,12 @@ export function LiveVoucherDetail() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2 font-medium">#</th>
                     <th className="pb-2 font-medium">Account</th>
                     <th className="pb-2 font-medium">Party / Remarks</th>
-                    <th className="pb-2 pr-3 text-right font-medium">Debit</th>
-                    <th className="pb-2 pr-3 text-right font-medium">Credit</th>
+                    <th className="pb-2 pe-3 text-end font-medium">Debit</th>
+                    <th className="pb-2 pe-3 text-end font-medium">Credit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,8 +191,8 @@ export function LiveVoucherDetail() {
                       <td className="py-2 text-muted-foreground">{l.lineNo}</td>
                       <td className="py-2"><span className="font-mono text-xs text-muted-foreground">{l.accountCode}</span> {l.accountName}</td>
                       <td className="py-2 text-muted-foreground">{[l.partyName, l.remarks].filter(Boolean).join(" · ") || "—"}</td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(l.debit) ? formatMoney(num(l.debit)) : ""}</td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(l.credit) ? formatMoney(num(l.credit)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(l.debit) ? formatMoney(num(l.debit)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(l.credit) ? formatMoney(num(l.credit)) : ""}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -211,8 +211,8 @@ export function LiveVoucherDetail() {
                       <tr key={j.lineNo} className="border-b border-border/40 last:border-0">
                         <td className="py-2"><span className="font-mono text-xs text-muted-foreground">{j.accountCode}</span> {j.accountName}</td>
                         <td className="py-2 text-muted-foreground">{j.partyName ?? ""}</td>
-                        <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(j.debit) ? formatMoney(num(j.debit)) : ""}</td>
-                        <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(j.credit) ? formatMoney(num(j.credit)) : ""}</td>
+                        <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(j.debit) ? formatMoney(num(j.debit)) : ""}</td>
+                        <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(j.credit) ? formatMoney(num(j.credit)) : ""}</td>
                       </tr>
                     ))}
                   </tbody>

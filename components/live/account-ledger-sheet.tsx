@@ -41,18 +41,18 @@ export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: s
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2 font-medium">Date</th>
                     <th className="pb-2 font-medium">Entry</th>
-                    <th className="pb-2 pr-2 text-right font-medium">Debit</th>
-                    <th className="pb-2 pr-2 text-right font-medium">Credit</th>
-                    <th className="pb-2 pr-2 text-right font-medium">Balance</th>
+                    <th className="pb-2 pe-2 text-end font-medium">Debit</th>
+                    <th className="pb-2 pe-2 text-end font-medium">Credit</th>
+                    <th className="pb-2 pe-2 text-end font-medium">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/40 bg-secondary/40 text-xs">
-                    <td className="py-1.5 pl-1" colSpan={4}>Opening balance</td>
-                    <td className="whitespace-nowrap py-1.5 pr-2 text-right font-mono tabular-nums">{formatMoney(num(q.data.openingBalance))}</td>
+                    <td className="py-1.5 ps-1" colSpan={4}>Opening balance</td>
+                    <td className="whitespace-nowrap py-1.5 pe-2 text-end font-mono tabular-nums">{formatMoney(num(q.data.openingBalance))}</td>
                   </tr>
                   {q.data.lines.map((l, i) => (
                     <tr key={`${l.entryId}-${i}`} className="border-b border-border/40 last:border-0">
@@ -65,9 +65,9 @@ export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: s
                         )}
                         <p className="max-w-[240px] truncate text-xs text-muted-foreground">{[l.partyName, l.memo ?? l.description].filter(Boolean).join(" · ")}</p>
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums">{num(l.debit) ? formatMoney(num(l.debit)) : ""}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums">{num(l.credit) ? formatMoney(num(l.credit)) : ""}</td>
-                      <td className="whitespace-nowrap py-2 pr-2 text-right font-mono tabular-nums font-medium">{formatMoney(num(l.balance))}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums">{num(l.debit) ? formatMoney(num(l.debit)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums">{num(l.credit) ? formatMoney(num(l.credit)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-2 text-end font-mono tabular-nums font-medium">{formatMoney(num(l.balance))}</td>
                     </tr>
                   ))}
                 </tbody>

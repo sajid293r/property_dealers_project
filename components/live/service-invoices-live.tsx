@@ -57,9 +57,9 @@ export function LiveServiceInvoices() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Invoice</th><th className="pb-2.5 font-medium">Customer</th><th className="pb-2.5 font-medium">For</th><th className="pb-2.5 font-medium">Due</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Amount</th><th className="pb-2.5 pr-3 text-right font-medium">Balance</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
+                <th className="pb-2.5 pe-3 text-end font-medium">Amount</th><th className="pb-2.5 pe-3 text-end font-medium">Balance</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -69,10 +69,10 @@ export function LiveServiceInvoices() {
                   <td className="py-2.5">{i.customerName}</td>
                   <td className="py-2.5"><p>{i.periodLabel ?? "—"}</p><p className="max-w-[200px] truncate text-xs text-muted-foreground">{[i.propertyCode, i.description].filter(Boolean).join(" · ")}</p></td>
                   <td className={`py-2.5 ${i.overdue ? "font-medium text-warning" : "text-muted-foreground"}`}>{formatDate(i.dueDate)}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(i.amount))}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{i.status === "void" ? "" : formatMoney(num(i.balance))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(i.amount))}</td>
+                  <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{i.status === "void" ? "" : formatMoney(num(i.balance))}</td>
                   <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${CLS[i.status]}`}>{i.status === "partial" ? "Part paid" : i.status}</span></td>
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-end">
                     <div className="flex justify-end gap-1.5">
                       <PrintLink kind="service-invoice" id={i.id} iconOnly label="Print invoice" variant="ghost" />
                       {(i.status === "unpaid" || i.status === "partial") && can("accounts.create") && <Button size="sm" variant="outline" onClick={() => setPaying(i)}>Receive</Button>}

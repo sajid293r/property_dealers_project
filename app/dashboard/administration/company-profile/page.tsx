@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { useCompany } from "@/lib/providers/company-provider";
 import { CompanyAvatar } from "@/components/company-avatar";
+import { CompanyLanguageCard } from "@/components/live/company-language-card";
 
 const PROVINCES = ["Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan", "Islamabad Capital Territory"] as const;
 const BUSINESS_TYPES = ["Independent dealer", "Agency", "Developer / housing scheme", "Dealer network"] as const;
@@ -138,6 +139,8 @@ function DemoCompanyProfilePage() {
           <Switch checked={whatsappFirst} onCheckedChange={setWhatsappFirst} />
         </div>
       </Card>
+
+      <CompanyLanguageCard />
 
       <div className="flex justify-end">
         <Button onClick={handleSave}>Save changes</Button>

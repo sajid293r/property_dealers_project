@@ -62,16 +62,16 @@ export function LiveLeave() {
           <Card className="p-4">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
-                <thead><tr className="border-b border-border/70 text-left text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Employee</th><th className="pb-2.5 font-medium">Type</th><th className="pb-2.5 font-medium">Dates</th><th className="pb-2.5 font-medium">Days</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" /></tr></thead>
+                <thead><tr className="border-b border-border/70 text-start text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Employee</th><th className="pb-2.5 font-medium">Type</th><th className="pb-2.5 font-medium">Dates</th><th className="pb-2.5 font-medium">Days</th><th className="pb-2.5 font-medium">Status</th><th className="pb-2.5" /></tr></thead>
                 <tbody>
                   {reqs.isLoading ? Array.from({ length: 4 }).map((_, i) => <tr key={i}><td colSpan={6} className="py-1.5"><Skeleton className="h-10 w-full" /></td></tr>) : all.map((r) => (
                     <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-secondary/40">
                       <td className="py-2.5"><p className="font-medium">{r.employeeName}</p><p className="max-w-[220px] truncate text-xs text-muted-foreground">{r.reason}</p></td>
-                      <td className="py-2.5">{r.leaveType}{!r.paid && <span className="ml-1 text-xs text-muted-foreground">(unpaid)</span>}</td>
+                      <td className="py-2.5">{r.leaveType}{!r.paid && <span className="ms-1 text-xs text-muted-foreground">(unpaid)</span>}</td>
                       <td className="py-2.5 text-muted-foreground">{formatDate(r.fromDate)} – {formatDate(r.toDate)}</td>
                       <td className="py-2.5">{num(r.days)}</td>
                       <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${CLS[r.status]}`}>{r.status}</span>{r.decisionNote && <p className="text-xs text-muted-foreground">{r.decisionNote}</p>}</td>
-                      <td className="py-2.5 text-right">
+                      <td className="py-2.5 text-end">
                         <div className="flex justify-end gap-1.5">
                           {r.status === "pending" && can("leave.approve") && <><Button size="sm" className="gap-1" disabled={busy} onClick={() => void decide(r, true)}><Check className="size-3.5" /> Approve</Button><Button size="icon-sm" variant="ghost" aria-label="Refuse" onClick={() => setRefusing(r)}><X className="size-4" /></Button></>}
                           {(r.status === "pending" || r.status === "approved") && can("leave.create") && <Button size="sm" variant="ghost" onClick={() => void cancelLeave(company.id, r.id).then(invalidate).then(() => toast.success("Cancelled"))}>Cancel</Button>}

@@ -81,12 +81,12 @@ export function LiveExpenses() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                   <th className="pb-2.5 font-medium">Date</th>
                   <th className="pb-2.5 font-medium">Account</th>
                   <th className="pb-2.5 font-medium">Paid to / note</th>
                   <th className="pb-2.5 font-medium">Voucher</th>
-                  <th className="pb-2.5 pr-3 text-right font-medium">Amount</th>
+                  <th className="pb-2.5 pe-3 text-end font-medium">Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,7 +100,7 @@ export function LiveExpenses() {
                         <td className="py-2.5">
                           {r.sourceType === "voucher" && r.sourceId ? <Link href={`/dashboard/vouchers/${r.sourceId}`} className="font-mono text-primary hover:underline">{r.number}</Link> : <span className="font-mono">{r.number}</span>}
                         </td>
-                        <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(r.amount))}</td>
+                        <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(r.amount))}</td>
                       </tr>
                     ))}
               </tbody>

@@ -19,7 +19,8 @@ import type {
 } from "@/lib/types";
 import { MOCK_TODAY_ISO } from "@/lib/mock-data/seed";
 import { lineMetrics } from "@/lib/budgets";
-import { formatPkr } from "@/lib/format";
+import { formatMonthShort, formatPkr } from "@/lib/format";
+import { translate as tr } from "@/lib/i18n/runtime";
 
 /**
  * Everything the dashboard shows is derived here from the same records the rest of the app
@@ -54,8 +55,7 @@ const toMs = (iso: string) => Date.parse(iso + "T00:00:00Z");
 export const addDays = (iso: string, n: number) => new Date(toMs(iso) + n * DAY).toISOString().slice(0, 10);
 export const daysBetween = (a: string, b: string) => Math.round((toMs(b) - toMs(a)) / DAY);
 const monthKey = (iso: string) => iso.slice(0, 7);
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const monthLabel = (key: string) => MONTH_NAMES[Number(key.slice(5, 7)) - 1];
+const monthLabel = (key: string) => formatMonthShort(key);
 function shiftMonth(key: string, delta: number) {
   const [y, m] = key.split("-").map(Number);
   const d = new Date(Date.UTC(y, m - 1 + delta, 1));
@@ -66,7 +66,8 @@ const inRange = (iso: string | undefined, a: string, b: string) => !!iso && iso 
 
 // ───────────────────────────────────────────────────────────────── period KPIs
 export type Period = "30d" | "90d" | "12m";
-export const PERIOD_LABEL: Record<Period, string> = { "30d": "Last 30 days", "90d": "Last 90 days", "12m": "Last 12 months" };
+/** "Last 30 days" (long) or "last 30 days" (inline, for use inside a sentence), in the language on screen. */
+export const periodLabel = (p: Period, form: "long" | "inline" = "long") => tr(`dashboard.period.${p}.${form}`);
 const PERIOD_DAYS: Record<Period, number> = { "30d": 30, "90d": 90, "12m": 365 };
 
 export interface PeriodStats {
@@ -116,10 +117,10 @@ export interface DueInstallment {
 }
 
 export const AGING_BUCKETS = [
-  { key: "0-30", label: "1–30 days", min: 1, max: 30 },
-  { key: "31-60", label: "31–60 days", min: 31, max: 60 },
-  { key: "61-90", label: "61–90 days", min: 61, max: 90 },
-  { key: "90+", label: "90+ days", min: 91, max: Infinity },
+  { key: "0-30", min: 1, max: 30 },
+  { key: "31-60", min: 31, max: 60 },
+  { key: "61-90", min: 61, max: 90 },
+  { key: "90+", min: 91, max: Infinity },
 ] as const;
 
 export function receivables(d: DashboardData, today = TODAY) {
@@ -294,8 +295,8 @@ export function attentionItems(d: DashboardData, formatMoney: (n: number) => str
   if (rec.overdueCount > 0) {
     items.push({
       id: "overdue",
-      title: `${rec.overdueCount} overdue installment${rec.overdueCount > 1 ? "s" : ""}`,
-      detail: rec.buckets[3].amount > 0 ? `${formatMoney(rec.overdueAmount)} past due — ${formatMoney(rec.buckets[3].amount)} is 90+ days late` : `${formatMoney(rec.overdueAmount)} past due — oldest is ${Math.max(...overdueDays(d, today))} days late`,
+      title: tr("dashboard.attn.overdue.title", { count: rec.overdueCount }),
+      detail: rec.buckets[3].amount > 0 ? tr("dashboard.attn.overdue.detail90", { amount: formatMoney(rec.overdueAmount), late: formatMoney(rec.buckets[3].amount) }) : tr("dashboard.attn.overdue.detail", { amount: formatMoney(rec.overdueAmount), days: Math.max(...overdueDays(d, today)) }),
       count: rec.overdueCount,
       severity: rec.buckets[3].amount > 0 || rec.buckets[2].amount > 0 ? "high" : "medium",
       href: "/dashboard/deals",
@@ -308,10 +309,10 @@ export function attentionItems(d: DashboardData, formatMoney: (n: number) => str
   if (bounced.length > 0 || chequesDue.length > 0) {
     items.push({
       id: "cheques",
-      title: bounced.length ? `${bounced.length} bounced cheque${bounced.length > 1 ? "s" : ""}` : `${chequesDue.length} cheque${chequesDue.length > 1 ? "s" : ""} due this week`,
+      title: bounced.length ? tr("dashboard.attn.bounced.title", { count: bounced.length }) : tr("dashboard.attn.chequesDue.title", { count: chequesDue.length }),
       detail: [
-        bounced.length ? `${formatMoney(sum(bounced.map((c) => c.amount)))} bounced — follow up with the customer` : "",
-        chequesDue.length ? `${chequesDue.length} due within 7 days (${formatMoney(sum(chequesDue.map((c) => c.amount)))})` : "",
+        bounced.length ? tr("dashboard.attn.bounced.detail", { amount: formatMoney(sum(bounced.map((c) => c.amount))) }) : "",
+        chequesDue.length ? tr("dashboard.attn.chequesDue.detail", { count: chequesDue.length, amount: formatMoney(sum(chequesDue.map((c) => c.amount))) }) : "",
       ].filter(Boolean).join(" · "),
       count: bounced.length + chequesDue.length,
       severity: bounced.length ? "high" : "medium",
@@ -325,8 +326,8 @@ export function attentionItems(d: DashboardData, formatMoney: (n: number) => str
   if (pendingApprovals > 0) {
     items.push({
       id: "approvals",
-      title: `${pendingApprovals} waiting for your approval`,
-      detail: [pendingVouchers ? `${pendingVouchers} voucher${pendingVouchers > 1 ? "s" : ""}` : "", pendingAdj ? `${pendingAdj} payroll adjustment${pendingAdj > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · "),
+      title: tr("dashboard.attn.approvals.title", { count: pendingApprovals }),
+      detail: [pendingVouchers ? tr("dashboard.attn.approvals.vouchers", { count: pendingVouchers }) : "", pendingAdj ? tr("dashboard.attn.approvals.payroll", { count: pendingAdj }) : ""].filter(Boolean).join(" · "),
       count: pendingApprovals,
       severity: pendingApprovals >= 5 ? "high" : "medium",
       href: pendingVouchers ? "/dashboard/vouchers" : "/dashboard/payroll",
@@ -335,29 +336,29 @@ export function attentionItems(d: DashboardData, formatMoney: (n: number) => str
   }
   const pendingLeave = d.leaves.filter((l) => l.status === "pending").length;
   if (pendingLeave > 0) {
-    items.push({ id: "leave", title: `${pendingLeave} leave request${pendingLeave > 1 ? "s" : ""} pending`, detail: "Staff are waiting for a decision", count: pendingLeave, severity: "low", href: "/dashboard/leave", icon: "leave" });
+    items.push({ id: "leave", title: tr("dashboard.attn.leave.title", { count: pendingLeave }), detail: tr("dashboard.attn.leave.detail"), count: pendingLeave, severity: "low", href: "/dashboard/leave", icon: "leave" });
   }
   const expiring = d.contracts.filter((c) => c.status === "expiring");
   if (expiring.length > 0) {
-    items.push({ id: "contracts", title: `${expiring.length} contract${expiring.length > 1 ? "s" : ""} expiring soon`, detail: `${formatMoney(sum(expiring.map((c) => c.value)))} in agreements to renew`, count: expiring.length, severity: "medium", href: "/dashboard/contracts", icon: "contract" });
+    items.push({ id: "contracts", title: tr("dashboard.attn.contracts.title", { count: expiring.length }), detail: tr("dashboard.attn.contracts.detail", { amount: formatMoney(sum(expiring.map((c) => c.value))) }), count: expiring.length, severity: "medium", href: "/dashboard/contracts", icon: "contract" });
   }
   const quotesLapsing = d.quotations.filter((q) => q.status === "sent" && q.validUntil >= today && q.validUntil <= weekAhead);
   if (quotesLapsing.length > 0) {
-    items.push({ id: "quotes", title: `${quotesLapsing.length} quotation${quotesLapsing.length > 1 ? "s" : ""} lapsing this week`, detail: "Follow up before the offer expires", count: quotesLapsing.length, severity: "medium", href: "/dashboard/quotations", icon: "quote" });
+    items.push({ id: "quotes", title: tr("dashboard.attn.quotes.title", { count: quotesLapsing.length }), detail: tr("dashboard.attn.quotes.detail"), count: quotesLapsing.length, severity: "medium", href: "/dashboard/quotations", icon: "quote" });
   }
   const followUps = d.leads.filter((l) => l.nextFollowUp && l.nextFollowUp <= today && l.status !== "won" && l.status !== "lost");
   if (followUps.length > 0) {
-    items.push({ id: "followups", title: `${followUps.length} lead follow-up${followUps.length > 1 ? "s" : ""} due`, detail: "Today or overdue — leads go cold quickly", count: followUps.length, severity: followUps.length >= 3 ? "high" : "medium", href: "/dashboard/crm", icon: "followup" });
+    items.push({ id: "followups", title: tr("dashboard.attn.followups.title", { count: followUps.length }), detail: tr("dashboard.attn.followups.detail"), count: followUps.length, severity: followUps.length >= 3 ? "high" : "medium", href: "/dashboard/crm", icon: "followup" });
   }
   const open = new Set(d.budgets.filter((b) => b.status !== "closed").map((b) => b.id));
   const hot = d.budgetLines.filter((l) => open.has(l.budgetId)).map(lineMetrics).filter((m) => m.health !== "ok");
   if (hot.length > 0) {
     const over = hot.filter((m) => m.health === "over").length;
-    items.push({ id: "budgets", title: `${hot.length} budget line${hot.length > 1 ? "s" : ""} need attention`, detail: over ? `${over} already over budget` : "Approaching the limit", count: hot.length, severity: over ? "high" : "medium", href: "/dashboard/budgets", icon: "budget" });
+    items.push({ id: "budgets", title: tr("dashboard.attn.budgets.title", { count: hot.length }), detail: over ? tr("dashboard.attn.budgets.over", { count: over }) : tr("dashboard.attn.budgets.near"), count: hot.length, severity: over ? "high" : "medium", href: "/dashboard/budgets", icon: "budget" });
   }
   const pay = payables(d);
   if (pay.count > 0) {
-    items.push({ id: "bills", title: `${pay.count} unpaid bill${pay.count > 1 ? "s" : ""}`, detail: `${formatMoney(pay.amount)} payable to vendors and contractors`, count: pay.count, severity: "low", href: "/dashboard/expenses", icon: "bills" });
+    items.push({ id: "bills", title: tr("dashboard.attn.bills.title", { count: pay.count }), detail: tr("dashboard.attn.bills.detail", { amount: formatMoney(pay.amount) }), count: pay.count, severity: "low", href: "/dashboard/expenses", icon: "bills" });
   }
   const order: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
   return items.sort((a, b) => order[a.severity] - order[b.severity] || b.count - a.count);
@@ -386,31 +387,31 @@ export function upcoming(d: DashboardData, today = TODAY, days = 10): UpcomingEv
     if (deal.status === "cancelled") continue;
     for (const i of deal.installments) {
       if (!i.paid && i.dueDate >= today && i.dueDate <= end) {
-        events.push({ date: i.dueDate, kind: "installment", title: `Installment due — ${name(deal.customerId)}`, detail: deal.voucherNo, amount: i.amount, href: "/dashboard/deals" });
+        events.push({ date: i.dueDate, kind: "installment", title: tr("dashboard.event.installment", { name: name(deal.customerId) }), detail: deal.voucherNo, amount: i.amount, href: "/dashboard/deals" });
       }
     }
   }
   for (const c of d.cheques) {
     if ((c.status === "in_hand" || c.status === "deposited") && c.chequeDate >= today && c.chequeDate <= end) {
-      events.push({ date: c.chequeDate, kind: "cheque", title: `Cheque date — ${name(c.customerId)}`, detail: `${c.bankName} · #${c.chequeNo}`, amount: c.amount, href: "/dashboard/cheques" });
+      events.push({ date: c.chequeDate, kind: "cheque", title: tr("dashboard.event.cheque", { name: name(c.customerId) }), detail: `${c.bankName} · #${c.chequeNo}`, amount: c.amount, href: "/dashboard/cheques" });
     }
   }
   for (const c of d.contracts) {
-    if (c.endDate >= today && c.endDate <= end) events.push({ date: c.endDate, kind: "contract", title: `Contract ends — ${c.partyName}`, detail: c.title, amount: c.value, href: "/dashboard/contracts" });
+    if (c.endDate >= today && c.endDate <= end) events.push({ date: c.endDate, kind: "contract", title: tr("dashboard.event.contract", { name: c.partyName }), detail: c.title, amount: c.value, href: "/dashboard/contracts" });
   }
   for (const l of d.leads) {
     if (l.nextFollowUp && l.nextFollowUp >= today && l.nextFollowUp <= end && l.status !== "won" && l.status !== "lost") {
-      events.push({ date: l.nextFollowUp, kind: "followup", title: `Follow up — ${l.name}`, detail: `${l.assignedTo} · ${l.interestedIn}`, href: "/dashboard/crm" });
+      events.push({ date: l.nextFollowUp, kind: "followup", title: tr("dashboard.event.followup", { name: l.name }), detail: `${l.assignedTo} · ${l.interestedIn}`, href: "/dashboard/crm" });
     }
   }
   for (const l of d.leaves) {
     if (l.status === "approved" && l.fromDate >= today && l.fromDate <= end) {
       const who = d.staff.find((s) => s.id === l.staffId)?.name ?? "Staff";
-      events.push({ date: l.fromDate, kind: "leave", title: `${who} on leave`, detail: `${l.type} · ${l.days} day${l.days > 1 ? "s" : ""}`, href: "/dashboard/leave" });
+      events.push({ date: l.fromDate, kind: "leave", title: tr("dashboard.event.leave", { name: who }), detail: tr("dashboard.event.leaveDetail", { type: l.type, days: l.days }), href: "/dashboard/leave" });
     }
   }
   for (const q of d.quotations) {
-    if (q.status === "sent" && q.validUntil >= today && q.validUntil <= end) events.push({ date: q.validUntil, kind: "quote", title: `Quotation expires — ${q.number}`, detail: name(q.customerId), href: "/dashboard/quotations" });
+    if (q.status === "sent" && q.validUntil >= today && q.validUntil <= end) events.push({ date: q.validUntil, kind: "quote", title: tr("dashboard.event.quote", { number: q.number }), detail: name(q.customerId), href: "/dashboard/quotations" });
   }
   return events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
@@ -454,39 +455,39 @@ export function healthScore(d: DashboardData, today = TODAY) {
   const factors: HealthFactor[] = [];
   factors.push({
     key: "collections",
-    label: "Collections",
+    label: tr("dashboard.health.collections"),
     score: Math.round(rec.efficiency * 100),
-    value: `${Math.round(rec.efficiency * 100)}% collected`,
-    how: "Share of all installments that have fallen due so far that have been paid.",
+    value: tr("dashboard.health.collections.value", { pct: Math.round(rec.efficiency * 100) }),
+    how: tr("dashboard.health.collections.how"),
   });
   if (metrics.length > 0) {
     const score = Math.round(Math.max(0, 1 - (over + watch * 0.5) / metrics.length) * 100);
     factors.push({
       key: "budget",
-      label: "Budget discipline",
+      label: tr("dashboard.health.budget"),
       score,
-      value: over || watch ? `${over} over · ${watch} watch` : "All on track",
-      how: "Budget lines on track out of all open lines (a line near its limit counts half).",
+      value: over || watch ? tr("dashboard.health.budget.value", { over, watch }) : tr("dashboard.health.budget.ok"),
+      how: tr("dashboard.health.budget.how"),
     });
   }
   factors.push({
     key: "sales",
-    label: "Sales progress",
+    label: tr("dashboard.health.sales"),
     score: Math.round(inv.sellThrough * 100),
-    value: `${Math.round(inv.sellThrough * 100)}% sold or reserved`,
-    how: "Properties sold or reserved as a share of the whole portfolio.",
+    value: tr("dashboard.health.sales.value", { pct: Math.round(inv.sellThrough * 100) }),
+    how: tr("dashboard.health.sales.how"),
   });
   const coverage = pay.amount > 0 ? cash / pay.amount : 3;
   factors.push({
     key: "liquidity",
-    label: "Liquidity",
+    label: tr("dashboard.health.liquidity"),
     score: Math.round(Math.min(1, coverage / 1.5) * 100),
-    value: pay.amount > 0 ? `Cash covers ${Math.round(coverage * 100)}% of unpaid bills` : "No unpaid bills",
-    how: "Cash and bank balance compared with bills still to be paid (150% cover scores full marks).",
+    value: pay.amount > 0 ? tr("dashboard.health.liquidity.value", { pct: Math.round(coverage * 100) }) : tr("dashboard.health.liquidity.none"),
+    how: tr("dashboard.health.liquidity.how"),
   });
 
   const overall = factors.length ? Math.round(sum(factors.map((f) => f.score)) / factors.length) : 0;
-  const grade = overall >= 80 ? "Excellent" : overall >= 60 ? "Good" : overall >= 40 ? "Needs attention" : "At risk";
+  const grade = tr(overall >= 80 ? "dashboard.health.grade.excellent" : overall >= 60 ? "dashboard.health.grade.good" : overall >= 40 ? "dashboard.health.grade.attention" : "dashboard.health.grade.risk");
   return { overall, grade, factors };
 }
 
@@ -509,14 +510,14 @@ export function smartInsights(d: DashboardData, formatMoney: (n: number) => stri
   if (rec.topOverdue.length > 0 && rec.overdueAmount > 0) {
     const top = rec.topOverdue[0];
     const share = Math.round((top.amount / rec.overdueAmount) * 100);
-    const name = d.customers.find((c) => c.id === top.customerId)?.name ?? "One customer";
+    const name = d.customers.find((c) => c.id === top.customerId)?.name ?? tr("dashboard.insight.oneCustomer");
     out.push({
       id: "overdue-conc",
       tone: share >= 35 ? "bad" : "warn",
-      title: `${name} owes ${formatMoney(top.amount)}`,
-      body: `That is ${share}% of everything overdue (${formatMoney(rec.overdueAmount)}); the oldest installment is ${top.oldest} days late.`,
+      title: tr("dashboard.insight.concentration.title", { name, amount: formatMoney(top.amount) }),
+      body: tr("dashboard.insight.concentration.body", { share, total: formatMoney(rec.overdueAmount), days: top.oldest }),
       href: "/dashboard/customers",
-      cta: "Open customers",
+      cta: tr("dashboard.insight.concentration.cta"),
     });
   }
   if (rec.dueAmount > 0) {
@@ -524,20 +525,22 @@ export function smartInsights(d: DashboardData, formatMoney: (n: number) => stri
     out.push({
       id: "efficiency",
       tone: eff >= 85 ? "good" : eff >= 65 ? "warn" : "bad",
-      title: `Collection efficiency is ${eff}%`,
-      body: `${formatMoney(rec.collectedOfDue)} of ${formatMoney(rec.dueAmount)} due so far has been collected${eff < 85 ? ` — ${formatMoney(rec.dueAmount - rec.collectedOfDue)} is still outstanding` : ""}.`,
+      title: tr("dashboard.insight.efficiency.title", { pct: eff }),
+      body: eff < 85
+        ? tr("dashboard.insight.efficiency.bodyOutstanding", { collected: formatMoney(rec.collectedOfDue), due: formatMoney(rec.dueAmount), outstanding: formatMoney(rec.dueAmount - rec.collectedOfDue) })
+        : tr("dashboard.insight.efficiency.body", { collected: formatMoney(rec.collectedOfDue), due: formatMoney(rec.dueAmount) }),
       href: "/dashboard/deals",
-      cta: "See bookings",
+      cta: tr("dashboard.insight.efficiency.cta"),
     });
   }
   if (stats.bookingsDelta !== undefined) {
     out.push({
       id: "momentum",
       tone: stats.bookingsDelta >= 0 ? "good" : "warn",
-      title: `Bookings ${stats.bookingsDelta >= 0 ? "up" : "down"} ${Math.abs(stats.bookingsDelta)}%`,
-      body: `${stats.bookings} new booking${stats.bookings === 1 ? "" : "s"} worth ${formatMoney(stats.salesValue)} in the ${PERIOD_LABEL[period].toLowerCase()}, versus ${stats.bookingsPrev} in the period before.`,
+      title: tr(stats.bookingsDelta >= 0 ? "dashboard.insight.momentum.up" : "dashboard.insight.momentum.down", { pct: Math.abs(stats.bookingsDelta) }),
+      body: tr("dashboard.insight.momentum.body", { count: stats.bookings, value: formatMoney(stats.salesValue), period: periodLabel(period, "inline"), prev: stats.bookingsPrev }),
       href: "/dashboard/deals",
-      cta: "View deals",
+      cta: tr("dashboard.insight.momentum.cta"),
     });
   }
   const unsold = port.filter((p) => p.available > 0).sort((a, b) => b.availableValue - a.availableValue)[0];
@@ -545,10 +548,10 @@ export function smartInsights(d: DashboardData, formatMoney: (n: number) => stri
     out.push({
       id: "unsold",
       tone: "info",
-      title: `${unsold.project.name} holds the most unsold stock`,
-      body: `${unsold.available} propert${unsold.available === 1 ? "y" : "ies"} worth ${formatMoney(unsold.availableValue)} are available; ${Math.round(unsold.soldPct * 100)}% of the project is sold.`,
+      title: tr("dashboard.insight.unsold.title", { project: unsold.project.name }),
+      body: tr("dashboard.insight.unsold.body", { count: unsold.available, value: formatMoney(unsold.availableValue), sold: Math.round(unsold.soldPct * 100) }),
       href: "/dashboard/properties",
-      cta: "Open properties",
+      cta: tr("dashboard.insight.unsold.cta"),
     });
   }
   const open = new Set(d.budgets.filter((b) => b.status !== "closed").map((b) => b.id));
@@ -561,10 +564,10 @@ export function smartInsights(d: DashboardData, formatMoney: (n: number) => stri
     out.push({
       id: "budget",
       tone: worst.m.health === "over" ? "bad" : "warn",
-      title: `${worst.l.category} is at ${Math.round(worst.m.utilization * 100)}% of budget`,
-      body: `${b?.name.replace(" — Project Budget", "") ?? "A budget"}: ${formatMoney(worst.m.used)} used of ${formatMoney(worst.m.budget)}${worst.m.health === "over" ? " — raise a revision or stop further spend" : ""}.`,
+      title: tr("dashboard.insight.budget.title", { category: worst.l.category, pct: Math.round(worst.m.utilization * 100) }),
+      body: tr(worst.m.health === "over" ? "dashboard.insight.budget.bodyOver" : "dashboard.insight.budget.body", { budget: b?.name.replace(" — Project Budget", "") ?? tr("dashboard.insight.budget.aBudget"), used: formatMoney(worst.m.used), total: formatMoney(worst.m.budget) }),
       href: "/dashboard/budgets",
-      cta: "Open budgets",
+      cta: tr("dashboard.insight.budget.cta"),
     });
   }
   const op = d.budgets.find((b) => b.kind === "operating");
@@ -581,10 +584,10 @@ export function smartInsights(d: DashboardData, formatMoney: (n: number) => stri
       out.push({
         id: "opex",
         tone: "warn",
-        title: `${hotLine.l.category} is running ${Math.round(hotLine.over * 100)}% over plan`,
-        body: `Year to date: ${formatMoney(hotLine.l.actualAmount)} spent against ${formatMoney(hotLine.plan)} planned. Overall operating spend is ${actual > planToDate ? "over" : "under"} plan by ${formatMoney(Math.abs(actual - planToDate))}.`,
+        title: tr("dashboard.insight.opex.title", { category: hotLine.l.category, pct: Math.round(hotLine.over * 100) }),
+        body: tr(actual > planToDate ? "dashboard.insight.opex.bodyOver" : "dashboard.insight.opex.bodyUnder", { spent: formatMoney(hotLine.l.actualAmount), planned: formatMoney(hotLine.plan), diff: formatMoney(Math.abs(actual - planToDate)) }),
         href: "/dashboard/budgets",
-        cta: "See variance",
+        cta: tr("dashboard.insight.opex.cta"),
       });
     }
   }
@@ -602,19 +605,19 @@ export interface ActivityEvent {
 }
 
 export function recentActivity(d: DashboardData, today = TODAY, limit = 7): ActivityEvent[] {
-  const name = (id: string) => d.customers.find((c) => c.id === id)?.name ?? "Customer";
+  const name = (id: string) => d.customers.find((c) => c.id === id)?.name ?? tr("common.customer");
   const code = (id: string) => d.units.find((u) => u.id === id)?.code ?? "";
   const money = (n: number) => formatPkr(n, { compact: true });
   const events: ActivityEvent[] = [];
   for (const deal of d.deals) {
-    if (deal.createdAt <= today) events.push({ id: `b-${deal.id}`, date: deal.createdAt, kind: "booking", title: "Booking confirmed", detail: `${name(deal.customerId)} · ${code(deal.unitId)}` });
+    if (deal.createdAt <= today) events.push({ id: `b-${deal.id}`, date: deal.createdAt, kind: "booking", title: tr("dashboard.feed.booking"), detail: `${name(deal.customerId)} · ${code(deal.unitId)}` });
     for (const i of deal.installments) {
-      if (i.paid && i.paidDate && i.paidDate <= today) events.push({ id: `p-${i.id}-${deal.id}`, date: i.paidDate, kind: "payment", title: "Installment received", detail: `${name(deal.customerId)} paid ${money(i.amount)} · ${code(deal.unitId)}` });
+      if (i.paid && i.paidDate && i.paidDate <= today) events.push({ id: `p-${i.id}-${deal.id}`, date: i.paidDate, kind: "payment", title: tr("dashboard.feed.payment"), detail: tr("dashboard.feed.paymentDetail", { name: name(deal.customerId), amount: money(i.amount), code: code(deal.unitId) }) });
     }
   }
-  for (const l of d.leads) if (l.createdAt <= today) events.push({ id: `l-${l.id}`, date: l.createdAt, kind: "lead", title: "New lead", detail: `${l.name} via ${l.source} · ${l.interestedIn}` });
-  for (const v of d.vouchers) if (v.status === "approved" && v.approvedAt && v.approvedAt <= today) events.push({ id: `v-${v.id}`, date: v.approvedAt, kind: "voucher", title: "Voucher approved", detail: `${v.number} · ${v.description || v.type}` });
-  for (const c of d.cheques) if (c.status === "cleared" && c.chequeDate <= today) events.push({ id: `c-${c.id}`, date: c.chequeDate, kind: "cheque", title: "Cheque cleared", detail: `${c.bankName} · ${money(c.amount)}` });
+  for (const l of d.leads) if (l.createdAt <= today) events.push({ id: `l-${l.id}`, date: l.createdAt, kind: "lead", title: tr("dashboard.feed.lead"), detail: tr("dashboard.feed.leadDetail", { name: l.name, source: l.source, interest: l.interestedIn }) });
+  for (const v of d.vouchers) if (v.status === "approved" && v.approvedAt && v.approvedAt <= today) events.push({ id: `v-${v.id}`, date: v.approvedAt, kind: "voucher", title: tr("dashboard.feed.voucher"), detail: `${v.number} · ${v.description || v.type}` });
+  for (const c of d.cheques) if (c.status === "cleared" && c.chequeDate <= today) events.push({ id: `c-${c.id}`, date: c.chequeDate, kind: "cheque", title: tr("dashboard.feed.cheque"), detail: `${c.bankName} · ${money(c.amount)}` });
   // newest first, but never let one kind (usually installment receipts) crowd out the rest
   const sorted = events.sort((a, b) => (a.date < b.date ? 1 : -1));
   const taken: Record<string, number> = {};
@@ -629,11 +632,11 @@ export function recentActivity(d: DashboardData, today = TODAY, limit = 7): Acti
 
 export function relativeDay(iso: string, today = TODAY) {
   const n = daysBetween(iso, today);
-  if (n <= 0) return "Today";
-  if (n === 1) return "Yesterday";
-  if (n < 14) return `${n} days ago`;
-  if (n < 60) return `${Math.round(n / 7)} weeks ago`;
-  return `${Math.round(n / 30)} months ago`;
+  if (n <= 0) return tr("common.today");
+  if (n === 1) return tr("common.yesterday");
+  if (n < 14) return tr("dashboard.when.daysAgo", { count: n });
+  if (n < 60) return tr("dashboard.when.weeksAgo", { count: Math.round(n / 7) });
+  return tr("dashboard.when.monthsAgo", { count: Math.round(n / 30) });
 }
 
 /** Trailing monthly series of money collected (for KPI sparklines). */

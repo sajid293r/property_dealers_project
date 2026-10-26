@@ -96,7 +96,7 @@ function DemoQuotationsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Quotation</th>
                 <th className="pb-2.5 font-medium">Customer</th>
                 <th className="pb-2.5 font-medium">Property</th>
@@ -131,12 +131,12 @@ function DemoQuotationsPage() {
                         <td className="py-2.5">
                           <span className="tabular-nums font-medium">{formatPkr(netPrice)}</span>
                           {q.discountPercent > 0 && (
-                            <span className="ml-1.5 text-xs text-muted-foreground">-{q.discountPercent}%</span>
+                            <span className="ms-1.5 text-xs text-muted-foreground">-{q.discountPercent}%</span>
                           )}
                         </td>
                         <td className="py-2.5 text-muted-foreground">{formatDate(q.validUntil)}</td>
                         <td className="py-2.5"><QuotationStatusBadge status={q.status} /></td>
-                        <td className="py-2.5 text-right">
+                        <td className="py-2.5 text-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">

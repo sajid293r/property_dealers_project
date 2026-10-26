@@ -78,9 +78,9 @@ export function CollectionsTab() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+            <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
               <th className="pb-2.5 font-medium">Customer</th><th className="pb-2.5 font-medium">Installment</th><th className="pb-2.5 font-medium">Due</th>
-              <th className="pb-2.5 pr-3 text-right font-medium">Owes</th><th className="pb-2.5 font-medium">Last reminded</th><th className="pb-2.5" />
+              <th className="pb-2.5 pe-3 text-end font-medium">Owes</th><th className="pb-2.5 font-medium">Last reminded</th><th className="pb-2.5" />
             </tr>
           </thead>
           <tbody>
@@ -89,9 +89,9 @@ export function CollectionsTab() {
                 <td className="py-2.5"><p className="font-medium">{r.customerName}</p><p className="text-xs text-muted-foreground">{r.phone ?? "No phone number"} · {r.propertyCode}</p></td>
                 <td className="py-2.5"><span className="font-mono text-xs text-muted-foreground">{r.bookingNo}</span> · #{r.seq}</td>
                 <td className={`py-2.5 ${r.daysLate > 0 ? "font-medium text-warning" : "text-muted-foreground"}`}>{formatDate(r.dueDate)}{r.daysLate > 0 && ` · ${r.daysLate}d late`}</td>
-                <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(r.outstanding))}</td>
+                <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(r.outstanding))}</td>
                 <td className="py-2.5 text-xs text-muted-foreground">{r.lastReminderAt ? `${formatDate(r.lastReminderAt)} (${r.reminders}×)` : "Never"}</td>
-                <td className="py-2.5 text-right">
+                <td className="py-2.5 text-end">
                   <div className="flex justify-end gap-1.5">
                     <Button size="sm" variant="outline" className="gap-1" disabled={!r.phone} onClick={() => whatsapp(r)}><MessageCircle className="size-3.5" /> WhatsApp</Button>
                     {r.phone && <Button size="icon-sm" variant="ghost" aria-label="Call" asChild><a href={`tel:${r.phone}`} onClick={() => can("deals.create") && void log(r, "call")}><Phone className="size-4" /></a></Button>}

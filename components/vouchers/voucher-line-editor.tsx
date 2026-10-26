@@ -42,27 +42,27 @@ export function VoucherLineEditor({
       <div className="overflow-x-auto rounded-lg border border-border/70">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="border-b border-border/70 bg-muted/50 text-left text-xs text-muted-foreground">
-              <th className="w-[26%] py-2 pl-3 font-medium">Account</th>
-              <th className="w-[11%] py-2 pr-2 font-medium">Debit</th>
-              <th className="w-[11%] py-2 pr-2 font-medium">Credit</th>
-              <th className="w-[20%] py-2 pr-2 font-medium">Remarks</th>
-              <th className="w-[14%] py-2 pr-2 font-medium">Cost Center</th>
-              <th className="w-[14%] py-2 pr-2 font-medium">Project</th>
+            <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
+              <th className="w-[26%] py-2 ps-3 font-medium">Account</th>
+              <th className="w-[11%] py-2 pe-2 font-medium">Debit</th>
+              <th className="w-[11%] py-2 pe-2 font-medium">Credit</th>
+              <th className="w-[20%] py-2 pe-2 font-medium">Remarks</th>
+              <th className="w-[14%] py-2 pe-2 font-medium">Cost Center</th>
+              <th className="w-[14%] py-2 pe-2 font-medium">Project</th>
               <th className="w-8 py-2" />
             </tr>
           </thead>
           <tbody>
             {lines.map((line) => (
               <tr key={line.id} className="border-b border-border/40 last:border-0">
-                <td className="py-1.5 pl-3 pr-2">
+                <td className="py-1.5 ps-3 pe-2">
                   <AccountSelect
                     accounts={accounts}
                     value={line.accountId}
                     onChange={(v) => updateLine(line.id, { accountId: v })}
                   />
                 </td>
-                <td className="py-1.5 pr-2">
+                <td className="py-1.5 pe-2">
                   <Input
                     type="number"
                     min={0}
@@ -71,7 +71,7 @@ export function VoucherLineEditor({
                     placeholder="0.00"
                   />
                 </td>
-                <td className="py-1.5 pr-2">
+                <td className="py-1.5 pe-2">
                   <Input
                     type="number"
                     min={0}
@@ -80,14 +80,14 @@ export function VoucherLineEditor({
                     placeholder="0.00"
                   />
                 </td>
-                <td className="py-1.5 pr-2">
+                <td className="py-1.5 pe-2">
                   <Input
                     value={line.remarks ?? ""}
                     onChange={(e) => updateLine(line.id, { remarks: e.target.value })}
                     placeholder="Remarks"
                   />
                 </td>
-                <td className="py-1.5 pr-2">
+                <td className="py-1.5 pe-2">
                   <Select
                     value={line.costCenter || "none"}
                     onValueChange={(v) => updateLine(line.id, { costCenter: v === "none" ? "" : v })}
@@ -101,7 +101,7 @@ export function VoucherLineEditor({
                     </SelectContent>
                   </Select>
                 </td>
-                <td className="py-1.5 pr-2">
+                <td className="py-1.5 pe-2">
                   <Select
                     value={line.project || "none"}
                     onValueChange={(v) => updateLine(line.id, { project: v === "none" ? "" : v })}
@@ -115,7 +115,7 @@ export function VoucherLineEditor({
                     </SelectContent>
                   </Select>
                 </td>
-                <td className="py-1.5 pr-3 text-right">
+                <td className="py-1.5 pe-3 text-end">
                   <Button
                     type="button"
                     variant="ghost"

@@ -82,7 +82,7 @@ export function FormDialog({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="absolute right-3 top-3 text-white/70 hover:bg-white/10 hover:text-white"
+              className="absolute end-3 top-3 text-white/70 hover:bg-white/10 hover:text-white"
             >
               <span className="sr-only">Close</span>
               <X className="size-4" />

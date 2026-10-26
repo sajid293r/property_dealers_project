@@ -98,7 +98,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="mx-auto max-w-[1400px] space-y-4">
         <Link href="/dashboard/projects" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
           Back to projects
         </Link>
         <Card className="p-10 text-center">
@@ -118,7 +118,7 @@ export default function ProjectDetailPage() {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="surface-hero sheen relative isolate overflow-hidden rounded-3xl p-6 shadow-xl shadow-primary/15 ring-1 ring-white/10 md:p-8"
       >
-        <div className="pointer-events-none absolute -right-10 -top-16 -z-10 size-72 animate-aurora rounded-full bg-gold/25 blur-3xl" />
+        <div className="pointer-events-none absolute -end-10 -top-16 -z-10 size-72 animate-aurora rounded-full bg-gold/25 blur-3xl" />
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-[0.1]"
           style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "20px 20px" }}
@@ -127,7 +127,7 @@ export default function ProjectDetailPage() {
           href="/dashboard/projects"
           className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20 hover:text-white"
         >
-          <ArrowLeft className="size-3.5" />
+          <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
           All projects
         </Link>
         <div className="flex flex-wrap items-center gap-3">
@@ -206,7 +206,7 @@ export default function ProjectDetailPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Contractor</th>
                 <th className="pb-2.5 font-medium">Scope</th>
                 <th className="pb-2.5 font-medium">Value</th>
@@ -233,7 +233,7 @@ export default function ProjectDetailPage() {
                       </div>
                     </td>
                     <td className="py-2.5"><ContractStatusBadge status={c.status} /></td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-end">
                       {c.status === "active" ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

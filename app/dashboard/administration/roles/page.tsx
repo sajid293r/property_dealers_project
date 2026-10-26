@@ -62,7 +62,7 @@ function DemoRolesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 12) * 0.04, duration: 0.4 }}
                   onClick={() => setActiveRole(role)}
-                  className="text-left"
+                  className="text-start"
                 >
                   <Card className="h-full p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/[0.06]">
                     <div className="flex items-start justify-between gap-3">

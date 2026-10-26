@@ -65,11 +65,11 @@ function VoucherLineTable({
       <div className="overflow-x-auto rounded-lg border border-border/70">
         <table className="w-full min-w-[820px] text-sm">
           <thead>
-            <tr className="border-b border-border/70 bg-muted/50 text-left text-xs text-muted-foreground">
-              <th className="w-[32%] py-2 pl-3 font-medium">Account</th>
-              <th className="w-[22%] py-2 pr-2 text-right font-medium">{side === "debit" ? "Debit" : "Credit"} amount</th>
-              <th className="py-2 pl-2 pr-2 font-medium">Narration</th>
-              {projectOptions.length > 0 && <th className="w-[16%] py-2 pr-2 font-medium">Project</th>}
+            <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
+              <th className="w-[32%] py-2 ps-3 font-medium">Account</th>
+              <th className="w-[22%] py-2 pe-2 text-end font-medium">{side === "debit" ? "Debit" : "Credit"} amount</th>
+              <th className="py-2 ps-2 pe-2 font-medium">Narration</th>
+              {projectOptions.length > 0 && <th className="w-[16%] py-2 pe-2 font-medium">Project</th>}
               <th className="w-9 py-2" />
             </tr>
           </thead>
@@ -80,21 +80,21 @@ function VoucherLineTable({
               return (
                 <React.Fragment key={l.key}>
                   <tr className="align-top">
-                    <td className="py-1.5 pl-3 pr-2">
+                    <td className="py-1.5 ps-3 pe-2">
                       <AccountPicker key={remountKey} value={l.accountId} only={onlyAccounts} onChange={(id) => updateLine(l.key, { accountId: id })} />
                     </td>
-                    <td className="py-1.5 pr-2">
+                    <td className="py-1.5 pe-2">
                       <AmountInput value={l.amount} onChange={(v) => updateLine(l.key, { amount: v })} aria-label={`${side} amount`} />
                     </td>
-                    <td className="py-1.5 pl-2 pr-2">
+                    <td className="py-1.5 ps-2 pe-2">
                       <Input value={l.remarks} onChange={(e) => updateLine(l.key, { remarks: e.target.value })} placeholder="Optional" maxLength={300} />
                     </td>
                     {projectOptions.length > 0 && (
-                      <td className="py-1.5 pr-2">
+                      <td className="py-1.5 pe-2">
                         <SearchSelect options={projectOptions} value={l.projectId} placeholder="—" clearable onChange={(v) => updateLine(l.key, { projectId: v })} />
                       </td>
                     )}
-                    <td className="py-1.5 pr-2 text-right">
+                    <td className="py-1.5 pe-2 text-end">
                       <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeLine(l.key)} disabled={list.length <= 1} aria-label="Remove line">
                         <Trash2 className="size-3.5 text-muted-foreground" />
                       </Button>
@@ -102,7 +102,7 @@ function VoucherLineTable({
                   </tr>
                   {needsParty && (
                     <tr>
-                      <td colSpan={projectOptions.length > 0 ? 5 : 4} className="pb-2 pl-3 pr-2">
+                      <td colSpan={projectOptions.length > 0 ? 5 : 4} className="pb-2 ps-3 pe-2">
                         <div className="flex items-center gap-3 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2">
                           <span className="text-xs">{account?.name} needs a customer / supplier:</span>
                           <div className="w-64">
@@ -123,7 +123,7 @@ function VoucherLineTable({
           <Plus className="size-3.5" /> Add line
         </Button>
         <p className="text-sm text-muted-foreground">
-          {side === "debit" ? "Debit" : "Credit"} total <span className="ml-1 font-mono text-base font-semibold tabular-nums text-foreground">{money(sum)}</span>
+          {side === "debit" ? "Debit" : "Credit"} total <span className="ms-1 font-mono text-base font-semibold tabular-nums text-foreground">{money(sum)}</span>
         </p>
       </div>
     </div>
@@ -385,7 +385,7 @@ export function LiveVoucherForm() {
                 <div className={meta.layout === "invoice" ? "" : "sm:col-span-2"}>
                   <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
                     {meta.partyLabel}
-                    {!meta.partyRequired && <span className="ml-1 font-normal">(optional)</span>}
+                    {!meta.partyRequired && <span className="ms-1 font-normal">(optional)</span>}
                   </Label>
                   <PartySelect key={type} value={partyId} role={meta.partyRole} onChange={(id) => setPartyId(id)} placeholder={`Choose ${meta.partyLabel.toLowerCase()}`} />
                 </div>

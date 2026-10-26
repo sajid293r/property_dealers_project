@@ -126,11 +126,11 @@ export function BudgetDetailSheet({
                 <div className="overflow-hidden rounded-xl border border-border/70">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="bg-secondary/50 text-left">
+                      <tr className="bg-secondary/50 text-start">
                         <th className="px-3 py-2 font-medium">Category</th>
-                        <th className="px-3 py-2 text-right font-medium">Budget</th>
-                        <th className="px-3 py-2 text-right font-medium">Used</th>
-                        <th className="px-3 py-2 text-right font-medium">Available</th>
+                        <th className="px-3 py-2 text-end font-medium">Budget</th>
+                        <th className="px-3 py-2 text-end font-medium">Used</th>
+                        <th className="px-3 py-2 text-end font-medium">Available</th>
                         <th className="w-36 px-3 py-2 font-medium">Status</th>
                       </tr>
                     </thead>
@@ -149,9 +149,9 @@ export function BudgetDetailSheet({
                               <p className="font-medium">{l.category}</p>
                               <p className="font-mono text-[10px] text-muted-foreground">{l.costCode}</p>
                             </td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{formatPkr(m.budget, { compact: true })}</td>
-                            <td className="px-3 py-2.5 text-right tabular-nums">{formatPkr(m.used, { compact: true })}</td>
-                            <td className={cn("px-3 py-2.5 text-right font-medium tabular-nums", m.available < 0 && "text-destructive")}>
+                            <td className="px-3 py-2.5 text-end tabular-nums">{formatPkr(m.budget, { compact: true })}</td>
+                            <td className="px-3 py-2.5 text-end tabular-nums">{formatPkr(m.used, { compact: true })}</td>
+                            <td className={cn("px-3 py-2.5 text-end font-medium tabular-nums", m.available < 0 && "text-destructive")}>
                               {formatPkr(m.available, { compact: true })}
                             </td>
                             <td className="px-3 py-2.5">
@@ -190,7 +190,7 @@ export function BudgetDetailSheet({
 
               <div>
                 <p className="mb-3 font-heading text-sm font-semibold">Revision history</p>
-                <ol className="relative space-y-3 before:absolute before:bottom-2 before:left-[13px] before:top-2 before:w-px before:bg-border">
+                <ol className="relative space-y-3 before:absolute before:bottom-2 before:start-[13px] before:top-2 before:w-px before:bg-border">
                   {[...budget.revisions].reverse().map((r) => {
                     const Icon = REVISION_ICON[r.type];
                     return (
@@ -202,9 +202,9 @@ export function BudgetDetailSheet({
                           <p className="text-sm font-medium">
                             v{r.no} · <span className="capitalize">{r.type}</span>
                             {r.deltaAmount !== 0 && (
-                              <span className="ml-2 tabular-nums text-muted-foreground">{r.deltaAmount > 0 ? "+" : ""}{formatPkr(r.deltaAmount, { compact: true })}</span>
+                              <span className="ms-2 tabular-nums text-muted-foreground">{r.deltaAmount > 0 ? "+" : ""}{formatPkr(r.deltaAmount, { compact: true })}</span>
                             )}
-                            <span className={cn("ml-2 rounded-full px-1.5 py-0.5 text-[10px] capitalize", r.status === "approved" ? "bg-success/12 text-success" : r.status === "pending" ? "bg-warning/15 text-warning" : "bg-destructive/10 text-destructive")}>{r.status}</span>
+                            <span className={cn("ms-2 rounded-full px-1.5 py-0.5 text-[10px] capitalize", r.status === "approved" ? "bg-success/12 text-success" : r.status === "pending" ? "bg-warning/15 text-warning" : "bg-destructive/10 text-destructive")}>{r.status}</span>
                           </p>
                           <p className="text-xs text-muted-foreground">{r.reason} · {formatDate(r.date)}{r.approvedBy ? ` · ${r.approvedBy}` : ""}</p>
                         </div>

@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPkr, formatAxis } from "@/lib/format";
 import { getTrends } from "@/lib/mock-data/company-data";
 import { useCompany } from "@/lib/providers/company-provider";
+import { useT } from "@/lib/i18n/provider";
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null;
@@ -34,6 +35,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps<ValueType,
 
 export function CollectionsChart() {
   const { company } = useCompany();
+  const t = useT();
   const { monthly: monthlyCollections, weekly: weeklyCollections } = React.useMemo(() => getTrends(company.id), [company.id]);
   const [range, setRange] = React.useState<"weekly" | "monthly">("monthly");
   const data = React.useMemo(
@@ -49,20 +51,20 @@ export function CollectionsChart() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="font-heading text-base font-semibold">Collections</h3>
+          <h3 className="font-heading text-base font-semibold">{t("dashboard.chart.title")}</h3>
           <p className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>Installments &amp; booking amounts received</span>
+            <span>{t("dashboard.chart.note")}</span>
             {range === "monthly" && (
               <span className="hidden items-center gap-1 sm:flex">
-                <span className="h-0 w-4 border-t-2 border-dashed border-gold" /> Target
+                <span className="h-0 w-4 border-t-2 border-dashed border-gold" /> {t("dashboard.chart.target")}
               </span>
             )}
           </p>
         </div>
         <Tabs value={range} onValueChange={(v) => setRange(v as "weekly" | "monthly")}>
           <TabsList>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            <TabsTrigger value="weekly">{t("dashboard.chart.weekly")}</TabsTrigger>
+            <TabsTrigger value="monthly">{t("dashboard.chart.monthly")}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -92,7 +94,7 @@ export function CollectionsChart() {
           <Line
             type="monotone"
             dataKey="target"
-            name="Target"
+            name={t("dashboard.chart.target")}
             stroke="var(--gold)"
             strokeWidth={1.5}
             strokeDasharray="5 5"
@@ -103,7 +105,7 @@ export function CollectionsChart() {
           <Area
             type="monotone"
             dataKey="collections"
-            name="Collections"
+            name={t("dashboard.chart.title")}
             stroke="var(--chart-1)"
             strokeWidth={3}
             fill="url(#collectionsFill)"

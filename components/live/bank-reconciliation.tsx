@@ -69,7 +69,7 @@ function Row({ label, value, strong, sign }: { label: string; value: number; str
   return (
     <div className={`flex items-baseline justify-between gap-3 py-1.5 ${strong ? "border-t border-border/70 font-semibold" : ""}`}>
       <span className="text-sm text-muted-foreground">
-        {sign && <span className="mr-1.5 inline-block w-3 text-center font-mono">{sign}</span>}
+        {sign && <span className="me-1.5 inline-block w-3 text-center font-mono">{sign}</span>}
         {label}
       </span>
       <span className="whitespace-nowrap font-mono text-sm tabular-nums">{formatMoney(value)}</span>
@@ -190,7 +190,7 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
               <span className="w-24 shrink-0 text-xs text-muted-foreground">{formatDate(it.date)}</span>
               <span className="min-w-0 flex-1">
                 <span className="font-mono text-xs">{it.number}</span>
-                <span className="ml-2 truncate text-sm text-muted-foreground">{[it.partyName, it.description].filter(Boolean).join(" · ")}</span>
+                <span className="ms-2 truncate text-sm text-muted-foreground">{[it.partyName, it.description].filter(Boolean).join(" · ")}</span>
               </span>
               <span className={`whitespace-nowrap font-mono text-sm tabular-nums ${amount < 0 ? "text-destructive" : "text-success"}`}>{formatMoney(amount)}</span>
             </label>
@@ -327,11 +327,11 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
-                <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                   <th className="pb-2 font-medium">Date</th>
                   <th className="pb-2 font-medium">Description</th>
-                  <th className="pb-2 pr-3 text-right font-medium">In</th>
-                  <th className="pb-2 pr-3 text-right font-medium">Out</th>
+                  <th className="pb-2 pe-3 text-end font-medium">In</th>
+                  <th className="pb-2 pe-3 text-end font-medium">Out</th>
                   <th className="pb-2 font-medium">Match</th>
                 </tr>
               </thead>
@@ -346,8 +346,8 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
                         <p className="max-w-[260px] truncate">{l.description || "—"}</p>
                         {l.reference && <p className="font-mono text-xs text-muted-foreground">{l.reference}</p>}
                       </td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(l.deposit) ? formatMoney(num(l.deposit)) : ""}</td>
-                      <td className="whitespace-nowrap py-2 pr-3 text-right font-mono tabular-nums">{num(l.withdrawal) ? formatMoney(num(l.withdrawal)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(l.deposit) ? formatMoney(num(l.deposit)) : ""}</td>
+                      <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{num(l.withdrawal) ? formatMoney(num(l.withdrawal)) : ""}</td>
                       <td className="py-2">
                         {l.matchStatus === "matched" ? (
                           <div className="flex items-center gap-2">

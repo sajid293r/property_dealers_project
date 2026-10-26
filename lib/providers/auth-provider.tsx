@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { Session } from "@supabase/supabase-js";
 import { liveConfigured, supabase } from "@/lib/supabase";
+import { translate } from "@/lib/i18n/runtime";
 
 /**
  * Who is using the app.
@@ -31,16 +32,16 @@ interface AuthContextValue {
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 const DEMO_KEY = "propiq-demo";
 
-/** Supabase's English error text, put the way we would say it to a property dealer. */
+/** Supabase's English error text, put the way we would say it to a property dealer (in the language on screen). */
 function friendlyAuthError(raw: string): string {
   const m = raw.toLowerCase();
-  if (m.includes("invalid login") || m.includes("invalid credentials")) return "That email or password isn't right.";
-  if (m.includes("email not confirmed")) return "This email hasn't been confirmed yet. Ask your administrator to confirm it.";
-  if (m.includes("already registered") || m.includes("already been registered")) return "This email already has a sign-in. Use Sign in instead.";
-  if (m.includes("password") && (m.includes("least") || m.includes("weak") || m.includes("short"))) return "Choose a stronger password of at least 8 characters.";
-  if (m.includes("rate limit") || m.includes("too many")) return "Too many attempts. Please wait a minute and try again.";
-  if (m.includes("fetch") || m.includes("network")) return "Cannot reach the sign-in service. Check your connection and try again.";
-  return "Sign-in didn't work. Please try again.";
+  if (m.includes("invalid login") || m.includes("invalid credentials")) return translate("auth.err.invalid");
+  if (m.includes("email not confirmed")) return translate("auth.err.notConfirmed");
+  if (m.includes("already registered") || m.includes("already been registered")) return translate("auth.err.exists");
+  if (m.includes("password") && (m.includes("least") || m.includes("weak") || m.includes("short"))) return translate("auth.err.weak");
+  if (m.includes("rate limit") || m.includes("too many")) return translate("auth.err.rateLimit");
+  if (m.includes("fetch") || m.includes("network")) return translate("auth.err.network");
+  return translate("auth.err.generic");
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

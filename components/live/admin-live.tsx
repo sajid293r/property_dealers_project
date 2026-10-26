@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, Field, FieldRow } from "@/components/dialogs/form-dialog";
 import { StatTile } from "@/components/live/stat-tile";
+import { CompanyLanguageCard } from "@/components/live/company-language-card";
 import { ReasonDialog } from "@/components/live/reason-dialog";
 import { useCompany } from "@/lib/providers/company-provider";
 import { useInvalidateFinance, usePermissions } from "@/lib/hooks/use-live";
@@ -85,7 +86,7 @@ export function LiveUsers() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Person</th>
                 <th className="pb-2.5 font-medium">Role</th>
                 <th className="pb-2.5 font-medium">Status</th>
@@ -109,7 +110,7 @@ export function LiveUsers() {
                       </td>
                       <td className="py-2.5"><Badge variant="outline" className={m.status === "active" ? "bg-success/12 text-success" : "bg-muted text-muted-foreground"}>{m.status === "active" ? "Active" : "Suspended"}</Badge></td>
                       <td className="py-2.5 text-muted-foreground">{formatDate(m.joinedAt)}</td>
-                      <td className="py-2.5 text-right">
+                      <td className="py-2.5 text-end">
                         {can("administration.edit") && (m.status === "active"
                           ? <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setSuspend({ id: m.userId, name: m.fullName })}>Suspend</Button>
                           : <Button size="sm" variant="outline" onClick={() => void change(m.userId, { status: "active" }, `${m.fullName} can sign in again`)}>Restore</Button>)}
@@ -122,7 +123,7 @@ export function LiveUsers() {
                   <td className="py-2.5">{i.role}</td>
                   <td className="py-2.5"><Badge variant="outline" className="bg-warning/12 text-warning">Invited</Badge></td>
                   <td />
-                  <td className="py-2.5 text-right">
+                  <td className="py-2.5 text-end">
                     {can("administration.delete") && (
                       <Button size="icon-sm" variant="ghost" aria-label="Cancel invitation" onClick={() => void revokeInvite(company.id, i.id).then(invalidate).then(() => toast.success("Invitation cancelled"))}><Trash2 className="size-4" /></Button>
                     )}
@@ -223,7 +224,7 @@ export function LiveRoles() {
         <Card className="h-fit p-2">
           {roles.isLoading ? <Skeleton className="h-32 w-full" /> : (roles.data ?? []).map((r) => (
             <button key={r.id} type="button" onClick={() => setSelectedId(r.id)}
-              className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${selected?.id === r.id ? "bg-primary/10 font-medium text-primary" : "hover:bg-secondary/60"}`}>
+              className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-start text-sm transition-colors ${selected?.id === r.id ? "bg-primary/10 font-medium text-primary" : "hover:bg-secondary/60"}`}>
               <span className="min-w-0"><span className="block truncate">{r.name}</span><span className="block text-xs text-muted-foreground">{r.members} {r.members === 1 ? "person" : "people"}{r.isSystem ? " · standard" : ""}</span></span>
               {r.isSystem && <KeyRound className="size-3.5 shrink-0 text-muted-foreground" />}
             </button>
@@ -280,7 +281,7 @@ export function LiveRoles() {
             <Field label="Description (optional)"><Textarea rows={2} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></Field>
             <div className="max-h-[320px] overflow-auto rounded-lg border border-border/60">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-background"><tr className="border-b text-xs text-muted-foreground"><th className="p-2 text-left font-medium">Area</th>{PERMISSION_ACTIONS.map((a) => <th key={a} className="p-2 font-medium capitalize">{a}</th>)}</tr></thead>
+                <thead className="sticky top-0 bg-background"><tr className="border-b text-xs text-muted-foreground"><th className="p-2 text-start font-medium">Area</th>{PERMISSION_ACTIONS.map((a) => <th key={a} className="p-2 font-medium capitalize">{a}</th>)}</tr></thead>
                 <tbody>
                   {PERMISSION_MODULES.map((m) => (
                     <tr key={m.key} className="border-b border-border/40 last:border-0">
@@ -304,7 +305,7 @@ function PermissionGrid({ grants }: { grants: Record<string, Grant> }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
-        <thead><tr className="border-b text-xs text-muted-foreground"><th className="pb-2 text-left font-medium">Area</th>{PERMISSION_ACTIONS.map((a) => <th key={a} className="pb-2 font-medium capitalize">{a}</th>)}</tr></thead>
+        <thead><tr className="border-b text-xs text-muted-foreground"><th className="pb-2 text-start font-medium">Area</th>{PERMISSION_ACTIONS.map((a) => <th key={a} className="pb-2 font-medium capitalize">{a}</th>)}</tr></thead>
         <tbody>
           {PERMISSION_MODULES.map((m) => (
             <tr key={m.key} className="border-b border-border/40 last:border-0">
@@ -400,6 +401,8 @@ export function LiveCompanyProfile() {
             <p className="text-xs text-muted-foreground">Late charges are suggested on overdue installments using this rate (0 turns it off); you choose when to apply them.</p>
             <p className="text-xs text-muted-foreground">Financial year starts in {new Date(2000, p.fiscalYearStart - 1, 1).toLocaleString("en", { month: "long" })} · 1 marla = {p.marlaSqft ?? "272.25"} sq ft · currency {p.currency}</p>
           </Card>
+
+          <CompanyLanguageCard saved={p.defaultLanguage} />
 
           {plan.data && (
             <Card className="p-5">

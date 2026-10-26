@@ -68,7 +68,7 @@ function DemoAccountsPage() {
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.06, duration: 0.4 }}
-                      className="text-left"
+                      className="text-start"
                     >
                       <div
                         className={cn(
@@ -79,9 +79,9 @@ function DemoAccountsPage() {
                           active && "ring-2 ring-gold ring-offset-2 ring-offset-background",
                         )}
                       >
-                        <div className="pointer-events-none absolute -right-10 -top-12 size-44 rounded-full border-[18px] border-white/[0.06] transition-transform duration-500 group-hover:scale-110" />
-                        <div className="pointer-events-none absolute -bottom-16 right-6 size-40 rounded-full bg-white/[0.06]" />
-                        <div className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/15 to-transparent transition-all duration-700 group-hover:left-[130%]" />
+                        <div className="pointer-events-none absolute -end-10 -top-12 size-44 rounded-full border-[18px] border-white/[0.06] transition-transform duration-500 group-hover:scale-110" />
+                        <div className="pointer-events-none absolute -bottom-16 end-6 size-40 rounded-full bg-white/[0.06]" />
+                        <div className="pointer-events-none absolute inset-y-0 -start-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/15 to-transparent transition-all duration-700 group-hover:start-[130%]" />
                         <div className="relative flex items-center justify-between">
                           <div className="flex h-7 w-10 items-center justify-center rounded-md bg-gradient-to-br from-[oklch(0.9_0.1_88)] to-[oklch(0.7_0.12_75)] shadow-inner">
                             {acc.type === "bank" ? <Landmark className="size-3.5 text-[oklch(0.35_0.06_75)]" /> : <Wallet className="size-3.5 text-[oklch(0.35_0.06_75)]" />}
@@ -138,7 +138,7 @@ function DemoAccountsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2.5 font-medium">Title</th>
                     <th className="pb-2.5 font-medium">Category</th>
                     <th className="pb-2.5 font-medium">Type</th>

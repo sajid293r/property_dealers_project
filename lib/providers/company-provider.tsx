@@ -5,6 +5,7 @@ import { SEED_COMPANIES, type Company } from "@/lib/companies";
 import { SAMPLE_SUFFIX } from "@/lib/mock-data/company-data";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/providers/auth-provider";
+import { isLanguageCode, type LanguageCode } from "@/lib/i18n/config";
 
 interface CompanyContextValue {
   companies: Company[];
@@ -19,6 +20,10 @@ interface CompanyContextValue {
   ready: boolean;
   /** Set when the list could not be fetched, or the person belongs to no company yet. */
   problem: string | null;
+  /** Fetch the account (names, plans, languages) again, e.g. after an administrator changes the company default. */
+  reloadAccount: () => void;
+  /** The interface language saved on the signed-in person's account: null = none chosen, undefined = not known (yet, or demo). */
+  userLanguage: LanguageCode | null | undefined;
 }
 
 const CompanyContext = React.createContext<CompanyContextValue | null>(null);
@@ -42,7 +47,8 @@ const PLACEHOLDER: Company = {
 };
 
 interface MeResponse {
-  companies: { companyId: string; name: string; shortName: string | null; status: string; role: string; plan?: "basic" | "moderate" | "premium" }[];
+  user?: { language?: string | null };
+  companies: { companyId: string; name: string; shortName: string | null; status: string; role: string; plan?: "basic" | "moderate" | "premium"; defaultLanguage?: string | null }[];
 }
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
@@ -54,6 +60,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [switching, setSwitching] = React.useState<Company | null>(null);
   const [liveCompanies, setLiveCompanies] = React.useState<Company[] | null>(null);
   const [liveProblem, setLiveProblem] = React.useState<string | null>(null);
+  const [reloadTick, setReloadTick] = React.useState(0);
+  const [userLanguage, setUserLanguage] = React.useState<LanguageCode | null | undefined>(undefined);
 
   // demo mode: remembered companies and the active one
   React.useEffect(() => {
@@ -78,6 +86,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveCompanies(null);
       setLiveProblem(null);
+      setUserLanguage(undefined);
       return;
     }
     let active = true;
@@ -98,8 +107,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
             accent: ACCENTS[i % ACCENTS.length]!,
             custom: true,
             plan: c.plan ?? "basic",
+            defaultLanguage: isLanguageCode(c.defaultLanguage) ? c.defaultLanguage : undefined,
           }));
         setLiveCompanies(list);
+        setUserLanguage(isLanguageCode(me.user?.language) ? me.user.language : null);
         setLiveProblem(list.length ? null : "You haven't been added to a company yet. Ask your administrator to add you.");
         let stored: string | null = null;
         try {
@@ -117,7 +128,9 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, [live]);
+  }, [live, reloadTick]);
+
+  const reloadAccount = React.useCallback(() => setReloadTick((n) => n + 1), []);
 
   const companies = React.useMemo(
     () => (live ? (liveCompanies ?? []) : [...SEED_COMPANIES, ...custom]),
@@ -166,7 +179,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CompanyContext.Provider
-      value={{ companies, company, setCompanyId, addCompany, switching, live, ready, problem: live ? liveProblem : null }}
+      value={{ companies, company, setCompanyId, addCompany, switching, live, ready, problem: live ? liveProblem : null, userLanguage, reloadAccount }}
     >
       {children}
     </CompanyContext.Provider>

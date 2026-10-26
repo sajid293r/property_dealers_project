@@ -88,7 +88,7 @@ export function LiveLeads() {
                   {col.map((l, i) => (
                     <motion.button key={l.id} type="button" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.03 }}
                       onClick={() => setOpenId(l.id)}
-                      className="w-full rounded-lg border border-border/60 bg-card p-3 text-left text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md">
+                      className="w-full rounded-lg border border-border/60 bg-card p-3 text-start text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md">
                       <p className="font-medium">{l.name}</p>
                       <p className="text-xs text-muted-foreground">{l.phone ?? l.city ?? l.leadNo}</p>
                       {(l.interestProject || l.budgetMax) && (
@@ -245,7 +245,7 @@ function LeadSheet({ id, onClose }: { id: string | null; onClose: () => void }) 
               {l.activities.length === 0 ? <p className="text-sm text-muted-foreground">Nothing logged yet.</p> : (
                 <ul className="space-y-2.5">
                   {l.activities.map((a) => (
-                    <li key={a.id} className="border-l-2 border-gold/50 pl-3 text-sm">
+                    <li key={a.id} className="border-s-2 border-gold/50 ps-3 text-sm">
                       <p><span className="font-medium">{KIND_LABEL[a.kind] ?? a.kind}</span> <span className="text-xs text-muted-foreground">· {formatDate(a.at)}{a.by ? ` · ${a.by}` : ""}</span></p>
                       {a.note && <p className="text-muted-foreground">{a.note}</p>}
                     </li>

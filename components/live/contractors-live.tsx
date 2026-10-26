@@ -64,7 +64,7 @@ export function LiveContractors() {
           <Card className="p-4">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px] text-sm">
-                <thead><tr className="border-b border-border/70 text-left text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Agreement</th><th className="pb-2.5 font-medium">Contractor</th><th className="pb-2.5 font-medium">Project</th><th className="pb-2.5 pr-3 text-right font-medium">Value</th><th className="pb-2.5 font-medium">Billed</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
+                <thead><tr className="border-b border-border/70 text-start text-xs text-muted-foreground"><th className="pb-2.5 font-medium">Agreement</th><th className="pb-2.5 font-medium">Contractor</th><th className="pb-2.5 font-medium">Project</th><th className="pb-2.5 pe-3 text-end font-medium">Value</th><th className="pb-2.5 font-medium">Billed</th><th className="pb-2.5 font-medium">Status</th></tr></thead>
                 <tbody>
                   {contracts.isLoading ? Array.from({ length: 3 }).map((_, i) => <tr key={i}><td colSpan={6} className="py-1.5"><Skeleton className="h-10 w-full" /></td></tr>) : cs.map((c) => {
                     const pct = num(c.contractValue) ? Math.min(100, (num(c.billed) / num(c.contractValue)) * 100) : 0;
@@ -73,7 +73,7 @@ export function LiveContractors() {
                         <td className="py-2.5"><p className="font-medium">{c.title}</p><p className="font-mono text-xs text-muted-foreground">{c.contractNo}</p></td>
                         <td className="py-2.5">{c.contractorName}</td>
                         <td className="py-2.5 text-muted-foreground">{c.projectName}</td>
-                        <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums">{formatMoney(num(c.contractValue))}</td>
+                        <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums">{formatMoney(num(c.contractValue))}</td>
                         <td className="min-w-[140px] py-2.5"><Progress value={pct} className="h-1.5" /><p className="mt-1 text-xs text-muted-foreground">{formatMoney(num(c.billed), { compact: true })} · {Math.round(pct)}%</p></td>
                         <td className="py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${CLS[c.status]}`}>{c.status}</span></td>
                       </tr>
@@ -193,7 +193,7 @@ function AgreementSheet({ id, onClose }: { id: string | null; onClose: () => voi
                   {(c.bills ?? []).map((b) => (
                     <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-sm">
                       <div><p className="font-mono font-medium">{b.billNo} <span className="font-sans font-normal text-muted-foreground">· {formatDate(b.billDate)}</span></p><p className="text-xs text-muted-foreground">{b.description}</p></div>
-                      <div className="text-right"><p className="font-mono">{formatMoney(num(b.grossAmount))}</p><p className="text-xs text-muted-foreground">retention {formatMoney(num(b.retentionAmount))} · pay {formatMoney(num(b.netAmount))}</p></div>
+                      <div className="text-end"><p className="font-mono">{formatMoney(num(b.grossAmount))}</p><p className="text-xs text-muted-foreground">retention {formatMoney(num(b.retentionAmount))} · pay {formatMoney(num(b.netAmount))}</p></div>
                       <div className="flex items-center gap-1.5">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${CLS[b.status]}`}>{b.status}</span>
                         {b.status === "draft" && can("contractors.approve") && <Button size="sm" disabled={busy} onClick={() => void approve(b.id)}>Approve</Button>}

@@ -159,7 +159,7 @@ function DemoBudgetsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.05 }}
                   onClick={() => setSelectedId(b.id)}
-                  className="group flex items-center gap-3 rounded-xl border border-border/70 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
+                  className="group flex items-center gap-3 rounded-xl border border-border/70 p-3 text-start transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums" style={{ background: `color-mix(in oklch, ${HEALTH_META[m.health].color} 16%, transparent)`, color: HEALTH_META[m.health].color }}>
                     {Math.round(m.utilization * 100)}%
@@ -169,7 +169,7 @@ function DemoBudgetsPage() {
                     <span className="block truncate text-xs text-muted-foreground">{b.name.replace(" — Project Budget", "")}</span>
                   </span>
                   <HealthChip health={m.health} />
-                  <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
                 </motion.button>
               );
             })}
@@ -336,7 +336,7 @@ function ProjectBudgetCard({
           )}
           <span className="flex shrink-0 items-center gap-1 font-medium text-muted-foreground transition-colors group-hover:text-foreground">
             Forecast {formatPkr(forecast, { compact: true })}
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
           </span>
         </div>
       </SpotlightCard>
@@ -380,7 +380,7 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
             <h3 className="font-heading text-base font-semibold">Month by month — plan vs actual</h3>
             <p className="text-xs text-muted-foreground">{budget.name} · fiscal year runs July to June</p>
           </div>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={onOpen}>Details <ArrowRight className="size-3.5" /></Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={onOpen}>Details <ArrowRight className="size-3.5 rtl:-scale-x-100" /></Button>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={monthly} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -422,14 +422,14 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left">
-                <th className="p-3 pl-5">Category</th>
-                <th className="p-3 text-right">Annual</th>
-                <th className="p-3 text-right">Plan to date</th>
-                <th className="p-3 text-right">Actual</th>
-                <th className="p-3 text-right">Variance</th>
+              <tr className="border-b border-border/70 text-start">
+                <th className="p-3 ps-5">Category</th>
+                <th className="p-3 text-end">Annual</th>
+                <th className="p-3 text-end">Plan to date</th>
+                <th className="p-3 text-end">Actual</th>
+                <th className="p-3 text-end">Variance</th>
                 <th className="hidden p-3 md:table-cell">Phasing</th>
-                <th className="p-3 pr-5 text-right">Outlook</th>
+                <th className="p-3 pe-5 text-end">Outlook</th>
               </tr>
             </thead>
             <tbody>
@@ -440,14 +440,14 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
                 const h: BudgetHealth = pct < -0.1 ? "over" : pct < 0 ? "watch" : "ok";
                 return (
                   <motion.tr key={l.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} className="border-b border-border/40 last:border-0">
-                    <td className="p-3 pl-5">
+                    <td className="p-3 ps-5">
                       <p className="font-medium">{l.category}</p>
                       <p className="text-xs text-muted-foreground">{l.description}</p>
                     </td>
-                    <td className="p-3 text-right tabular-nums">{formatPkr(l.budgetAmount, { compact: true })}</td>
-                    <td className="p-3 text-right tabular-nums text-muted-foreground">{formatPkr(planToDate, { compact: true })}</td>
-                    <td className="p-3 text-right font-medium tabular-nums">{formatPkr(l.actualAmount, { compact: true })}</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-end tabular-nums">{formatPkr(l.budgetAmount, { compact: true })}</td>
+                    <td className="p-3 text-end tabular-nums text-muted-foreground">{formatPkr(planToDate, { compact: true })}</td>
+                    <td className="p-3 text-end font-medium tabular-nums">{formatPkr(l.actualAmount, { compact: true })}</td>
+                    <td className="p-3 text-end">
                       <span className={cn("inline-block rounded-full px-2 py-0.5 text-xs font-medium tabular-nums", HEALTH_META[h].chip)}>
                         {v >= 0 ? "−" : "+"}{formatPkr(Math.abs(v), { compact: true })} ({Math.abs(Math.round(pct * 100))}%)
                       </span>
@@ -455,7 +455,7 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
                     <td className="hidden w-32 p-3 md:table-cell">
                       <Sparkline data={l.monthlyBudgetAmounts ?? [0, 0]} height={26} stroke="var(--gold)" />
                     </td>
-                    <td className="p-3 pr-5 text-right tabular-nums text-muted-foreground">{formatPkr(l.forecastAmount, { compact: true })}</td>
+                    <td className="p-3 pe-5 text-end tabular-nums text-muted-foreground">{formatPkr(l.forecastAmount, { compact: true })}</td>
                   </motion.tr>
                 );
               })}
@@ -497,17 +497,17 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
             <SelectItem value="ok">On track</SelectItem>
           </SelectContent>
         </Select>
-        <span className="ml-auto text-xs text-muted-foreground">{rows.length} lines · sorted by utilization</span>
+        <span className="ms-auto text-xs text-muted-foreground">{rows.length} lines · sorted by utilization</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/70 text-left">
+            <tr className="border-b border-border/70 text-start">
               <th className="pb-2.5">Budget</th>
               <th className="pb-2.5">Category</th>
-              <th className="pb-2.5 text-right">Budget</th>
-              <th className="pb-2.5 text-right">Used</th>
-              <th className="pb-2.5 text-right">Available</th>
+              <th className="pb-2.5 text-end">Budget</th>
+              <th className="pb-2.5 text-end">Used</th>
+              <th className="pb-2.5 text-end">Available</th>
               <th className="w-40 pb-2.5">Utilization</th>
               <th className="pb-2.5">Status</th>
             </tr>
@@ -518,13 +518,13 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
                 className="cursor-pointer border-b border-border/40 last:border-0 hover:bg-secondary/40" onClick={() => onOpen(l.budgetId)}>
                 <td className="py-2.5 text-muted-foreground">{nameOf(l.budgetId)}</td>
                 <td className="py-2.5 font-medium">{l.category}</td>
-                <td className="py-2.5 text-right tabular-nums">{formatPkr(m.budget, { compact: true })}</td>
-                <td className="py-2.5 text-right tabular-nums">{formatPkr(m.used, { compact: true })}</td>
-                <td className={cn("py-2.5 text-right font-medium tabular-nums", m.available < 0 && "text-destructive")}>{formatPkr(m.available, { compact: true })}</td>
+                <td className="py-2.5 text-end tabular-nums">{formatPkr(m.budget, { compact: true })}</td>
+                <td className="py-2.5 text-end tabular-nums">{formatPkr(m.used, { compact: true })}</td>
+                <td className={cn("py-2.5 text-end font-medium tabular-nums", m.available < 0 && "text-destructive")}>{formatPkr(m.available, { compact: true })}</td>
                 <td className="py-2.5">
                   <div className="flex items-center gap-2">
                     <UtilizationBar budget={m.budget} actual={m.actual} committed={m.committed} height="h-1.5" className="flex-1" />
-                    <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">{Math.round(m.utilization * 100)}%</span>
+                    <span className="w-9 text-end text-xs tabular-nums text-muted-foreground">{Math.round(m.utilization * 100)}%</span>
                   </div>
                 </td>
                 <td className="py-2.5"><HealthChip health={m.health} /></td>

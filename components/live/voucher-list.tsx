@@ -149,11 +149,11 @@ export function LiveVoucherList({ preset = {} }: { preset?: VoucherListPreset })
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Voucher</th>
                 <th className="pb-2.5 font-medium">Date</th>
                 <th className="pb-2.5 font-medium">Party / Details</th>
-                <th className="pb-2.5 pr-3 text-right font-medium">Amount</th>
+                <th className="pb-2.5 pe-3 text-end font-medium">Amount</th>
                 <th className="pb-2.5 font-medium">Status</th>
                 <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
               </tr>
@@ -186,9 +186,9 @@ export function LiveVoucherList({ preset = {} }: { preset?: VoucherListPreset })
                           <p className="truncate font-medium">{v.partyName ?? meta.short}</p>
                           <p className="max-w-[340px] truncate text-xs text-muted-foreground">{detail || "—"}</p>
                         </td>
-                        <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono tabular-nums font-medium">{formatMoney(num(v.total))}</td>
+                        <td className="whitespace-nowrap py-2.5 pe-3 text-end font-mono tabular-nums font-medium">{formatMoney(num(v.total))}</td>
                         <td className="py-2.5"><LiveVoucherStatusBadge status={v.status} /></td>
-                        <td className="py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 text-end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm" aria-label="Actions"><MoreHorizontal className="size-4" /></Button>

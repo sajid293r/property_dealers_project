@@ -61,7 +61,7 @@ function DemoStaffPage() {
               >
                 <Card className="group/staff gap-0 p-0 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-primary/[0.1] hover:ring-gold/40">
                   <div className="surface-hero relative h-16 overflow-hidden">
-                    <div className="absolute -right-6 -top-8 size-28 rounded-full bg-gold/30 blur-2xl transition-transform duration-500 group-hover/staff:scale-150" />
+                    <div className="absolute -end-6 -top-8 size-28 rounded-full bg-gold/30 blur-2xl transition-transform duration-500 group-hover/staff:scale-150" />
                     <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "14px 14px" }} />
                   </div>
                   <div className="-mt-7 px-4 pb-4">

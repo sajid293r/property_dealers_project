@@ -122,7 +122,7 @@ export default function PropertiesPage() {
           </Select>
 
           {selected.size > 0 && (
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ms-auto flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{selected.size} selected</span>
               <Button
                 size="sm"
@@ -152,7 +152,7 @@ export default function PropertiesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="w-9 pb-2.5">
                   <Checkbox checked={allChecked} onCheckedChange={(c) => toggleAll(!!c)} />
                 </th>

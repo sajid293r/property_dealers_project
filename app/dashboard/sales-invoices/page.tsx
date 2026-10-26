@@ -89,7 +89,7 @@ function DemoSalesInvoicesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/70 text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                 <th className="pb-2.5 font-medium">Invoice</th>
                 <th className="pb-2.5 font-medium">Customer</th>
                 <th className="pb-2.5 font-medium">Description</th>
@@ -122,7 +122,7 @@ function DemoSalesInvoicesPage() {
                         <td className="py-2.5 tabular-nums font-medium">{formatPkr(inv.amount)}</td>
                         <td className="py-2.5 text-muted-foreground">{formatDate(inv.dueDate)}</td>
                         <td className="py-2.5"><InvoiceStatusBadge status={inv.status} dueDate={inv.dueDate} /></td>
-                        <td className="py-2.5 text-right">
+                        <td className="py-2.5 text-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon-sm">

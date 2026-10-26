@@ -56,7 +56,7 @@ export function PageHeader({
               href={back.href}
               className="group/back mb-1.5 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
             >
-              <ArrowLeft className="size-3 transition-transform group-hover/back:-translate-x-0.5" />
+              <ArrowLeft className="size-3 transition-transform group-hover/back:-translate-x-0.5 rtl:-scale-x-100 rtl:group-hover/back:translate-x-0.5" />
               {back.label}
             </Link>
           )}
