@@ -44,6 +44,8 @@ import { formatPkr, formatDate } from "@/lib/format";
 import type { Contract, ContractStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { translate } from "@/lib/i18n/runtime";
+import { useT } from "@/lib/i18n/provider";
 
 const STATUS_STYLES: Record<ContractStatus, string> = {
   active: "bg-success/15 text-success border-success/30",
@@ -54,14 +56,15 @@ const STATUS_STYLES: Record<ContractStatus, string> = {
 function expiryMeta(endDate: string, status: ContractStatus) {
   const days = differenceInCalendarDays(new Date(endDate), new Date());
   if (status === "expired" || days < 0) {
-    return { label: `Expired ${Math.abs(days)}d ago`, tone: STATUS_STYLES.expired };
+    return { label: translate("dm.ctr.expired_ago", { days: Math.abs(days) }), tone: STATUS_STYLES.expired };
   }
-  if (days === 0) return { label: "Expires today", tone: STATUS_STYLES.expiring };
-  if (days <= 30) return { label: `Expires in ${days}d`, tone: STATUS_STYLES.expiring };
-  return { label: `Renews ${formatDate(endDate)}`, tone: STATUS_STYLES.active };
+  if (days === 0) return { label: translate("dm.ctr.expires_today"), tone: STATUS_STYLES.expiring };
+  if (days <= 30) return { label: translate("dm.ctr.expires_in", { days }), tone: STATUS_STYLES.expiring };
+  return { label: translate("dm.ctr.renews", { date: formatDate(endDate) }), tone: STATUS_STYLES.active };
 }
 
 function DemoContractsPage() {
+  const t = useT();
   const { data: contracts, isLoading } = useContracts();
   const [search, setSearch] = React.useState("");
   const [type, setType] = React.useState("all");
@@ -91,20 +94,20 @@ function DemoContractsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Contracts"
-        description={<>{total} agreements on record — sale, lease and dealer contracts in one place.</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("perm.module.contracts")}
+        description={t("dm.ctr.description", { count: total })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setNewOpen(true)}>
           <PlusCircle className="size-4" />
-          New Contract
+          {t("dm.new_contract")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Total Contracts"
+          label={t("dm.total_contracts")}
           value={total}
           format={(n) => n.toString()}
           icon={FileSignature}
@@ -112,7 +115,7 @@ function DemoContractsPage() {
           onClick={() => setStatus("all")}
         />
         <KpiCard
-          label="Active"
+          label={t("adm.users.status.active")}
           value={active}
           format={(n) => n.toString()}
           icon={FileCheck2}
@@ -120,7 +123,7 @@ function DemoContractsPage() {
           onClick={() => setStatus("active")}
         />
         <KpiCard
-          label="Expiring Soon"
+          label={t("dm.expiring_soon")}
           value={expiring}
           format={(n) => n.toString()}
           icon={AlertTriangle}
@@ -129,7 +132,7 @@ function DemoContractsPage() {
           onClick={() => setStatus("expiring")}
         />
         <KpiCard
-          label="Expired"
+          label={t("quotes.status.expired")}
           value={expired}
           format={(n) => n.toString()}
           icon={FileX2}
@@ -140,23 +143,23 @@ function DemoContractsPage() {
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search title, party..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_title_party")} />
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger size="sm" className="w-44"><SelectValue placeholder="Type" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-44"><SelectValue placeholder={t("leave.col.type")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="all">{t("dm.all_types")}</SelectItem>
               {types.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder={t("common.status")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="expiring">Expiring</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="all">{t("deals.allStatuses")}</SelectItem>
+              <SelectItem value="active">{t("adm.users.status.active")}</SelectItem>
+              <SelectItem value="expiring">{t("dm.expiring")}</SelectItem>
+              <SelectItem value="expired">{t("quotes.status.expired")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -165,12 +168,12 @@ function DemoContractsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Contract</th>
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium">Party</th>
-                <th className="pb-2.5 font-medium">Start</th>
-                <th className="pb-2.5 font-medium">Value</th>
-                <th className="pb-2.5 font-medium">Expiry</th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.contracts")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                <th className="pb-2.5 font-medium">{t("print.voucher.party")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.start")}</th>
+                <th className="pb-2.5 font-medium">{t("print.contract.value")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.expiry")}</th>
                 <th className="pb-2.5 font-medium" />
               </tr>
             </thead>
@@ -187,7 +190,7 @@ function DemoContractsPage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    No contracts match these filters.
+                    {t("dm.no_contracts_match_these_filters")}
                   </td>
                 </tr>
               )}
@@ -202,6 +205,7 @@ function DemoContractsPage() {
 }
 
 function ContractRow({ contract, index }: { contract: Contract; index: number }) {
+  const t = useT();
   const expiry = expiryMeta(contract.endDate, contract.status);
 
   return (
@@ -235,20 +239,20 @@ function ContractRow({ contract, index }: { contract: Contract; index: number })
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => toast.success(`${contract.title} renewed for 1 year`)}>
+            <DropdownMenuItem onClick={() => toast.success(t("dm.ctr.renewed", { title: contract.title }))}>
               <RefreshCcw className="size-3.5" />
-              Renew
+              {t("dm.renew")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.success(`${contract.title} PDF downloaded`)}>
+            <DropdownMenuItem onClick={() => toast.success(t("dm.ctr.pdf", { title: contract.title }))}>
               <Download className="size-3.5" />
-              Download PDF
+              {t("dm.download_pdf")}
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => toast.success(`${contract.title} marked as terminated`)}
+              onClick={() => toast.success(t("dm.ctr.terminated", { title: contract.title }))}
             >
               <Ban className="size-3.5" />
-              Mark Terminated
+              {t("dm.mark_terminated")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

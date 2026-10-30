@@ -18,6 +18,8 @@ import { PAYMENT_TERMS, nextDocNumber } from "@/lib/sales";
 import { formatPkr, dateOffsetFromToday } from "@/lib/format";
 import type { Quotation } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 export function NewQuotationDialog({
   open,
@@ -26,6 +28,7 @@ export function NewQuotationDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -93,16 +96,16 @@ export function NewQuotationDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={FileStack}
-      title="New Quotation"
-      description="Quote a property's price to a prospect before they book."
-      submitLabel="Create Quotation"
+      title={t("dm.new_quotation")}
+      description={t("dm.quote_a_property_s_price")}
+      submitLabel={t("dm.create_quotation")}
       submitDisabled={!customerId || !unitId || !salesPerson || !price}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Customer">
+        <Field label={t("common.customer")}>
           <Select value={customerId} onValueChange={setCustomerId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_customer")} /></SelectTrigger>
             <SelectContent>
               {customers?.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -110,9 +113,9 @@ export function NewQuotationDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Sales person">
+        <Field label={t("dm.sales_person")}>
           <Select value={salesPerson} onValueChange={setSalesPerson}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select agent" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_agent")} /></SelectTrigger>
             <SelectContent>
               {salesStaff.map((s) => (
                 <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
@@ -122,9 +125,9 @@ export function NewQuotationDialog({
         </Field>
       </FieldRow>
 
-      <Field label="Property">
+      <Field label={t("audit.entity.properties")}>
         <Select value={unitId} onValueChange={handleUnitChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available property" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("deals.demo.selectProperty")} /></SelectTrigger>
           <SelectContent>
             {availableUnits.map((u) => (
               <SelectItem key={u.id} value={u.id}>
@@ -136,10 +139,10 @@ export function NewQuotationDialog({
       </Field>
 
       <FieldRow>
-        <Field label="Quoted price (PKR)">
+        <Field label={t("dm.quoted_price_pkr")}>
           <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Discount %">
+        <Field label={t("dm.discount")}>
           <Input
             type="number"
             value={discountPercent}
@@ -149,19 +152,19 @@ export function NewQuotationDialog({
         </Field>
       </FieldRow>
 
-      <Field label="Payment terms">
+      <Field label={t("dm.payment_terms")}>
         <Select value={paymentTerms} onValueChange={setPaymentTerms}>
           <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
             {PAYMENT_TERMS.map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
+              <SelectItem key={t} value={t}>{tx(t)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </Field>
 
-      <Field label="Remarks">
-        <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional notes..." rows={2} />
+      <Field label={t("dm.remarks")}>
+        <Textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder={t("dm.optional_notes")} rows={2} />
       </Field>
 
       {selectedUnit && (

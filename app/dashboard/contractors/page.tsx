@@ -17,8 +17,10 @@ import { NewContractorDialog } from "@/components/dialogs/new-contractor-dialog"
 import { useContractors, useConstructionContracts } from "@/lib/hooks/use-data";
 import { CONTRACTOR_TRADE_ICON } from "@/lib/projects";
 import { formatPkr } from "@/lib/format";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoContractorsPage() {
+  const t = useT();
   const { data: contractors, isLoading } = useContractors();
   const { data: contracts } = useConstructionContracts();
   const [search, setSearch] = React.useState("");
@@ -45,36 +47,36 @@ function DemoContractorsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Projects"
-        title="Contractors"
+        eyebrow={t("nav.section.projects")}
+        title={t("perm.module.contractors")}
         description={<>{contractors?.length ?? 0} construction vendors on your roster</>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          Add Contractor
+          {t("dm.add_contractor")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatTile icon={HardHat} label="Total contractors" value={stats.total} />
-        <StatTile icon={ShieldCheck} label="Active contracts" value={stats.activeContracts} accent="success" />
-        <StatTile icon={Banknote} label="Active contract value" value={formatPkr(stats.totalValue, { compact: true })} accent="gold" />
+        <StatTile icon={HardHat} label={t("dm.total_contractors")} value={stats.total} />
+        <StatTile icon={ShieldCheck} label={t("dm.active_contracts")} value={stats.activeContracts} accent="success" />
+        <StatTile icon={Banknote} label={t("dm.active_contract_value")} value={formatPkr(stats.totalValue, { compact: true })} accent="gold" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search name, company, trade..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_name_company_trade")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Contractor</th>
-                <th className="pb-2.5 font-medium">Trade</th>
-                <th className="pb-2.5 font-medium">Contact</th>
-                <th className="pb-2.5 font-medium">Rating</th>
-                <th className="pb-2.5 font-medium">Active contracts</th>
+                <th className="pb-2.5 font-medium">{t("customers.role.contractor")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.trade")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.contact")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.rating")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.active_contracts")}</th>
               </tr>
             </thead>
             <tbody>
@@ -118,7 +120,7 @@ function DemoContractorsPage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                    No contractors match your search.
+                    {t("dm.no_contractors_match_your_search")}
                   </td>
                 </tr>
               )}

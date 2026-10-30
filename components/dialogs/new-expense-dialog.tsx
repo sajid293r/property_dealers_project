@@ -15,6 +15,7 @@ import {
 import { useAccounts } from "@/lib/hooks/use-data";
 import type { Expense } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const EXPENSE_TYPES = ["Utility", "Rent", "Marketing", "Maintenance", "Travel", "Office Supplies"] as const;
 
@@ -25,6 +26,7 @@ export function NewExpenseDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: accounts } = useAccounts();
 
@@ -59,7 +61,7 @@ export function NewExpenseDialog({
     };
 
     queryClient.setQueryData<Expense[]>(["expenses"], (old = []) => [newExpense, ...old]);
-    toast.success(`Expense "${newExpense.title}" recorded`);
+    toast.success(t("dm.exp.recorded", { title: newExpense.title }));
   }
 
   return (
@@ -67,20 +69,20 @@ export function NewExpenseDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Receipt}
-      title="New Expense"
-      description="Log a bill or voucher against an account."
-      submitLabel="Add Expense"
+      title={t("dm.new_expense")}
+      description={t("dm.log_a_bill_or_voucher")}
+      submitLabel={t("dm.add_expense")}
       submitDisabled={!type || !amount || !paidVia}
       onSubmit={handleSubmit}
     >
-      <Field label="Title">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Facebook ads — September" />
+      <Field label={t("properties.new.name")}>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("dm.facebook_ads_september")} />
       </Field>
 
       <FieldRow>
-        <Field label="Type">
+        <Field label={t("leave.col.type")}>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select type" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_type")} /></SelectTrigger>
             <SelectContent>
               {EXPENSE_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -88,15 +90,15 @@ export function NewExpenseDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Amount (PKR)">
+        <Field label={t("dm.amount_pkr")}>
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="25000" />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="Paid via">
+        <Field label={t("dm.paid_via")}>
           <Select value={paidVia} onValueChange={setPaidVia}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select account" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_account")} /></SelectTrigger>
             <SelectContent>
               {accounts?.map((a) => (
                 <SelectItem key={a.id} value={a.title}>{a.title}</SelectItem>
@@ -104,12 +106,12 @@ export function NewExpenseDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Status">
+        <Field label={t("common.status")}>
           <Select value={status} onValueChange={(v) => setStatus(v as "paid" | "unpaid")}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="unpaid">{t("sinv.status.unpaid")}</SelectItem>
+              <SelectItem value="paid">{t("deals.col.paid")}</SelectItem>
             </SelectContent>
           </Select>
         </Field>

@@ -11,6 +11,7 @@ import {
   type PermissionMatrix as PermissionMatrixType,
 } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 const ACTION_ABBR: Record<PermissionAction, string> = {
   view: "V",
@@ -34,6 +35,7 @@ export function PermissionMatrix({
   onChange?: (next: PermissionMatrixType) => void;
   compact?: boolean;
 }) {
+  const t = useT();
   const readOnly = !onChange;
 
   function toggle(moduleKey: ModuleKey, action: PermissionAction) {
@@ -49,7 +51,7 @@ export function PermissionMatrix({
       <table className="w-full min-w-[340px] text-sm">
         <thead>
           <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
-            <th className={cn("font-medium", compact ? "py-2 ps-3" : "py-2.5 ps-4")}>Module</th>
+            <th className={cn("font-medium", compact ? "py-2 ps-3" : "py-2.5 ps-4")}>{t("dm.module")}</th>
             {PERMISSION_ACTIONS.map((action) => (
               <th
                 key={action}

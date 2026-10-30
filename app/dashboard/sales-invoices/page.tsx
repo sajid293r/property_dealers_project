@@ -3,7 +3,7 @@
 import { useCompany } from "@/lib/providers/company-provider";
 import { LiveVoucherList, type VoucherListPreset } from "@/components/live/voucher-list";
 
-const SALES_PRESET: VoucherListPreset = { types: ["SV", "CN"], eyebrow: "Sales & CRM", title: "Sales Invoices", description: "Invoices and credit notes issued to customers", newLabel: "New invoice", icon: ReceiptText };
+const salesPreset = (t: (key: string) => string): VoucherListPreset => ({ types: ["SV", "CN"], eyebrow: t("nav.section.sales"), title: t("nav.item.sales-invoices"), description: t("sinvoice.description"), newLabel: t("sinvoice.new"), icon: ReceiptText });
 
 import { ReceiptText as HeaderIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -28,8 +28,10 @@ import { isOverdue } from "@/lib/sales";
 import { formatDate, formatPkr } from "@/lib/format";
 import type { SalesInvoice } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoSalesInvoicesPage() {
+  const t = useT();
   const { data: invoices, isLoading } = useSalesInvoices();
   const { data: customers } = useCustomers();
   const queryClient = useQueryClient();
@@ -57,46 +59,46 @@ function DemoSalesInvoicesPage() {
     queryClient.setQueryData<SalesInvoice[]>(["salesInvoices"], (old = []) =>
       old.map((item) => (item.id === inv.id ? { ...item, status: "paid" } : item)),
     );
-    toast.success(`${inv.number} marked paid`);
+    toast.success(t("dm.sinv.marked_paid", { number: inv.number }));
   }
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Sales Invoices"
-        description={<>{invoices?.length ?? 0} invoices billed to customers</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("nav.item.sales-invoices")}
+        description={t("dm.sinv.description", { count: invoices?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Invoice
+          {t("dm.new_invoice")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={ReceiptText} label="Total invoices" value={stats.total} />
-        <StatTile icon={Clock} label="Outstanding" value={formatPkr(stats.unpaidAmount, { compact: true })} accent="warning" />
-        <StatTile icon={Clock} label="Overdue" value={stats.overdue} accent="destructive" />
-        <StatTile icon={CheckCircle2} label="Collected" value={formatPkr(stats.paidAmount, { compact: true })} accent="success" />
+        <StatTile icon={ReceiptText} label={t("dm.total_invoices")} value={stats.total} />
+        <StatTile icon={Clock} label={t("deals.kpi.outstanding")} value={formatPkr(stats.unpaidAmount, { compact: true })} accent="warning" />
+        <StatTile icon={Clock} label={t("dashboard.live.overdue")} value={stats.overdue} accent="destructive" />
+        <StatTile icon={CheckCircle2} label={t("dashboard.schedule.collected")} value={formatPkr(stats.paidAmount, { compact: true })} accent="success" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, customer, description..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_number_customer_description")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Invoice</th>
-                <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Description</th>
-                <th className="pb-2.5 font-medium">Amount</th>
-                <th className="pb-2.5 font-medium">Due date</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("print.invoice.title")}</th>
+                <th className="pb-2.5 font-medium">{t("common.customer")}</th>
+                <th className="pb-2.5 font-medium">{t("rec.st.colDescription")}</th>
+                <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                <th className="pb-2.5 font-medium">{t("print.invoice.dueDate")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -131,9 +133,9 @@ function DemoSalesInvoicesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {inv.status === "unpaid" ? (
-                                <DropdownMenuItem onSelect={() => markPaid(inv)}>Mark as paid</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => markPaid(inv)}>{t("dm.mark_as_paid")}</DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem disabled>Already paid</DropdownMenuItem>
+                                <DropdownMenuItem disabled>{t("dm.already_paid")}</DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -144,7 +146,7 @@ function DemoSalesInvoicesPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No invoices match your search.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_invoices_match_your_search")}</p>
           )}
         </div>
       </Card>
@@ -186,6 +188,7 @@ function StatTile({
 }
 
 export default function Page() {
+  const t = useT();
   const { live } = useCompany();
-  return live ? <LiveVoucherList preset={SALES_PRESET} /> : <DemoSalesInvoicesPage />;
+  return live ? <LiveVoucherList preset={salesPreset(t)} /> : <DemoSalesInvoicesPage />;
 }

@@ -2,20 +2,22 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import type { Unit } from "@/lib/types";
+import { useT } from "@/lib/i18n/provider";
 
 const COLORS: Record<string, string> = {
-  Available: "var(--chart-1)",
-  Reserved: "var(--gold)",
-  Sold: "var(--chart-4)",
+  available: "var(--chart-1)",
+  reserved: "var(--gold)",
+  sold: "var(--chart-4)",
 };
 
 export function UnitStatusDonut({ units }: { units: Unit[] }) {
+  const t = useT();
   const counts = {
-    Available: units.filter((u) => u.status === "available").length,
-    Reserved: units.filter((u) => u.status === "reserved").length,
-    Sold: units.filter((u) => u.status === "sold").length,
+    available: units.filter((u) => u.status === "available").length,
+    reserved: units.filter((u) => u.status === "reserved").length,
+    sold: units.filter((u) => u.status === "sold").length,
   };
-  const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
+  const data = Object.entries(counts).map(([key, value]) => ({ key, name: t(`status.${key}`), value }));
   const total = units.length;
 
   return (
@@ -33,7 +35,7 @@ export function UnitStatusDonut({ units }: { units: Unit[] }) {
             animationDuration={800}
           >
             {data.map((entry) => (
-              <Cell key={entry.name} fill={COLORS[entry.name]} stroke="none" />
+              <Cell key={entry.key} fill={COLORS[entry.key]} stroke="none" />
             ))}
           </Pie>
           <Tooltip
@@ -51,14 +53,14 @@ export function UnitStatusDonut({ units }: { units: Unit[] }) {
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-heading text-2xl font-semibold">{total}</span>
-        <span className="text-[11px] text-muted-foreground">Total properties</span>
+        <span className="text-[11px] text-muted-foreground">{t("properties.kpi.total")}</span>
       </div>
       <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1.5">
         {data.map((d) => (
-          <div key={d.name} className="flex items-center gap-1.5 text-xs">
+          <div key={d.key} className="flex items-center gap-1.5 text-xs">
             <span
               className="size-2 rounded-full"
-              style={{ backgroundColor: COLORS[d.name] }}
+              style={{ backgroundColor: COLORS[d.key] }}
             />
             <span className="text-muted-foreground">{d.name}</span>
             <span className="font-medium">{d.value}</span>

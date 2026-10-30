@@ -18,6 +18,7 @@ import { emptyMatrix, ROLE_COLOR_CLASSES, type RoleColor } from "@/lib/permissio
 import type { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const COLOR_OPTIONS: RoleColor[] = ["primary", "gold", "success", "warning", "destructive", "violet", "blue"];
 
@@ -28,6 +29,7 @@ export function NewRoleDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
 
   const [name, setName] = React.useState("");
@@ -59,7 +61,7 @@ export function NewRoleDialog({
     };
 
     queryClient.setQueryData<UserRole[]>(["roles"], (old = []) => [...old, newRole]);
-    toast.success(`${name} role created`, { description: "Assign it to users from the Users screen." });
+    toast.success(t("dm.role.created", { name }), { description: t("dm.role.assign_hint") });
   }
 
   return (
@@ -67,26 +69,26 @@ export function NewRoleDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={ShieldPlus}
-      title="New Role"
-      description="Build a custom access profile for a job function this system doesn't already cover."
-      submitLabel="Create Role"
+      title={t("dm.new_role")}
+      description={t("dm.build_a_custom_access_profile")}
+      submitLabel={t("dm.create_role")}
       submitDisabled={!name}
       onSubmit={handleSubmit}
     >
-      <Field label="Role name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Site Supervisor" />
+      <Field label={t("adm.roles.edit.name")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dm.site_supervisor")} />
       </Field>
 
-      <Field label="Description">
+      <Field label={t("rec.st.colDescription")}>
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What this role is responsible for..."
+          placeholder={t("dm.what_this_role_is_responsible")}
           rows={2}
         />
       </Field>
 
-      <Field label="Badge colour">
+      <Field label={t("dm.badge_colour")}>
         <Select value={color} onValueChange={(v) => setColor(v as RoleColor)}>
           <SelectTrigger className="w-full">
             <SelectValue />
@@ -104,7 +106,7 @@ export function NewRoleDialog({
         </Select>
       </Field>
 
-      <Field label="Permissions">
+      <Field label={t("dm.permissions")}>
         <PermissionMatrix value={permissions} onChange={setPermissions} compact />
       </Field>
     </FormDialog>

@@ -10,6 +10,7 @@ import {
   PaintRoller,
   type LucideIcon,
 } from "lucide-react";
+import { translate } from "@/lib/i18n/runtime";
 import type { ConstructionContractStatus, ContractorTrade, Expense, Project, ProjectStatus, ProjectType, Unit } from "@/lib/types";
 
 export const PROJECT_TYPES: ProjectType[] = ["Residential", "Commercial", "Mixed-Use"];
@@ -78,9 +79,9 @@ export function contractStatusMeta(status: ConstructionContractStatus) {
 export function formatLandArea(marla: number) {
   const kanal = Math.floor(marla / 20);
   const rest = marla % 20;
-  if (kanal === 0) return `${marla} Marla`;
-  if (rest === 0) return `${kanal} Kanal`;
-  return `${kanal} Kanal ${rest} Marla`;
+  if (kanal === 0) return translate("projects.land.marla", { count: marla });
+  if (rest === 0) return translate("projects.land.kanal", { count: kanal });
+  return translate("projects.land.kanalMarla", { kanal, marla: rest });
 }
 
 export function unitsForProject(units: Unit[], projectName: string) {

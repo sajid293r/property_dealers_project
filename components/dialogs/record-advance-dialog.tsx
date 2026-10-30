@@ -16,6 +16,7 @@ import { useStaff, useAccounts } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
 import type { Account, PayrollAdjustment, StaffMember, Transaction } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function RecordAdvanceDialog({
   open,
@@ -24,6 +25,7 @@ export function RecordAdvanceDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: staff } = useStaff();
   const { data: accounts } = useAccounts();
@@ -88,8 +90,8 @@ export function RecordAdvanceDialog({
       ...old,
     ]);
 
-    toast.success(`${formatPkr(value)} advance recorded for ${member.name}`, {
-      description: "Added to their outstanding balance",
+    toast.success(t("dm.pay.advance_recorded", { amount: formatPkr(value), name: member.name }), {
+      description: t("dm.pay.added_balance"),
     });
   }
 
@@ -98,15 +100,15 @@ export function RecordAdvanceDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={HandCoins}
-      title="Record Advance"
-      description="Give a staff loan or advance against next payroll."
-      submitLabel="Record Advance"
+      title={t("dm.record_advance")}
+      description={t("dm.give_a_staff_loan_or")}
+      submitLabel={t("dm.record_advance")}
       submitDisabled={!staffId || !amount}
       onSubmit={handleSubmit}
     >
-      <Field label="Staff member">
+      <Field label={t("dm.staff_member")}>
         <Select value={staffId} onValueChange={setStaffId}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("projects.new.selectStaff")} /></SelectTrigger>
           <SelectContent>
             {staff?.map((s) => (
               <SelectItem key={s.id} value={s.id}>
@@ -117,7 +119,7 @@ export function RecordAdvanceDialog({
         </Select>
       </Field>
 
-      <Field label="Amount (PKR)">
+      <Field label={t("dm.amount_pkr")}>
         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="20000" />
       </Field>
 
@@ -127,8 +129,8 @@ export function RecordAdvanceDialog({
         </p>
       )}
 
-      <Field label="Note (optional)">
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Medical advance" />
+      <Field label={t("files.notePlaceholder")}>
+        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("dm.medical_advance")} />
       </Field>
     </FormDialog>
   );

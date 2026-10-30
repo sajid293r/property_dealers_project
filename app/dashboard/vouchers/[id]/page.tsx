@@ -23,8 +23,10 @@ import { voucherTypeMeta } from "@/lib/vouchers";
 import { formatDate, formatPkr } from "@/lib/format";
 import type { Voucher } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoVoucherDetailPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -78,10 +80,10 @@ function DemoVoucherDetailPage() {
       <div className="mx-auto max-w-[1200px] space-y-4">
         <Link href="/dashboard/vouchers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          Back to vouchers
+          {t("dm.back_to_vouchers")}
         </Link>
         <Card className="p-10 text-center">
-          <p className="text-sm text-muted-foreground">This voucher doesn&apos;t exist, or was deleted.</p>
+          <p className="text-sm text-muted-foreground">{t("dm.v.missing")}</p>
         </Card>
       </div>
     );
@@ -93,7 +95,7 @@ function DemoVoucherDetailPage() {
     <div className="mx-auto max-w-[1200px] space-y-5">
       <PageHeader
         icon={meta.icon}
-        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
+        back={{ href: "/dashboard/vouchers", label: t("vch.title") }}
         title={voucher.number}
         badge={
           <>
@@ -102,7 +104,7 @@ function DemoVoucherDetailPage() {
             {voucher.recurring && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Repeat className="size-3" />
-                Recurring
+                {t("dm.recurring")}
               </span>
             )}
           </>
@@ -114,14 +116,14 @@ function DemoVoucherDetailPage() {
         <div className="space-y-5">
           <Card className="p-5">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Meta label="Voucher date" value={formatDate(voucher.date)} />
-              {voucher.chequeDate && <Meta label="Cheque date" value={formatDate(voucher.chequeDate)} />}
+              <Meta label={t("vch.f.voucherDate")} value={formatDate(voucher.date)} />
+              {voucher.chequeDate && <Meta label={t("chq.csv.date")} value={formatDate(voucher.chequeDate)} />}
               {voucher.partyName && <Meta label={meta.partyLabel ?? "Party"} value={voucher.partyName} />}
-              <Meta label="Created by" value={voucher.createdBy} />
+              <Meta label={t("dm.created_by")} value={voucher.createdBy} />
             </div>
             <Separator className="my-4" />
             <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Description</p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">{t("rec.st.colDescription")}</p>
               <p className="text-sm">{voucher.description || "—"}</p>
             </div>
 
@@ -129,7 +131,7 @@ function DemoVoucherDetailPage() {
               <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/[0.06] p-3">
                 <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-destructive">
                   <XCircle className="size-3.5" />
-                  Rejection note
+                  {t("dm.rejection_note")}
                 </p>
                 <p className="text-sm text-destructive/90">{voucher.approvalNote}</p>
               </div>
@@ -137,17 +139,17 @@ function DemoVoucherDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h3 className="mb-3 font-heading text-base font-semibold">Line items</h3>
+            <h3 className="mb-3 font-heading text-base font-semibold">{t("dm.line_items")}</h3>
             <div className="overflow-x-auto rounded-lg border border-border/70">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
-                    <th className="py-2 ps-3 font-medium">Account</th>
-                    <th className="py-2 pe-2 font-medium">Remarks</th>
-                    <th className="py-2 pe-2 font-medium">Cost Center</th>
-                    <th className="py-2 pe-2 font-medium">Project</th>
-                    <th className="py-2 pe-3 text-end font-medium">Debit</th>
-                    <th className="py-2 pe-3 text-end font-medium">Credit</th>
+                    <th className="py-2 ps-3 font-medium">{t("account.eyebrow")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("dm.remarks")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("dm.cost_center")}</th>
+                    <th className="py-2 pe-2 font-medium">{t("audit.entity.projects")}</th>
+                    <th className="py-2 pe-3 text-end font-medium">{t("vch.d.colDebit")}</th>
+                    <th className="py-2 pe-3 text-end font-medium">{t("vch.d.colCredit")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -158,7 +160,7 @@ function DemoVoucherDetailPage() {
                         <td className="py-2.5 ps-3">
                           <span className="flex items-center gap-1.5">
                             <span className="font-mono text-[10px] text-muted-foreground">{account?.code}</span>
-                            {account?.name ?? "Unknown account"}
+                            {account?.name ?? t("dm.v.unknown_account")}
                           </span>
                         </td>
                         <td className="py-2.5 pe-2 text-muted-foreground">{line.remarks || "—"}</td>
@@ -180,14 +182,14 @@ function DemoVoucherDetailPage() {
 
           {voucher.status === "pending" && (
             <Card className="space-y-2.5 p-4">
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Approval</p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">{t("dm.approval")}</p>
               <Button className="w-full gap-1.5" onClick={() => decide("approved")}>
                 <CheckCircle2 className="size-4" />
-                Approve
+                {t("perm.action.approve")}
               </Button>
               <Button variant="outline" className="w-full gap-1.5 text-destructive hover:text-destructive" onClick={() => setRejectOpen(true)}>
                 <XCircle className="size-4" />
-                Un-Approve (Reject)
+                {t("dm.un_approve_reject")}
               </Button>
             </Card>
           )}
@@ -196,18 +198,18 @@ function DemoVoucherDetailPage() {
             <Card className="p-4">
               <Button variant="outline" className="w-full gap-1.5 text-destructive hover:text-destructive" onClick={deleteDraft}>
                 <Trash2 className="size-4" />
-                Delete draft
+                {t("dm.delete_draft")}
               </Button>
             </Card>
           )}
 
           {(voucher.approvedBy || voucher.createdBy) && (
             <Card className="space-y-3 p-4 text-sm">
-              <p className="text-xs font-medium text-muted-foreground">Activity</p>
-              <ActivityRow label={`Created by ${voucher.createdBy}`} date={voucher.createdAt} />
+              <p className="text-xs font-medium text-muted-foreground">{t("dm.activity")}</p>
+              <ActivityRow label={t("dm.v.created_by", { name: voucher.createdBy })} date={voucher.createdAt} />
               {voucher.approvedBy && voucher.approvedAt && (
                 <ActivityRow
-                  label={`${voucher.status === "rejected" ? "Rejected" : "Approved"} by ${voucher.approvedBy}`}
+                  label={t(voucher.status === "rejected" ? "vch.d.rejectedBy" : "vch.d.approvedBy", { name: voucher.approvedBy ?? "" })}
                   date={voucher.approvedAt}
                 />
               )}

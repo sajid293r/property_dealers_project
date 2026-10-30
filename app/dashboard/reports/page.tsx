@@ -31,24 +31,26 @@ import { ProfitLossTab } from "@/components/reports/profit-loss-tab";
 import { useDeals, useUnits, useExpenses } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoReportsPage() {
+  const t = useT();
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Finance"
-        title="Reports"
-        description="Income statements, profit reports and exportable financial statements"
+        eyebrow={t("nav.section.finance")}
+        title={t("perm.module.reports")}
+        description={t("dm.income_statements_profit_reports_and")}
         actions={<>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-1.5" onClick={() => toast.success("CSV export queued")}>
+          <Button variant="outline" className="gap-1.5" onClick={() => toast.success(t("dm.csv_export_queued"))}>
             <Download className="size-4" />
-            Export CSV
+            {t("dm.export_csv")}
           </Button>
-          <Button variant="outline" className="gap-1.5" onClick={() => toast.success("PDF export queued")}>
+          <Button variant="outline" className="gap-1.5" onClick={() => toast.success(t("dm.pdf_export_queued"))}>
             <FileText className="size-4" />
-            Export PDF
+            {t("dm.export_pdf")}
           </Button>
         </div>
         </>}
@@ -56,13 +58,13 @@ function DemoReportsPage() {
 
       <Tabs defaultValue="balance-sheet">
         <TabsList>
-          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
-          <TabsTrigger value="profit-loss">Profit &amp; Loss</TabsTrigger>
-          <TabsTrigger value="trial-balance">Trial Balance</TabsTrigger>
-          <TabsTrigger value="ledger">Ledger</TabsTrigger>
-          <TabsTrigger value="sales">Sales</TabsTrigger>
-          <TabsTrigger value="stock">Stock</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="balance-sheet">{t("dm.balance_sheet")}</TabsTrigger>
+          <TabsTrigger value="profit-loss">{t("rep.tab.is")}</TabsTrigger>
+          <TabsTrigger value="trial-balance">{t("dm.trial_balance")}</TabsTrigger>
+          <TabsTrigger value="ledger">{t("dm.ledger")}</TabsTrigger>
+          <TabsTrigger value="sales">{t("deals.eyebrow")}</TabsTrigger>
+          <TabsTrigger value="stock">{t("dm.stock")}</TabsTrigger>
+          <TabsTrigger value="expenses">{t("perm.module.expenses")}</TabsTrigger>
         </TabsList>
         <TabsContent value="balance-sheet" className="mt-5">
           <BalanceSheetTab />
@@ -104,6 +106,7 @@ function TabSection({ children }: { children: React.ReactNode }) {
 }
 
 function SalesTab() {
+  const t = useT();
   const { data: deals, isLoading: dealsLoading } = useDeals();
   const { data: units, isLoading: unitsLoading } = useUnits();
   const isLoading = dealsLoading || unitsLoading;
@@ -134,21 +137,21 @@ function SalesTab() {
   return (
     <TabSection>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Bookings" value={totalBookings} format={(n) => n.toString()} icon={Handshake} index={0} />
-        <KpiCard label="Total Sales Value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Building2} index={1} />
-        <KpiCard label="Total Collected" value={totalCollected} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} index={2} accent="gold" />
-        <KpiCard label="Outstanding" value={outstanding} format={(n) => formatPkr(n, { compact: true })} icon={TimerReset} index={3} />
+        <KpiCard label={t("dm.total_bookings")} value={totalBookings} format={(n) => n.toString()} icon={Handshake} index={0} />
+        <KpiCard label={t("dm.total_sales_value")} value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Building2} index={1} />
+        <KpiCard label={t("dm.total_collected")} value={totalCollected} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} index={2} accent="gold" />
+        <KpiCard label={t("deals.kpi.outstanding")} value={outstanding} format={(n) => formatPkr(n, { compact: true })} icon={TimerReset} index={3} />
       </div>
       <Card className="p-5">
-        <h3 className="mb-4 font-heading text-base font-semibold">Sales by project</h3>
+        <h3 className="mb-4 font-heading text-base font-semibold">{t("dm.sales_by_project")}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Project</th>
-                <th className="pb-2.5 font-medium">Bookings</th>
-                <th className="pb-2.5 font-medium">Total Value</th>
-                <th className="pb-2.5 font-medium">Collected</th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.projects")}</th>
+                <th className="pb-2.5 font-medium">{t("dashboard.live.bookings")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.total_value")}</th>
+                <th className="pb-2.5 font-medium">{t("dashboard.schedule.collected")}</th>
               </tr>
             </thead>
             <tbody>
@@ -169,6 +172,7 @@ function SalesTab() {
 }
 
 function StockTab() {
+  const t = useT();
   const { data: units, isLoading } = useUnits();
 
   const byProject = React.useMemo(() => {
@@ -196,22 +200,22 @@ function StockTab() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <KpiCard label="Total Properties" value={totalUnits} format={(n) => n.toString()} icon={Building2} index={0} />
-            <KpiCard label="Total Portfolio Value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Landmark} index={1} />
-            <KpiCard label="Sold Value" value={soldValue} format={(n) => formatPkr(n, { compact: true })} icon={CheckCircle2} index={2} accent="gold" />
+            <KpiCard label={t("dm.total_properties")} value={totalUnits} format={(n) => n.toString()} icon={Building2} index={0} />
+            <KpiCard label={t("dm.total_portfolio_value")} value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={Landmark} index={1} />
+            <KpiCard label={t("dm.sold_value")} value={soldValue} format={(n) => formatPkr(n, { compact: true })} icon={CheckCircle2} index={2} accent="gold" />
           </div>
           <Card className="p-5">
-            <h3 className="mb-4 font-heading text-base font-semibold">Stock by project</h3>
+            <h3 className="mb-4 font-heading text-base font-semibold">{t("dm.stock_by_project")}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Project</th>
-                    <th className="pb-2.5 font-medium">Total</th>
-                    <th className="pb-2.5 font-medium">Available</th>
-                    <th className="pb-2.5 font-medium">Reserved</th>
-                    <th className="pb-2.5 font-medium">Sold</th>
-                    <th className="pb-2.5 font-medium">Value</th>
+                    <th className="pb-2.5 font-medium">{t("audit.entity.projects")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.total")}</th>
+                    <th className="pb-2.5 font-medium">{t("status.available")}</th>
+                    <th className="pb-2.5 font-medium">{t("status.reserved")}</th>
+                    <th className="pb-2.5 font-medium">{t("status.sold")}</th>
+                    <th className="pb-2.5 font-medium">{t("print.contract.value")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,7 +235,7 @@ function StockTab() {
           </Card>
         </div>
         <Card className="p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">Overall status</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">{t("dm.overall_status")}</h3>
           <UnitStatusDonut units={units ?? []} />
         </Card>
       </div>
@@ -240,6 +244,7 @@ function StockTab() {
 }
 
 function ExpensesTab() {
+  const t = useT();
   const { data: expenses, isLoading } = useExpenses();
 
   const byType = React.useMemo(() => {
@@ -266,21 +271,21 @@ function ExpensesTab() {
   return (
     <TabSection>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Total Expenses" value={total} format={(n) => formatPkr(n, { compact: true })} icon={Receipt} index={0} />
-        <KpiCard label="Paid" value={paid} format={(n) => formatPkr(n, { compact: true })} icon={CheckCircle2} index={1} />
-        <KpiCard label="Unpaid" value={unpaid} format={(n) => formatPkr(n, { compact: true })} icon={TimerReset} index={2} accent="gold" />
+        <KpiCard label={t("dm.total_expenses")} value={total} format={(n) => formatPkr(n, { compact: true })} icon={Receipt} index={0} />
+        <KpiCard label={t("deals.col.paid")} value={paid} format={(n) => formatPkr(n, { compact: true })} icon={CheckCircle2} index={1} />
+        <KpiCard label={t("sinv.status.unpaid")} value={unpaid} format={(n) => formatPkr(n, { compact: true })} icon={TimerReset} index={2} accent="gold" />
       </div>
       <Card className="p-5">
-        <h3 className="mb-4 font-heading text-base font-semibold">By type</h3>
+        <h3 className="mb-4 font-heading text-base font-semibold">{t("dm.by_type")}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium">Count</th>
-                <th className="pb-2.5 font-medium">Paid</th>
-                <th className="pb-2.5 font-medium">Unpaid</th>
-                <th className="pb-2.5 font-medium">Total</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.count")}</th>
+                <th className="pb-2.5 font-medium">{t("deals.col.paid")}</th>
+                <th className="pb-2.5 font-medium">{t("sinv.status.unpaid")}</th>
+                <th className="pb-2.5 font-medium">{t("common.total")}</th>
               </tr>
             </thead>
             <tbody>

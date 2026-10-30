@@ -12,9 +12,11 @@ import { buildSchedule } from "@/lib/api/sales";
 import { num } from "@/lib/api/finance";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 /** Set up the payment plan: a down payment, then equal installments. The total always equals the price. */
 export function ScheduleDialog({ open, onOpenChange, bookingId, netPrice }: { open: boolean; onOpenChange: (o: boolean) => void; bookingId: string; netPrice: number }) {
+  const t = useT();
   const { company } = useCompany();
   const invalidate = useInvalidateFinance();
   const [down, setDown] = React.useState("");
@@ -33,9 +35,9 @@ export function ScheduleDialog({ open, onOpenChange, bookingId, netPrice }: { op
       open={open}
       onOpenChange={onOpenChange}
       icon={CalendarClock}
-      title="Payment plan"
-      description="The plan always adds up to exactly the price. Any rounding paisa goes into the last installment."
-      submitLabel="Create plan"
+      title={t("deals.plan.title")}
+      description={t("deals.plan.description")}
+      submitLabel={t("deals.plan.submit")}
       submitDisabled={invalid}
       onSubmit={async () => {
         await buildSchedule(company.id, bookingId, {
@@ -46,35 +48,35 @@ export function ScheduleDialog({ open, onOpenChange, bookingId, netPrice }: { op
           balloon: balloon || "0",
         });
         await invalidate();
-        toast.success("Payment plan created");
+        toast.success(t("deals.plan.created"));
       }}
     >
-      <div className="rounded-lg bg-secondary/50 px-3 py-2 text-sm">Price to be paid: <span className="font-mono font-medium">{formatMoney(netPrice)}</span></div>
-      <Field label="Down payment"><AmountInput value={down} onChange={setDown} /></Field>
+      <div className="rounded-lg bg-secondary/50 px-3 py-2 text-sm">{t("deals.plan.price")} <span className="font-mono font-medium">{formatMoney(netPrice)}</span></div>
+      <Field label={t("deals.plan.down")}><AmountInput value={down} onChange={setDown} /></Field>
       <FieldRow>
-        <Field label="Number of installments"><Input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 3))} /></Field>
-        <Field label="Every">
+        <Field label={t("deals.plan.count")}><Input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 3))} /></Field>
+        <Field label={t("deals.plan.every")}>
           <Select value={interval} onValueChange={setIntervalMonths}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Month</SelectItem>
-              <SelectItem value="2">2 months</SelectItem>
-              <SelectItem value="3">3 months (quarterly)</SelectItem>
-              <SelectItem value="6">6 months</SelectItem>
-              <SelectItem value="12">Year</SelectItem>
+              <SelectItem value="1">{t("deals.plan.month1")}</SelectItem>
+              <SelectItem value="2">{t("deals.plan.month2")}</SelectItem>
+              <SelectItem value="3">{t("deals.plan.month3")}</SelectItem>
+              <SelectItem value="6">{t("deals.plan.month6")}</SelectItem>
+              <SelectItem value="12">{t("deals.plan.month12")}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
       </FieldRow>
-      <Field label="First installment due"><Input type="date" value={first} onChange={(e) => setFirst(e.target.value)} /></Field>
-      <Field label="Balloon payment at the end (optional)"><AmountInput value={balloon} onChange={setBalloon} /></Field>
+      <Field label={t("deals.plan.first")}><Input type="date" value={first} onChange={(e) => setFirst(e.target.value)} /></Field>
+      <Field label={t("deals.plan.balloon")}><AmountInput value={balloon} onChange={setBalloon} /></Field>
       <div className="rounded-lg border border-border/70 px-3 py-2 text-sm">
         {rest < 0 ? (
-          <span className="text-destructive">The down payment and balloon are more than the price.</span>
+          <span className="text-destructive">{t("deals.plan.tooMuch")}</span>
         ) : n > 0 ? (
-          <>{n} installments of about <span className="font-mono font-medium">{formatMoney(each)}</span></>
+          <>{t("deals.plan.eachAbout", { count: n, amount: formatMoney(each) })}</>
         ) : (
-          <span className="text-muted-foreground">With no installments, the down payment must be the whole price.</span>
+          <span className="text-muted-foreground">{t("deals.plan.noInstallments")}</span>
         )}
       </div>
     </FormDialog>

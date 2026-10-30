@@ -13,8 +13,10 @@ import { useAccounts, useVouchers } from "@/lib/hooks/use-data";
 import { chartLeafAccounts, buildAccountLedger, formatLedgerBalance } from "@/lib/chart-of-accounts";
 import { formatDate, formatPkr } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function LedgerTab() {
+  const t = useT();
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const { data: vouchers, isLoading: vouchersLoading } = useVouchers();
   const isLoading = accountsLoading || vouchersLoading;
@@ -49,15 +51,15 @@ export function LedgerTab() {
       <Card className="p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Account</Label>
+            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("account.eyebrow")}</Label>
             <AccountSelect accounts={leafAccounts} value={accountId} onChange={setAccountId} />
           </div>
           <div>
-            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Start date</Label>
+            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("dm.start_date")}</Label>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div>
-            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">End date</Label>
+            <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("dm.end_date")}</Label>
             <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </div>
         </div>
@@ -65,15 +67,15 @@ export function LedgerTab() {
 
       {!account ? (
         <Card className="p-10 text-center">
-          <p className="text-sm text-muted-foreground">Select an account above to see its posted transaction history.</p>
+          <p className="text-sm text-muted-foreground">{t("dm.select_an_account_above_to")}</p>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatTile icon={Wallet} label="Opening Balance" value={formatLedgerBalance(openingBalance)} />
-            <StatTile icon={ArrowUpFromLine} label="Total Debit" value={formatPkr(totalDebit, { compact: true })} accent="destructive" />
-            <StatTile icon={ArrowDownToLine} label="Total Credit" value={formatPkr(totalCredit, { compact: true })} accent="success" />
-            <StatTile icon={Landmark} label="Closing Balance" value={formatLedgerBalance(closingBalance)} accent="gold" />
+            <StatTile icon={Wallet} label={t("dm.opening_balance")} value={formatLedgerBalance(openingBalance)} />
+            <StatTile icon={ArrowUpFromLine} label={t("dm.total_debit")} value={formatPkr(totalDebit, { compact: true })} accent="destructive" />
+            <StatTile icon={ArrowDownToLine} label={t("dm.total_credit")} value={formatPkr(totalCredit, { compact: true })} accent="success" />
+            <StatTile icon={Landmark} label={t("dm.closing_balance")} value={formatLedgerBalance(closingBalance)} accent="gold" />
           </div>
 
           <Card className="p-5">
@@ -84,17 +86,17 @@ export function LedgerTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Date</th>
-                    <th className="pb-2.5 font-medium">Voucher</th>
-                    <th className="pb-2.5 font-medium">Description</th>
-                    <th className="pb-2.5 pe-3 text-end font-medium">Debit</th>
-                    <th className="pb-2.5 pe-3 text-end font-medium">Credit</th>
-                    <th className="pb-2.5 text-end font-medium">Balance</th>
+                    <th className="pb-2.5 font-medium">{t("common.date")}</th>
+                    <th className="pb-2.5 font-medium">{t("audit.entity.vouchers")}</th>
+                    <th className="pb-2.5 font-medium">{t("rec.st.colDescription")}</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">{t("vch.d.colDebit")}</th>
+                    <th className="pb-2.5 pe-3 text-end font-medium">{t("vch.d.colCredit")}</th>
+                    <th className="pb-2.5 text-end font-medium">{t("customers.col.balance")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/40 bg-muted/30">
-                    <td colSpan={5} className="py-2 font-medium text-muted-foreground">Opening balance</td>
+                    <td colSpan={5} className="py-2 font-medium text-muted-foreground">{t("stmt.opening")}</td>
                     <td className="py-2 text-end tabular-nums font-medium">{formatLedgerBalance(openingBalance)}</td>
                   </tr>
                   {displayed.map((e, i) => (
@@ -123,14 +125,14 @@ export function LedgerTab() {
                   {displayed.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                        No posted vouchers for this account in the selected range.
+                        {t("dm.no_posted_vouchers_for_this")}
                       </td>
                     </tr>
                   )}
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-border">
-                    <td colSpan={3} className="py-2.5 font-semibold">Closing balance</td>
+                    <td colSpan={3} className="py-2.5 font-semibold">{t("stmt.closing")}</td>
                     <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatPkr(totalDebit)}</td>
                     <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatPkr(totalCredit)}</td>
                     <td className="py-2.5 text-end tabular-nums font-semibold">{formatLedgerBalance(closingBalance)}</td>

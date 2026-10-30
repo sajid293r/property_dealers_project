@@ -9,13 +9,9 @@ import { useCompany } from "@/lib/providers/company-provider";
 import { createParty, type PartyRole, type PartyRow } from "@/lib/api/finance";
 import { useInvalidateFinance } from "@/lib/hooks/use-live";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
-const ROLE_CHOICES: { role: PartyRole; label: string }[] = [
-  { role: "customer", label: "Customer" },
-  { role: "vendor", label: "Supplier" },
-  { role: "dealer", label: "Dealer" },
-  { role: "contractor", label: "Contractor" },
-];
+const ROLE_CHOICES: PartyRole[] = ["customer", "vendor", "dealer", "contractor"];
 
 /** Add a customer, supplier, dealer or contractor to the address book (one person can be several). */
 export function NewPartyDialog({
@@ -29,6 +25,7 @@ export function NewPartyDialog({
   defaultRoles?: PartyRole[];
   onCreated?: (party: PartyRow) => void;
 }) {
+  const t = useT();
   const { company } = useCompany();
   const invalidate = useInvalidateFinance();
   const [name, setName] = React.useState("");
@@ -60,7 +57,7 @@ export function NewPartyDialog({
       city: city.trim() || undefined,
     });
     await invalidate();
-    toast.success(`${party.name} added`, { description: roles.map((r) => ROLE_CHOICES.find((c) => c.role === r)?.label).join(", ") });
+    toast.success(t("customers.party.added", { name: party.name }), { description: roles.map((r) => t(`customers.role.${r}`)).join(", ") });
     reset();
     onCreated?.(party);
   }
@@ -73,44 +70,44 @@ export function NewPartyDialog({
         onOpenChange(o);
       }}
       icon={UserPlus}
-      title="Add a customer or supplier"
-      description="One address book for everyone you deal with. Add them once, use them everywhere."
-      submitLabel="Add"
+      title={t("customers.party.title")}
+      description={t("customers.party.description")}
+      submitLabel={t("customers.party.submit")}
       submitDisabled={!name.trim() || roles.length === 0}
       onSubmit={submit}
     >
-      <Field label="Name">
+      <Field label={t("customers.party.name")}>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={organization ? "Lahore Steel Traders" : "Ahmed Khan"} />
       </Field>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         {ROLE_CHOICES.map((c) => (
-          <label key={c.role} className="flex items-center gap-2 text-sm">
-            <Checkbox checked={roles.includes(c.role)} onCheckedChange={(v) => setRoles((r) => (v === true ? [...r, c.role] : r.filter((x) => x !== c.role)))} />
-            {c.label}
+          <label key={c} className="flex items-center gap-2 text-sm">
+            <Checkbox checked={roles.includes(c)} onCheckedChange={(v) => setRoles((r) => (v === true ? [...r, c] : r.filter((x) => x !== c)))} />
+            {t(`customers.role.${c}`)}
           </label>
         ))}
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox checked={organization} onCheckedChange={(v) => setOrganization(v === true)} />
-          It is a company
+          {t("customers.party.company")}
         </label>
       </div>
       <FieldRow>
-        <Field label="Phone">
+        <Field label={t("customers.party.phone")}>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0300-1234567" inputMode="tel" />
         </Field>
-        <Field label="City">
+        <Field label={t("customers.party.city")}>
           <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Lahore" />
         </Field>
       </FieldRow>
       <FieldRow>
-        <Field label={organization ? "NTN" : "CNIC (optional)"}>
+        <Field label={organization ? t("customers.party.ntn") : t("customers.party.cnicOptional")}>
           {organization ? (
             <Input value={ntn} onChange={(e) => setNtn(e.target.value)} placeholder="1234567-8" />
           ) : (
             <Input value={cnic} onChange={(e) => setCnic(e.target.value)} placeholder="35201-1234567-1" inputMode="numeric" />
           )}
         </Field>
-        <Field label={organization ? "CNIC of owner (optional)" : "NTN (optional)"}>
+        <Field label={organization ? t("customers.party.ownerCnic") : t("customers.party.ntnOptional")}>
           {organization ? (
             <Input value={cnic} onChange={(e) => setCnic(e.target.value)} placeholder="35201-1234567-1" inputMode="numeric" />
           ) : (

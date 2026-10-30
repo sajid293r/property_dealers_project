@@ -18,9 +18,11 @@ import { listExpenses, num } from "@/lib/api/finance";
 import { fiscalYearOf, todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
 import { ExportButton } from "@/components/live/export-button";
+import { useT } from "@/lib/i18n/provider";
 
 /** What the business spent, listed straight from the ledger (so it always agrees with the profit-and-loss report). */
 export function LiveExpenses() {
+  const t = useT();
   const { company } = useCompany();
   const { can } = usePermissions();
   const month = todayIso().slice(0, 7);
@@ -29,8 +31,8 @@ export function LiveExpenses() {
   const [search, setSearch] = React.useState("");
   const [debounced, setDebounced] = React.useState("");
   React.useEffect(() => {
-    const t = window.setTimeout(() => setDebounced(search.trim()), 250);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setDebounced(search.trim()), 250);
+    return () => window.clearTimeout(timer);
   }, [search]);
 
   const q = useQuery({
@@ -46,35 +48,35 @@ export function LiveExpenses() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={Receipt}
-        eyebrow="Finance"
-        title="Expenses"
-        description="Everything spent, from your approved payment vouchers and purchase invoices"
+        eyebrow={t("nav.section.finance")}
+        title={t("exp.title")}
+        description={t("exp.description")}
         actions={
           can("accounts.create") ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="gap-1.5"><Plus className="size-4" /> New expense</Button>
+                <Button className="gap-1.5"><Plus className="size-4" /> {t("exp.new")}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=CPV">Paid in cash</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=BPV">Paid from a bank account</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=PIV">Supplier invoice (pay later)</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=CPV">{t("exp.paidCash")}</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=BPV">{t("exp.paidBank")}</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/dashboard/vouchers/new?type=PIV">{t("exp.supplierInvoice")}</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : undefined
         }
       />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatTile icon={TrendingDown} label="Spent in this period" value={formatMoney(total, { compact: true })} accent="warning" />
-        <StatTile icon={Wallet} label="Biggest category" value={top ? top.accountName : "—"} accent="gold" />
-        <StatTile icon={ScrollText} label="Entries" value={q.data?.rows.length ?? 0} />
+        <StatTile icon={TrendingDown} label={t("exp.tile.spent")} value={formatMoney(total, { compact: true })} accent="warning" />
+        <StatTile icon={Wallet} label={t("exp.tile.biggest")} value={top ? top.accountName : "—"} accent="gold" />
+        <StatTile icon={ScrollText} label={t("exp.tile.entries")} value={q.data?.rows.length ?? 0} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" />
-        <span className="text-sm text-muted-foreground">to</span>
-        <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
-        <DataTableSearch value={search} onChange={setSearch} placeholder="Search account, supplier, note…" />
-        <ExportButton name="expenses" headers={["Date", "Voucher", "Account code", "Account", "Paid to", "Note", "Amount"]} rows={(q.data?.rows ?? []).map((r) => [r.date, r.number, r.accountCode, r.accountName, r.partyName, r.description, num(r.amount)])} />
+        <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t("acc.ledger.from")} />
+        <span className="text-sm text-muted-foreground">{t("acc.ledger.toWord")}</span>
+        <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t("acc.ledger.to")} />
+        <DataTableSearch value={search} onChange={setSearch} placeholder={t("exp.search")} />
+        <ExportButton name="expenses" headers={[t("common.date"), t("vch.csv.voucher"), t("exp.csv.accountCode"), t("vch.d.colAccount"), t("exp.csv.paidTo"), t("exp.csv.note"), t("common.amount")]} rows={(q.data?.rows ?? []).map((r) => [r.date, r.number, r.accountCode, r.accountName, r.partyName, r.description, num(r.amount)])} />
       </div>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card className="p-4">
@@ -82,11 +84,11 @@ export function LiveExpenses() {
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                  <th className="pb-2.5 font-medium">Date</th>
-                  <th className="pb-2.5 font-medium">Account</th>
-                  <th className="pb-2.5 font-medium">Paid to / note</th>
-                  <th className="pb-2.5 font-medium">Voucher</th>
-                  <th className="pb-2.5 pe-3 text-end font-medium">Amount</th>
+                  <th className="pb-2.5 font-medium">{t("common.date")}</th>
+                  <th className="pb-2.5 font-medium">{t("vch.d.colAccount")}</th>
+                  <th className="pb-2.5 font-medium">{t("exp.col.paidTo")}</th>
+                  <th className="pb-2.5 font-medium">{t("vch.col.voucher")}</th>
+                  <th className="pb-2.5 pe-3 text-end font-medium">{t("common.amount")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,11 +107,11 @@ export function LiveExpenses() {
                     ))}
               </tbody>
             </table>
-            {!q.isLoading && (q.data?.rows ?? []).length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">No expenses in this period.</p>}
+            {!q.isLoading && (q.data?.rows ?? []).length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">{t("exp.empty")}</p>}
           </div>
         </Card>
         <Card className="h-fit p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">By category</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">{t("exp.byCategory")}</h3>
           <div className="space-y-2.5">
             {(q.data?.byAccount ?? []).slice(0, 10).map((a) => (
               <div key={a.accountId}>
@@ -117,7 +119,7 @@ export function LiveExpenses() {
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary" style={{ width: `${total > 0 ? Math.max(2, (num(a.amount) / total) * 100) : 0}%` }} /></div>
               </div>
             ))}
-            {(q.data?.byAccount ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nothing yet.</p>}
+            {(q.data?.byAccount ?? []).length === 0 && <p className="text-sm text-muted-foreground">{t("exp.nothingYet")}</p>}
           </div>
         </Card>
       </div>

@@ -17,8 +17,10 @@ import {
   useUnits,
 } from "@/lib/hooks/use-data";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function ProfitLossTab() {
+  const t = useT();
   const { data: units, isLoading: l1 } = useUnits();
   const { data: customers, isLoading: l2 } = useCustomers();
   const { data: staff, isLoading: l3 } = useStaff();
@@ -51,10 +53,10 @@ export function ProfitLossTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Total Income" value={totalIncome} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={0} />
-        <KpiCard label="Total Expenses" value={totalExpense} format={(n) => formatLedgerBalance(n)} icon={TrendingDown} index={1} />
+        <KpiCard label={t("dm.total_income")} value={totalIncome} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={0} />
+        <KpiCard label={t("dm.total_expenses")} value={totalExpense} format={(n) => formatLedgerBalance(n)} icon={TrendingDown} index={1} />
         <KpiCard
-          label={netProfit >= 0 ? "Net Profit" : "Net Loss"}
+          label={t(netProfit >= 0 ? "rep.netProfit" : "rep.netLoss")}
           value={netProfit}
           format={(n) => `${n < 0 ? "-" : ""}${formatLedgerBalance(n)}`}
           icon={Landmark}
@@ -64,21 +66,21 @@ export function ProfitLossTab() {
       </div>
 
       <Card className="p-5">
-        <h3 className="mb-4 font-heading text-base font-semibold">Profit &amp; Loss</h3>
+        <h3 className="mb-4 font-heading text-base font-semibold">{t("rep.tab.is")}</h3>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-sm font-heading font-semibold">Income</p>
+            <p className="mb-1.5 text-sm font-heading font-semibold">{t("rep.income")}</p>
             <AccountStatementTree nodes={tree} rootId="04" />
             <div className="mt-1 flex items-center justify-between border-t-2 border-border pt-2 font-semibold">
-              <span>Total Income</span>
+              <span>{t("dm.total_income")}</span>
               <span className="tabular-nums">{formatLedgerBalance(totalIncome)}</span>
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-sm font-heading font-semibold">Expenses</p>
+            <p className="mb-1.5 text-sm font-heading font-semibold">{t("perm.module.expenses")}</p>
             <AccountStatementTree nodes={tree} rootId="05" />
             <div className="mt-1 flex items-center justify-between border-t-2 border-border pt-2 font-semibold">
-              <span>Total Expenses</span>
+              <span>{t("dm.total_expenses")}</span>
               <span className="tabular-nums">{formatLedgerBalance(totalExpense)}</span>
             </div>
           </div>
@@ -90,7 +92,7 @@ export function ProfitLossTab() {
             netProfit >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
           )}
         >
-          <span>Net Profit</span>
+          <span>{t("dm.net_profit")}</span>
           <span className="tabular-nums">{netProfit < 0 ? "-" : ""}{formatLedgerBalance(netProfit)}</span>
         </div>
       </Card>

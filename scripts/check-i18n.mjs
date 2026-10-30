@@ -1,5 +1,6 @@
 // Checks the translation dictionaries: every language must have exactly the keys English has, and each message must
 // use the same {placeholders} as English. Run: node scripts/check-i18n.mjs   (exit code 1 if anything is wrong)
+// Check just some languages while writing them:  node scripts/check-i18n.mjs ar de
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -44,7 +45,8 @@ const problems = [];
 const en = await load("en");
 let checked = 0;
 
-for (const lang of LANGS.filter((l) => l !== "en")) {
+const only = process.argv.slice(2);
+for (const lang of LANGS.filter((l) => l !== "en" && (only.length === 0 || only.includes(l)))) {
   const dict = await load(lang);
   for (const key of Object.keys(en)) {
     if (!(key in dict)) problems.push(`${lang}: missing ${key}`);
@@ -75,7 +77,7 @@ for (const lang of LANGS.filter((l) => l !== "en")) {
   }
 }
 for (const key of Object.keys(en)) {
-  if (!/^[a-z][a-z0-9-]*(\.[a-zA-Z0-9+-]+)+$/.test(key)) problems.push(`en: unusual key ${key}`);
+  if (!/^[a-z][a-z0-9-]*(\.[^.\s][^.]*)+$/.test(key)) problems.push(`en: unusual key ${key}`);
 }
 
 console.log(`${Object.keys(en).length} English keys, ${LANGS.length - 1} other languages, ${checked} translations compared.`);

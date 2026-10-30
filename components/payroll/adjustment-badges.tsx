@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { adjustmentTypeMeta } from "@/lib/payroll";
 import type { PayrollAdjustmentStatus, PayrollAdjustmentType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { tx } from "@/lib/i18n/runtime";
 
 const ACCENT_CLASSES = {
   success: "bg-success/12 text-success",
@@ -22,9 +23,9 @@ export function AdjustmentTypeBadge({ type, className }: { type: PayrollAdjustme
 }
 
 const STATUS_CONFIG: Record<PayrollAdjustmentStatus, { label: string; icon: typeof Clock; classes: string }> = {
-  pending: { label: "Pending", icon: Clock, classes: "bg-warning/12 text-warning" },
-  approved: { label: "Approved", icon: CheckCircle2, classes: "bg-success/12 text-success" },
-  rejected: { label: "Rejected", icon: Ban, classes: "bg-destructive/10 text-destructive" },
+  pending: { get label() { return tx("Pending"); }, icon: Clock, classes: "bg-warning/12 text-warning" },
+  approved: { get label() { return tx("Approved"); }, icon: CheckCircle2, classes: "bg-success/12 text-success" },
+  rejected: { get label() { return tx("Rejected"); }, icon: Ban, classes: "bg-destructive/10 text-destructive" },
 };
 
 export function AdjustmentStatusBadge({ status }: { status: PayrollAdjustmentStatus }) {

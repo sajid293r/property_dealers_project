@@ -18,6 +18,8 @@ import { LEAVE_TYPES, daysBetween, leaveBalance } from "@/lib/payroll";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { LeaveRequest, LeaveType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 export function NewLeaveRequestDialog({
   open,
@@ -26,6 +28,7 @@ export function NewLeaveRequestDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: staff } = useStaff();
   const { data: leaveRequests } = useLeaveRequests();
@@ -56,6 +59,7 @@ export function NewLeaveRequestDialog({
   function handleSubmit() {
     const today = new Date().toISOString().slice(0, 10);
     const newRequest: LeaveRequest = {
+      // eslint-disable-next-line react-hooks/purity -- runs in an event handler
       id: `leave-${Date.now()}`,
       staffId,
       type,
@@ -68,7 +72,7 @@ export function NewLeaveRequestDialog({
     };
 
     queryClient.setQueryData<LeaveRequest[]>(["leaveRequests"], (old = []) => [newRequest, ...old]);
-    toast.success(`Leave request submitted for ${member?.name}`, { description: `${days} day${days > 1 ? "s" : ""} — awaiting approval` });
+    toast.success(t("dm.leave.submitted", { name: member?.name ?? "" }), { description: t("dm.leave.awaiting", { count: days }) });
   }
 
   return (
@@ -76,16 +80,16 @@ export function NewLeaveRequestDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Palmtree}
-      title="New Leave Request"
-      description="Request time off on behalf of a staff member."
-      submitLabel="Submit Request"
+      title={t("dm.new_leave_request")}
+      description={t("dm.request_time_off_on_behalf")}
+      submitLabel={t("dm.submit_request")}
       submitDisabled={!staffId || !fromDate || !toDate || fromDate > toDate}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Staff member">
+        <Field label={t("dm.staff_member")}>
           <Select value={staffId} onValueChange={setStaffId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("projects.new.selectStaff")} /></SelectTrigger>
             <SelectContent>
               {staff?.map((s) => (
                 <SelectItem key={s.id} value={s.id}>{s.name} · {s.department}</SelectItem>
@@ -93,12 +97,12 @@ export function NewLeaveRequestDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Leave type">
+        <Field label={t("dm.leave_type")}>
           <Select value={type} onValueChange={(v) => setType(v as LeaveType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               {LEAVE_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
+                <SelectItem key={t} value={t}>{tx(t)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -106,16 +110,16 @@ export function NewLeaveRequestDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="From">
+        <Field label={t("leave.new.from")}>
           <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
         </Field>
-        <Field label="To">
+        <Field label={t("leave.new.to")}>
           <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
         </Field>
       </FieldRow>
 
-      <Field label="Reason">
-        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional notes..." rows={2} />
+      <Field label={t("common.reason")}>
+        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("dm.optional_notes")} rows={2} />
       </Field>
 
       {member && fromDate <= toDate && (

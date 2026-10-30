@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/provider";
+import { APP_NAME } from "@/lib/brand";
 
 /**
  * Shared page masthead: icon tile with a soft glow, section eyebrow, display-serif
@@ -31,6 +33,11 @@ export function PageHeader({
   back?: { href: string; label: string };
   className?: string;
 }) {
+  const { dir } = useLanguage();
+  // The browser tab and history show the page the person is on, in their language.
+  React.useEffect(() => {
+    if (typeof title === "string" && title) document.title = `${title} · ${APP_NAME}`;
+  }, [title]);
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -75,8 +82,8 @@ export function PageHeader({
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            style={{ transformOrigin: "left" }}
-            className="mt-1.5 h-[3px] w-12 rounded-full bg-gradient-to-r from-gold to-transparent"
+            style={{ transformOrigin: dir === "rtl" ? "right" : "left" }}
+            className="mt-1.5 h-[3px] w-12 rounded-full bg-gradient-to-r from-gold to-transparent rtl:bg-gradient-to-l"
           />
           {description && (
             <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>

@@ -1,5 +1,6 @@
 import { ArrowLeftRight, FileMinus2, FilePlus2, Landmark, Receipt, ReceiptText, ScrollText, Wallet, WalletCards, type LucideIcon } from "lucide-react";
 import type { ChartAccount, InstrumentType, PartyRole, VoucherStatus, VoucherType } from "@/lib/api/finance";
+import { tOr, translate } from "@/lib/i18n/runtime";
 
 /**
  * How each voucher is filled in. Every voucher except a Journal has ONE fixed side (cash, a bank account, a customer's
@@ -111,3 +112,23 @@ export const INSTRUMENTS: { value: InstrumentType; label: string; needsNumber: b
 export const STATUS_LABEL: Record<VoucherStatus, string> = {
   draft: "Draft", pending: "Pending approval", approved: "Approved", rejected: "Rejected", void: "Void",
 };
+
+// The same descriptions in the language on screen. Printed documents still use the plain English `liveVoucherMeta`.
+const GROUP_KEY = { "Cash & bank": "cash", Sales: "sales", Purchases: "purchases", Other: "other" } as const;
+export const groupLabel = (g: LiveVoucherMeta["group"]) => tOr(translate, `vch.group.${GROUP_KEY[g]}`, g);
+export const voucherStatusLabel = (s: VoucherStatus) => tOr(translate, `vch.status.${s}`, STATUS_LABEL[s]);
+export const instrumentLabel = (v: InstrumentType) => tOr(translate, `vch.instr.${v}`, INSTRUMENTS.find((i) => i.value === v)?.label ?? v);
+export function localMeta(type: VoucherType): LiveVoucherMeta {
+  const m = liveVoucherMeta(type);
+  const k = (field: string, fallback: string) => tOr(translate, `vch.type.${type}.${field}`, fallback);
+  return {
+    ...m,
+    label: k("label", m.label),
+    short: k("short", m.short),
+    description: k("description", m.description),
+    partyLabel: m.partyLabel ? k("party", m.partyLabel) : null,
+    linesTitle: k("lines", m.linesTitle),
+    linesHint: k("hint", m.linesHint),
+    fixedSideLabel: m.fixedSideLabel ? k("fixed", m.fixedSideLabel) : undefined,
+  };
+}

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import type { Customer } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const CITIES = ["Lahore", "Islamabad", "Rawalpindi", "Karachi", "Faisalabad", "Multan", "Gujranwala"] as const;
 
@@ -24,6 +25,7 @@ export function NewCustomerDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
 
   const [name, setName] = React.useState("");
@@ -56,7 +58,7 @@ export function NewCustomerDialog({
     };
 
     queryClient.setQueryData<Customer[]>(["customers"], (old = []) => [newCustomer, ...old]);
-    toast.success(`${name} added as a customer`);
+    toast.success(t("customers.new.added", { name }));
   }
 
   return (
@@ -64,28 +66,28 @@ export function NewCustomerDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Users2}
-      title="Add Customer"
-      description="Create a client record to book properties against."
-      submitLabel="Add Customer"
+      title={t("customers.new.title")}
+      description={t("customers.new.description")}
+      submitLabel={t("customers.new.submit")}
       submitDisabled={!name || !phone || !city}
       onSubmit={handleSubmit}
     >
-      <Field label="Full name">
+      <Field label={t("customers.new.fullName")}>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ayesha Malik" />
       </Field>
 
       <FieldRow>
-        <Field label="CNIC">
+        <Field label={t("customers.col.cnic")}>
           <Input value={cnic} onChange={(e) => setCnic(e.target.value)} placeholder="35201-1234567-1" />
         </Field>
-        <Field label="Phone">
+        <Field label={t("customers.party.phone")}>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03001234567" />
         </Field>
       </FieldRow>
 
-      <Field label="City">
+      <Field label={t("customers.party.city")}>
         <Select value={city} onValueChange={setCity}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select city" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("customers.new.selectCity")} /></SelectTrigger>
           <SelectContent>
             {CITIES.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>

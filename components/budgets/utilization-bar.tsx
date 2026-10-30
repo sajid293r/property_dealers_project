@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Budget meter: paid (solid) + committed (hatched gold) against the budget limit.
@@ -22,6 +23,7 @@ export function UtilizationBar({
   height?: string;
   delay?: number;
 }) {
+  const t = useT();
   const used = actual + committed;
   const scale = Math.max(budget, used, 1);
   const over = used > budget;
@@ -49,7 +51,7 @@ export function UtilizationBar({
         <span
           className="absolute -top-1 bottom-[-4px] w-0.5 rounded-full bg-foreground/70"
           style={{ left: `${limitPct}%` }}
-          title="Budget limit"
+          title={t("dm.budget_limit")}
         />
       )}
     </div>

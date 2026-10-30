@@ -1,4 +1,5 @@
 import type { BookingStatus, ReceiptMethod, InstallmentStatus } from "@/lib/api/sales";
+import { translate, tOr } from "@/lib/i18n/runtime";
 
 export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   pending: "Pending",
@@ -32,4 +33,5 @@ export const RECEIPT_METHODS: { value: ReceiptMethod; label: string; needsRef: b
   { value: "online", label: "Online / mobile wallet", needsRef: true, refLabel: "Transaction ID" },
   { value: "pay_order", label: "Pay order / demand draft", needsRef: true, refLabel: "Pay order number" },
 ];
-export const methodLabel = (m: string) => RECEIPT_METHODS.find((x) => x.value === m)?.label ?? (m === "split" ? "Several methods" : m);
+/** The label for a payment method, in the language on screen (the English label is the fallback for an unknown code). */
+export const methodLabel = (m: string) => tOr(translate, `deals.method.${m}`, RECEIPT_METHODS.find((x) => x.value === m)?.label ?? m);

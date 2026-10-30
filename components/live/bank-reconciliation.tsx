@@ -46,8 +46,10 @@ import {
 import { todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function useAction() {
+  const t = useT();
   const invalidate = useInvalidateFinance();
   const [busy, setBusy] = React.useState(false);
   async function run(fn: () => Promise<unknown>, success?: string) {
@@ -57,7 +59,7 @@ function useAction() {
       await invalidate();
       if (success) toast.success(success);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "That did not work.");
+      toast.error(e instanceof Error ? e.message : t("common.thatDidNotWork"));
     } finally {
       setBusy(false);
     }
@@ -79,6 +81,7 @@ function Row({ label, value, strong, sign }: { label: string; value: number; str
 
 // ───────────────────────────────────────────── reconcile tab
 function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; bookBalance: number }) {
+  const t = useT();
   const { company } = useCompany();
   const { can } = usePermissions();
   const { busy, run } = useAction();
@@ -108,16 +111,16 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
       <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
         <Card className="space-y-4 p-5">
           <div>
-            <h3 className="font-heading text-base font-semibold">Start a reconciliation</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Enter the closing balance from your bank statement. Then tick every item that appears on it.</p>
+            <h3 className="font-heading text-base font-semibold">{t("rec.start.title")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("rec.start.hint")}</p>
           </div>
-          <Field label="Statement date"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
-          <Field label="Closing balance on the statement"><AmountInput value={balance} onChange={setBalance} allowNegative /></Field>
-          <Field label="Statement entered in the system (optional)">
+          <Field label={t("rec.start.date")}><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
+          <Field label={t("rec.start.closing")}><AmountInput value={balance} onChange={setBalance} allowNegative /></Field>
+          <Field label={t("rec.start.entered")}>
             <Select value={statementId} onValueChange={setStatementId}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="none">{t("common.none")}</SelectItem>
                 {(statements.data ?? []).map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.label || `${formatDate(s.periodFrom)} – ${formatDate(s.periodTo)}`}</SelectItem>
                 ))}
@@ -127,32 +130,32 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
           {canStart ? (
             <Button
               disabled={busy || balance === "" || !asOf}
-              onClick={() => void run(() => startReconciliation(company.id, bankAccountId, { asOf, statementBalance: balance, statementId: statementId === "none" ? null : statementId }), "Reconciliation started")}
+              onClick={() => void run(() => startReconciliation(company.id, bankAccountId, { asOf, statementBalance: balance, statementId: statementId === "none" ? null : statementId }), t("rec.start.started"))}
             >
-              Start reconciling
+              {t("rec.start.button")}
             </Button>
           ) : (
-            <p className="text-sm text-muted-foreground">You can view reconciliations, but you need permission to add entries.</p>
+            <p className="text-sm text-muted-foreground">{t("rec.start.noPermission")}</p>
           )}
-          <p className="text-xs text-muted-foreground">Book balance right now: <span className="font-mono">{formatMoney(bookBalance)}</span></p>
+          <p className="text-xs text-muted-foreground">{t("rec.bookNow")} <span className="font-mono">{formatMoney(bookBalance)}</span></p>
         </Card>
         <Card className="p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">Past reconciliations</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">{t("rec.past")}</h3>
           {(history.data ?? []).length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Nothing reconciled yet.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t("rec.pastEmpty")}</p>
           ) : (
             <div className="space-y-2">
               {(history.data ?? []).map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-sm">
                   <div>
-                    <p className="font-medium">As of {formatDate(r.asOf)}</p>
-                    <p className="text-xs text-muted-foreground">Statement {formatMoney(num(r.statementBalance))}{r.finalizedBy ? ` · finished by ${r.finalizedBy}` : ""}</p>
+                    <p className="font-medium">{t("rec.asOf", { date: formatDate(r.asOf) })}</p>
+                    <p className="text-xs text-muted-foreground">{r.finalizedBy ? t("rec.statementLineBy", { amount: formatMoney(num(r.statementBalance)), name: r.finalizedBy }) : t("rec.statementLine", { amount: formatMoney(num(r.statementBalance)) })}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="gap-1"><Lock className="size-3" /> Finished</Badge>
+                    <Badge variant="outline" className="gap-1"><Lock className="size-3" /> {t("rec.finishedBadge")}</Badge>
                     {canApprove && r.id === last?.id && (
-                      <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => reopenReconciliation(company.id, r.id), "Reopened")}>
-                        <RotateCcw className="size-3.5" /> Reopen
+                      <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => reopenReconciliation(company.id, r.id), t("rec.reopened"))}>
+                        <RotateCcw className="size-3.5" /> {t("rec.reopen")}
                       </Button>
                     )}
                   </div>
@@ -174,7 +177,7 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
     <div key={title}>
       <p className="mb-1 mt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
       {items.length === 0 ? (
-        <p className="py-2 text-sm text-muted-foreground">Nothing here.</p>
+        <p className="py-2 text-sm text-muted-foreground">{t("rec.nothingHere")}</p>
       ) : (
         items.map((it) => {
           const amount = num(it.debit) - num(it.credit);
@@ -208,41 +211,41 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
       <Card className="p-5">
         <div className="mb-1 flex items-center justify-between gap-2">
           <div>
-            <h3 className="font-heading text-base font-semibold">Tick what appears on the bank statement</h3>
-            <p className="text-xs text-muted-foreground">Ticked items are cleared as of {formatDate(r.asOf)}. Anything unticked stays outstanding.</p>
+            <h3 className="font-heading text-base font-semibold">{t("rec.tick.title")}</h3>
+            <p className="text-xs text-muted-foreground">{t("rec.tick.hint", { date: formatDate(r.asOf) })}</p>
           </div>
         </div>
-        {section("Money in (deposits & receipts)", money)}
-        {section("Money out (cheques & payments)", payments)}
+        {section(t("rec.moneyIn"), money)}
+        {section(t("rec.moneyOut"), payments)}
       </Card>
 
       <div className="space-y-4">
         <Card className="p-5">
           <div className="mb-1 flex items-center justify-between">
-            <h3 className="font-heading text-base font-semibold">Summary</h3>
+            <h3 className="font-heading text-base font-semibold">{t("rec.summary")}</h3>
             {canEdit && (
-              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Change</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>{t("rec.change")}</Button>
             )}
           </div>
-          <Row label="Balance on bank statement" value={num(rep.statementBalance)} />
-          <Row label="Deposits not yet in the bank" value={num(rep.depositsInTransit)} sign="+" />
-          <Row label="Cheques not yet cashed" value={num(rep.outstandingPayments)} sign="−" />
-          <Row label="Adjusted bank balance" value={num(rep.adjustedBankBalance)} sign="=" strong />
-          <Row label="Balance in your books" value={num(rep.bookBalance)} />
+          <Row label={t("rec.row.statement")} value={num(rep.statementBalance)} />
+          <Row label={t("rec.row.deposits")} value={num(rep.depositsInTransit)} sign="+" />
+          <Row label={t("rec.row.cheques")} value={num(rep.outstandingPayments)} sign="−" />
+          <Row label={t("rec.row.adjusted")} value={num(rep.adjustedBankBalance)} sign="=" strong />
+          <Row label={t("rec.row.books")} value={num(rep.bookBalance)} />
           <div className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${Math.abs(diff) < 0.005 ? "bg-success/12 text-success" : "bg-warning/12 text-warning"}`}>
-            {Math.abs(diff) < 0.005 ? "Balanced — nothing left to explain." : `Difference of ${formatMoney(Math.abs(diff))} still to explain`}
+            {Math.abs(diff) < 0.005 ? t("rec.balanced") : t("rec.difference", { amount: formatMoney(Math.abs(diff)) })}
           </div>
           {Math.abs(diff) >= 0.005 && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Usually a bank charge, a deposit or a payment not yet recorded. Add the missing voucher, then come back.
+              {t("rec.differenceHint")}
             </p>
           )}
           {(canEdit || canApprove) && (
             <div className="mt-4 flex gap-2">
-              <Button className="flex-1 gap-1.5" disabled={busy || !canApprove || !r.canFinish} onClick={() => void run(() => finalizeReconciliation(company.id, r.id), "Reconciliation finished")}>
-                <CheckCircle2 className="size-4" /> Finish
+              <Button className="flex-1 gap-1.5" disabled={busy || !canApprove || !r.canFinish} onClick={() => void run(() => finalizeReconciliation(company.id, r.id), t("rec.finished"))}>
+                <CheckCircle2 className="size-4" /> {t("rec.finish")}
               </Button>
-              <Button variant="outline" size="icon" disabled={busy} aria-label="Cancel reconciliation" onClick={() => void run(() => deleteReconciliation(company.id, r.id), "Reconciliation cancelled")}>
+              <Button variant="outline" size="icon" disabled={busy} aria-label={t("rec.cancelAria")} onClick={() => void run(() => deleteReconciliation(company.id, r.id), t("rec.cancelled"))}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -254,16 +257,16 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
         open={editing}
         onOpenChange={setEditing}
         icon={Scale}
-        title="Change statement details"
-        description="Fix the statement date or its closing balance."
-        submitLabel="Save"
+        title={t("rec.edit.title")}
+        description={t("rec.edit.description")}
+        submitLabel={t("common.save")}
         onSubmit={async () => {
           await updateReconciliation(company.id, r.id, { asOf: asOf || r.asOf, ...(balance !== "" ? { statementBalance: balance } : {}) });
-          await run(async () => undefined, "Updated");
+          await run(async () => undefined, t("rec.edit.updated"));
         }}
       >
-        <Field label="Statement date"><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
-        <Field label={`Closing balance (now ${formatMoney(num(r.statementBalance))})`}><AmountInput value={balance} onChange={setBalance} allowNegative /></Field>
+        <Field label={t("rec.start.date")}><Input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></Field>
+        <Field label={t("rec.edit.closingNow", { amount: formatMoney(num(r.statementBalance)) })}><AmountInput value={balance} onChange={setBalance} allowNegative /></Field>
       </FormDialog>
     </div>
   );
@@ -271,6 +274,7 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
 
 // ───────────────────────────────────────────── statements tab
 function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
+  const t = useT();
   const { company } = useCompany();
   const { can } = usePermissions();
   const { busy, run } = useAction();
@@ -292,47 +296,47 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Select value={activeId ?? ""} onValueChange={setSelected}>
-          <SelectTrigger className="w-[320px]"><SelectValue placeholder="No statements yet" /></SelectTrigger>
+          <SelectTrigger className="w-[320px]"><SelectValue placeholder={t("rec.st.none")} /></SelectTrigger>
           <SelectContent>
             {(list.data ?? []).map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                {s.label || `${formatDate(s.periodFrom)} – ${formatDate(s.periodTo)}`} · {s.matchedCount}/{s.lineCount} matched
+                {s.label || `${formatDate(s.periodFrom)} – ${formatDate(s.periodTo)}`} · {t("rec.st.matchedOf", { matched: s.matchedCount, total: s.lineCount })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <div className="flex gap-2">
           {canEdit && activeId && (
-            <Button variant="outline" className="gap-1.5" disabled={busy} onClick={() => void run(() => deleteStatement(company.id, activeId).then(() => setSelected(null)), "Statement removed")}>
-              <Trash2 className="size-4" /> Remove
+            <Button variant="outline" className="gap-1.5" disabled={busy} onClick={() => void run(() => deleteStatement(company.id, activeId).then(() => setSelected(null)), t("rec.st.removed"))}>
+              <Trash2 className="size-4" /> {t("rec.st.remove")}
             </Button>
           )}
-          {canEdit && <Button className="gap-1.5" onClick={() => setImporting(true)}><Plus className="size-4" /> Add statement</Button>}
+          {canEdit && <Button className="gap-1.5" onClick={() => setImporting(true)}><Plus className="size-4" /> {t("rec.st.add")}</Button>}
         </div>
       </div>
 
       {!activeId ? (
         <Card className="p-10 text-center">
           <FileSpreadsheet className="mx-auto size-8 text-muted-foreground" />
-          <p className="mt-3 text-sm font-medium">No statements yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Paste a statement to let the system suggest which entries match each line.</p>
+          <p className="mt-3 text-sm font-medium">{t("rec.st.none")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("rec.st.emptyHint")}</p>
         </Card>
       ) : detail.isLoading || !detail.data ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : (
         <Card className="p-4">
           {!detail.data.linesAddUp && (
-            <p className="mb-3 rounded-lg bg-warning/12 px-3 py-2 text-sm text-warning">These lines do not add up to the closing balance — a row may be missing or mistyped.</p>
+            <p className="mb-3 rounded-lg bg-warning/12 px-3 py-2 text-sm text-warning">{t("rec.st.notAddUp")}</p>
           )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                  <th className="pb-2 font-medium">Date</th>
-                  <th className="pb-2 font-medium">Description</th>
-                  <th className="pb-2 pe-3 text-end font-medium">In</th>
-                  <th className="pb-2 pe-3 text-end font-medium">Out</th>
-                  <th className="pb-2 font-medium">Match</th>
+                  <th className="pb-2 font-medium">{t("common.date")}</th>
+                  <th className="pb-2 font-medium">{t("rec.st.colDescription")}</th>
+                  <th className="pb-2 pe-3 text-end font-medium">{t("rec.st.colIn")}</th>
+                  <th className="pb-2 pe-3 text-end font-medium">{t("rec.st.colOut")}</th>
+                  <th className="pb-2 font-medium">{t("rec.st.colMatch")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -351,9 +355,9 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
                       <td className="py-2">
                         {l.matchStatus === "matched" ? (
                           <div className="flex items-center gap-2">
-                            <Badge className="gap-1 bg-success/12 text-success" variant="outline"><CheckCircle2 className="size-3" /> Matched</Badge>
+                            <Badge className="gap-1 bg-success/12 text-success" variant="outline"><CheckCircle2 className="size-3" /> {t("rec.st.matched")}</Badge>
                             {canEdit && (
-                              <Button size="icon-sm" variant="ghost" aria-label="Unmatch" disabled={busy} onClick={() => void run(() => unmatchLine(company.id, l.id))}>
+                              <Button size="icon-sm" variant="ghost" aria-label={t("rec.st.unmatchAria")} disabled={busy} onClick={() => void run(() => unmatchLine(company.id, l.id))}>
                                 <Unlink className="size-3.5" />
                               </Button>
                             )}
@@ -367,13 +371,13 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
                                   {target.number} · {target.partyName ?? target.description ?? ""}
                                 </span>
                                 {canEdit && (
-                                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => matchLine(company.id, l.id, [s.journalLineId]), "Matched")}>Match</Button>
+                                  <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => matchLine(company.id, l.id, [s.journalLineId]), t("rec.st.matchedDone"))}>{t("rec.st.match")}</Button>
                                 )}
                               </div>
                             )}
                             {canEdit && (
                               <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setDraftFor(l); setAccountId(null); }}>
-                                Not recorded yet — create voucher
+                                {t("rec.st.createVoucher")}
                               </Button>
                             )}
                           </div>
@@ -394,17 +398,17 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
         open={!!draftFor}
         onOpenChange={(o) => !o && setDraftFor(null)}
         icon={Plus}
-        title="Create voucher from this line"
-        description={draftFor ? `${num(draftFor.deposit) ? "Money in" : "Money out"} ${formatMoney(Math.abs(num(draftFor.amount)))} on ${formatDate(draftFor.date)}. Choose the account it belongs to; a draft bank voucher is created and matches this line automatically once approved.` : ""}
-        submitLabel="Create draft"
+        title={t("rec.st.dlgTitle")}
+        description={draftFor ? t(num(draftFor.deposit) ? "rec.st.dlgInDescription" : "rec.st.dlgOutDescription", { amount: formatMoney(Math.abs(num(draftFor.amount))), date: formatDate(draftFor.date) }) : ""}
+        submitLabel={t("rec.st.dlgSubmit")}
         submitDisabled={!accountId}
         onSubmit={async () => {
           const v = await draftVoucherFromLine(company.id, draftFor!.id, accountId!);
-          toast.success(`Draft ${v.number} created — approve it to match`);
+          toast.success(t("rec.st.dlgCreated", { number: v.number }));
           await run(async () => undefined);
         }}
       >
-        <Field label={draftFor && num(draftFor.deposit) ? "Where did this money come from?" : "What was this money spent on?"}>
+        <Field label={draftFor && num(draftFor.deposit) ? t("rec.st.whereFrom") : t("rec.st.whatSpent")}>
           <AccountPicker value={accountId} onChange={(id) => setAccountId(id)} />
         </Field>
       </FormDialog>
@@ -414,6 +418,7 @@ function StatementsTab({ bankAccountId }: { bankAccountId: string }) {
 
 // ───────────────────────────────────────────── page
 export function LiveBankReconciliation() {
+  const t = useT();
   const params = useSearchParams();
   const accounts = useBankAccounts();
   const [picked, setPicked] = React.useState<string | null>(params.get("account"));
@@ -425,9 +430,9 @@ export function LiveBankReconciliation() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={Scale}
-        eyebrow="Finance"
-        title="Bank Reconciliation"
-        description="Check that your books agree with what the bank says, and find what’s different"
+        eyebrow={t("nav.section.finance")}
+        title={t("rec.title")}
+        description={t("rec.description")}
         actions={
           list.length > 0 ? (
             <Select value={activeId ?? ""} onValueChange={setPicked}>
@@ -445,20 +450,20 @@ export function LiveBankReconciliation() {
       ) : !active ? (
         <Card className="p-10 text-center">
           <Landmark className="mx-auto size-8 text-muted-foreground" />
-          <p className="mt-3 text-sm font-medium">No bank accounts yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Add one under <Link href="/dashboard/accounts" className="text-primary underline">Accounts</Link> to start reconciling.</p>
+          <p className="mt-3 text-sm font-medium">{t("acc.noBanks")}</p>
+          <p className="mt-1 text-sm text-muted-foreground"><Link href="/dashboard/accounts" className="text-primary underline">{t("rec.noBanksLink")}</Link></p>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatTile icon={Landmark} label="Book balance" value={formatMoney(num(active.bookBalance), { compact: true })} accent="success" />
-            <StatTile icon={Scale} label="Uncleared entries" value={active.unclearedCount} accent="warning" />
-            <StatTile icon={CheckCircle2} label="Last reconciled" value={active.lastReconciledOn ? formatDate(active.lastReconciledOn) : "Never"} accent="gold" />
+            <StatTile icon={Landmark} label={t("acc.bookBalance")} value={formatMoney(num(active.bookBalance), { compact: true })} accent="success" />
+            <StatTile icon={Scale} label={t("rec.tile.uncleared")} value={active.unclearedCount} accent="warning" />
+            <StatTile icon={CheckCircle2} label={t("rec.tile.last")} value={active.lastReconciledOn ? formatDate(active.lastReconciledOn) : t("rec.never")} accent="gold" />
           </div>
           <Tabs defaultValue="reconcile" key={active.id}>
             <TabsList>
-              <TabsTrigger value="reconcile">Reconcile</TabsTrigger>
-              <TabsTrigger value="statements">Bank statements</TabsTrigger>
+              <TabsTrigger value="reconcile">{t("rec.tab.reconcile")}</TabsTrigger>
+              <TabsTrigger value="statements">{t("rec.tab.statements")}</TabsTrigger>
             </TabsList>
             <TabsContent value="reconcile" className="mt-4"><ReconcileTab bankAccountId={active.id} bookBalance={num(active.bookBalance)} /></TabsContent>
             <TabsContent value="statements" className="mt-4"><StatementsTab bankAccountId={active.id} /></TabsContent>

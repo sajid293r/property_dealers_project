@@ -39,9 +39,17 @@ import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { PRICING, SEAT_PACKS } from "@/lib/plan";
 import { formatPkr } from "@/lib/format";
 import { monthlyCollections } from "@/lib/mock-data/trends";
-import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import type { PlanTier } from "@/lib/types";
+import { useT } from "@/lib/i18n/provider";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+
+/** Splits "plain *highlighted* plain" so the middle word can be styled; the marker moves with the translation. */
+function Emph({ text, className }: { text: string; className: string }) {
+  const parts = text.split("*");
+  return <>{parts.map((p, i) => (i % 2 === 1 ? <span key={i} className={className}>{p}</span> : <React.Fragment key={i}>{p}</React.Fragment>))}</>;
+}
 
 const TIER_CHIP: Record<PlanTier, string> = {
   basic: "bg-secondary text-secondary-foreground border-border",
@@ -50,68 +58,23 @@ const TIER_CHIP: Record<PlanTier, string> = {
 };
 
 const FEATURES: {
+  id: "properties" | "crm" | "accounting" | "plotmap" | "payroll" | "expenses";
   icon: typeof Building2;
-  title: string;
-  desc: string;
   tier: PlanTier;
   big?: boolean;
 }[] = [
-  {
-    icon: Building2,
-    title: "Properties & Bookings",
-    desc: "Plot / property catalogue with per-Marla pricing, bulk updates, and a full booking-to-installment flow.",
-    tier: "basic",
-    big: true,
-  },
-  {
-    icon: Users2,
-    title: "CRM & Lead Pipeline",
-    desc: "Track leads from Facebook, WhatsApp and referrals through to a closed deal, with follow-up reminders.",
-    tier: "moderate",
-  },
-  {
-    icon: Landmark,
-    title: "Double-entry Accounting",
-    desc: "Chart of accounts, journal, trial balance, P&L and cash flow — real books, not just a cash register.",
-    tier: "moderate",
-  },
-  {
-    icon: MapPinned,
-    title: "Interactive Plot Map",
-    desc: "Let clients visually pick an available plot on a real map layer — a Premium-tier signature feature.",
-    tier: "premium",
-    big: true,
-  },
-  {
-    icon: UserSquare2,
-    title: "Staff & Payroll",
-    desc: "Staff ledgers, salary disbursement, advances and role-based permissions per module.",
-    tier: "moderate",
-  },
-  {
-    icon: Receipt,
-    title: "Expenses & Reports",
-    desc: "Voucher tracking, income statements and exportable reports for every part of the business.",
-    tier: "basic",
-  },
+  { id: "properties", icon: Building2, tier: "basic", big: true },
+  { id: "crm", icon: Users2, tier: "moderate" },
+  { id: "accounting", icon: Landmark, tier: "moderate" },
+  { id: "plotmap", icon: MapPinned, tier: "premium", big: true },
+  { id: "payroll", icon: UserSquare2, tier: "moderate" },
+  { id: "expenses", icon: Receipt, tier: "basic" },
 ];
 
 const STEPS = [
-  {
-    icon: ListChecks,
-    title: "Set up your properties",
-    desc: "Add projects, blocks and properties with per-Marla or per-sqft pricing in minutes — bulk-import if you're migrating from a register.",
-  },
-  {
-    icon: HandCoins,
-    title: "Book & collect",
-    desc: "Record a booking, generate an installment schedule, and post every payment against a real cash or bank account.",
-  },
-  {
-    icon: LineChart,
-    title: "Grow with insight",
-    desc: "Bring on staff, run leads through the CRM pipeline, and watch collections and portfolio health on one dashboard.",
-  },
+  { icon: ListChecks },
+  { icon: HandCoins },
+  { icon: LineChart },
 ];
 
 // Deterministic plot-status grid for the "Interactive Plot Map" feature card preview.
@@ -150,6 +113,7 @@ function Logomark({ className }: { className?: string }) {
 }
 
 function SiteNav() {
+  const t = useT();
   const [open, setOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
 
@@ -174,9 +138,9 @@ function SiteNav() {
         </Link>
         <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
           {[
-            { href: "#features", label: "Features" },
-            { href: "#how-it-works", label: "How it works" },
-            { href: "#pricing", label: "Pricing" },
+            { href: "#features", label: t("landing.nav.features") },
+            { href: "#how-it-works", label: t("landing.nav.how") },
+            { href: "#pricing", label: t("landing.nav.pricing") },
           ].map((item) => (
             <a
               key={item.href}
@@ -189,12 +153,13 @@ function SiteNav() {
           ))}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
+          <LanguageSwitcher />
           <Button variant="ghost" asChild>
-            <Link href="/dashboard">Log in</Link>
+            <Link href="/dashboard">{t("landing.nav.login")}</Link>
           </Button>
           <Button asChild>
             <Link href="/dashboard">
-              Try the demo
+              {t("landing.nav.demo")}
               <ArrowRight className="size-4 rtl:-scale-x-100" />
             </Link>
           </Button>
@@ -204,7 +169,7 @@ function SiteNav() {
           size="icon"
           className="md:hidden"
           onClick={() => setOpen(true)}
-          aria-label="Open menu"
+          aria-label={t("landing.nav.openMenu")}
         >
           <Menu className="size-5" />
         </Button>
@@ -220,9 +185,9 @@ function SiteNav() {
           </SheetHeader>
           <nav className="flex flex-col gap-1 px-4 text-sm">
             {[
-              { href: "#features", label: "Features" },
-              { href: "#how-it-works", label: "How it works" },
-              { href: "#pricing", label: "Pricing" },
+              { href: "#features", label: t("landing.nav.features") },
+              { href: "#how-it-works", label: t("landing.nav.how") },
+              { href: "#pricing", label: t("landing.nav.pricing") },
             ].map((item) => (
               <a
                 key={item.href}
@@ -235,12 +200,13 @@ function SiteNav() {
             ))}
           </nav>
           <div className="mt-4 flex flex-col gap-2 px-4">
+            <LanguageSwitcher variant="full" align="start" />
             <Button variant="outline" asChild>
-              <Link href="/dashboard">Log in</Link>
+              <Link href="/dashboard">{t("landing.nav.login")}</Link>
             </Button>
             <Button asChild>
               <Link href="/dashboard">
-                Try the demo
+                {t("landing.nav.demo")}
                 <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
@@ -252,6 +218,7 @@ function SiteNav() {
 }
 
 function Hero() {
+  const t = useT();
   const heroChartData = monthlyCollections.map((d) => ({ label: d.month, v: d.collections }));
   const mockRef = React.useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = React.useState({ x: 0, y: 0 });
@@ -288,7 +255,7 @@ function Hero() {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
             <span className="relative inline-flex size-2 rounded-full bg-success" />
           </span>
-          Built for Pakistan&apos;s property dealers
+          {t("landing.hero.badge")}
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 14 }}
@@ -296,8 +263,7 @@ function Hero() {
           transition={{ duration: 0.55, delay: 0.05 }}
           className="font-heading text-[2.75rem] font-semibold leading-[1.05] tracking-tight md:text-7xl"
         >
-          The ERP &amp; CRM built for how property dealers{" "}
-          <span className="text-gradient-brand italic">actually</span> work
+          <Emph text={t("landing.hero.title")} className="text-gradient-brand italic rtl:not-italic" />
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 14 }}
@@ -305,8 +271,7 @@ function Hero() {
           transition={{ duration: 0.55, delay: 0.12 }}
           className="mx-auto mt-5 max-w-xl text-balance text-base text-muted-foreground md:text-lg"
         >
-          Bookings, installments, accounts, staff and plot maps in one fast, beautifully
-          designed workspace — with a plan that grows from a solo dealer to a multi-branch agency.
+          {t("landing.hero.sub")}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -317,16 +282,16 @@ function Hero() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" asChild>
               <Link href="/dashboard">
-                Explore the prototype
+                {t("landing.hero.cta")}
                 <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="#pricing">See pricing</a>
+              <a href="#pricing">{t("landing.hero.seePricing")}</a>
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            No credit card required — this build runs on sample data.
+            {t("landing.hero.note")}
           </p>
         </motion.div>
       </div>
@@ -347,7 +312,7 @@ function Hero() {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
             <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
           </span>
-          Live prototype
+          {t("landing.hero.chipLive")}
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: -10, rotate: 5 }}
@@ -356,7 +321,7 @@ function Hero() {
           className="absolute -start-3 -bottom-4 z-10 hidden items-center gap-1.5 rounded-full border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-medium text-gold shadow-md sm:flex"
         >
           <Sparkles className="size-3" />
-          3 subscription tiers
+          {t("landing.hero.chipTiers")}
         </motion.div>
 
         <motion.div
@@ -370,8 +335,8 @@ function Hero() {
               <HandCoins className="size-4.5" />
             </span>
             <div className="text-start">
-              <p className="text-xs font-semibold">Installment received</p>
-              <p className="text-[11px] text-muted-foreground">Rs 450,000 · PRP-1042</p>
+              <p className="text-xs font-semibold">{t("landing.hero.notifTitle")}</p>
+              <p className="text-[11px] text-muted-foreground" dir="ltr">Rs 450,000 · PRP-1042</p>
             </div>
           </div>
         </motion.div>
@@ -386,8 +351,8 @@ function Hero() {
               <MapPinned className="size-4.5" />
             </span>
             <div className="text-start">
-              <p className="text-xs font-semibold">Plot B-14 booked</p>
-              <p className="text-[11px] text-muted-foreground">Emerald Gardens · just now</p>
+              <p className="text-xs font-semibold">{t("landing.hero.plotTitle")}</p>
+              <p className="text-[11px] text-muted-foreground">{t("landing.hero.plotSub", { project: "Emerald Gardens" })}</p>
             </div>
           </div>
         </motion.div>
@@ -408,14 +373,14 @@ function Hero() {
           </div>
           <div className="grid grid-cols-2 gap-3 p-6 md:grid-cols-4">
             {[
-              { label: "Available Units", value: "128", delta: "+4.2%" },
-              { label: "Total Collections", value: "PKR 42.6M", delta: "+12.8%" },
-              { label: "Pending Installments", value: "PKR 6.1M", delta: "-3.1%" },
-              { label: "Active Deals", value: "37", delta: "+7.5%" },
+              { label: t("landing.hero.tileAvailable"), value: "128", delta: "+4.2%" },
+              { label: t("landing.hero.tileCollections"), value: "PKR 42.6M", delta: "+12.8%" },
+              { label: t("landing.hero.tilePending"), value: "PKR 6.1M", delta: "-3.1%" },
+              { label: t("landing.hero.tileDeals"), value: "37", delta: "+7.5%" },
             ].map((tile) => (
               <div key={tile.label} className="rounded-xl border border-border/60 bg-background p-4 text-start">
                 <p className="text-[11px] text-muted-foreground">{tile.label}</p>
-                <p className="mt-1 font-heading text-xl font-semibold">{tile.value}</p>
+                <p className="mt-1 font-heading text-xl font-semibold" dir="ltr">{tile.value}</p>
                 <span
                   className={cn(
                     "mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-medium",
@@ -423,7 +388,7 @@ function Hero() {
                   )}
                 >
                   <ArrowUpRight className={cn("size-3", tile.delta.startsWith("-") && "rotate-90")} />
-                  {tile.delta}
+                  <bdi dir="ltr">{tile.delta}</bdi>
                 </span>
               </div>
             ))}
@@ -454,12 +419,11 @@ function Hero() {
   );
 }
 
-const MARQUEE_ITEMS = [
-  "Properties & Bookings", "CRM Pipeline", "Double-entry Accounts", "Plot Map", "Payroll & Leave",
-  "Post-Dated Cheques", "Quotations", "Sales Invoices", "Vouchers", "Contracts", "Project Budgets", "Financial Reports",
-];
+const MARQUEE_COUNT = 12;
 
 function ModuleMarquee() {
+  const t = useT();
+  const MARQUEE_ITEMS = Array.from({ length: MARQUEE_COUNT }, (_, i) => t(`landing.marquee.${i + 1}`));
   return (
     <div className="relative overflow-hidden border-t border-border/60 bg-background py-5 [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
       <div className="flex w-max animate-marquee gap-10 whitespace-nowrap hover:[animation-play-state:paused]">
@@ -475,11 +439,12 @@ function ModuleMarquee() {
 }
 
 function StatsStrip() {
+  const t = useT();
   const stats = [
-    { icon: Sparkles, value: "3", label: "Subscription tiers", count: 3 },
-    { icon: ListChecks, value: "12+", label: "ERP/CRM modules", count: 12, suffix: "+" },
-    { icon: HandCoins, value: "PKR", label: "Native currency & CNIC fields" },
-    { icon: Users2, value: "EN/UR", label: "Bilingual ready" },
+    { icon: Sparkles, value: "3", label: t("landing.stats.tiers"), count: 3 },
+    { icon: ListChecks, value: "12+", label: t("landing.stats.modules"), count: 12, suffix: "+" },
+    { icon: HandCoins, value: "PKR", label: t("landing.stats.currency") },
+    { icon: Users2, value: "8", label: t("landing.stats.languages"), count: 8 },
   ];
   return (
     <section className="border-y border-border/60 bg-secondary/30">
@@ -504,20 +469,21 @@ function StatsStrip() {
 }
 
 function FeaturesSection() {
+  const t = useT();
   return (
     <section id="features" className="mx-auto max-w-6xl px-4 py-24 md:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-          Everything a property dealer&apos;s office needs
+          {t("landing.features.title")}
         </h2>
         <p className="mt-3 text-muted-foreground">
-          Every module below is gated by subscription tier — see the full breakdown on the pricing table.
+          {t("landing.features.sub")}
         </p>
       </div>
       <div className="mt-14 grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
           <motion.div
-            key={f.title}
+            key={f.id}
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
@@ -537,29 +503,29 @@ function FeaturesSection() {
               <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
                 <f.icon className="size-5" />
               </div>
-              <Badge variant="outline" className={cn("shrink-0 text-[10px] font-medium capitalize", TIER_CHIP[f.tier])}>
-                {f.tier}
+              <Badge variant="outline" className={cn("shrink-0 text-[10px] font-medium", TIER_CHIP[f.tier])}>
+                {t(`plan.${f.tier}`)}
               </Badge>
             </div>
-            <h3 className="relative mt-4 font-heading text-base font-semibold">{f.title}</h3>
-            <p className="relative mt-1.5 max-w-md text-sm text-muted-foreground">{f.desc}</p>
+            <h3 className="relative mt-4 font-heading text-base font-semibold">{t(`landing.feature.${f.id}.title`)}</h3>
+            <p className="relative mt-1.5 max-w-md text-sm text-muted-foreground">{t(`landing.feature.${f.id}.desc`)}</p>
 
-            {f.title === "Properties & Bookings" && (
+            {f.id === "properties" && (
               <div className="relative mt-5 flex h-2 overflow-hidden rounded-full">
                 <div className="h-full bg-[var(--chart-1)]" style={{ width: "60%" }} />
                 <div className="h-full bg-[var(--gold)]" style={{ width: "15%" }} />
                 <div className="h-full bg-[var(--chart-4)]" style={{ width: "25%" }} />
               </div>
             )}
-            {f.title === "Properties & Bookings" && (
+            {f.id === "properties" && (
               <div className="relative mt-2 flex gap-4 text-[11px] text-muted-foreground">
-                <span>Available 60%</span>
-                <span>Reserved 15%</span>
-                <span>Sold 25%</span>
+                <span>{t("status.available")} 60%</span>
+                <span>{t("status.reserved")} 15%</span>
+                <span>{t("status.sold")} 25%</span>
               </div>
             )}
 
-            {f.title === "Interactive Plot Map" && (
+            {f.id === "plotmap" && (
               <div className="relative mt-5 grid grid-cols-6 gap-1.5">
                 {PLOT_PREVIEW.map((status, idx) => (
                   <motion.span
@@ -581,15 +547,16 @@ function FeaturesSection() {
 }
 
 function HowItWorks() {
+  const t = useT();
   return (
     <section id="how-it-works" className="border-y border-border/60 bg-secondary/20 py-24">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-            From first plot to full agency, in three steps
+            {t("landing.how.title")}
           </h2>
           <p className="mt-3 text-muted-foreground">
-            No migrations team, no lengthy onboarding — this is built to be usable on day one.
+            {t("landing.how.sub")}
           </p>
         </div>
         <div className="relative mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -605,7 +572,7 @@ function HowItWorks() {
           </div>
           {STEPS.map((step, i) => (
             <motion.div
-              key={step.title}
+              key={i}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
@@ -617,9 +584,9 @@ function HowItWorks() {
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <step.icon className="size-4 text-primary" />
-                <h3 className="font-heading text-base font-semibold">{step.title}</h3>
+                <h3 className="font-heading text-base font-semibold">{t(`landing.step.${i + 1}.title`)}</h3>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{step.desc}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t(`landing.step.${i + 1}.desc`)}</p>
             </motion.div>
           ))}
         </div>
@@ -635,27 +602,28 @@ const TIER_ICON: Record<string, typeof Building2> = {
 };
 
 function PricingSection() {
+  const t = useT();
   const [annual, setAnnual] = React.useState(false);
 
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-4 py-24 md:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-heading text-3xl font-semibold tracking-tight md:text-4xl">
-          Simple pricing that grows with your agency
+          {t("landing.pricing.title")}
         </h2>
         <p className="mt-3 text-muted-foreground">
-          Start on Basic, upgrade the moment you hire your first agent or open a second project.
+          {t("landing.pricing.sub")}
         </p>
         <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2">
           <span className={cn("text-sm", !annual && "font-medium text-foreground", annual && "text-muted-foreground")}>
-            Monthly
+            {t("landing.pricing.monthly")}
           </span>
-          <Switch checked={annual} onCheckedChange={setAnnual} aria-label="Toggle annual billing" />
+          <Switch checked={annual} onCheckedChange={setAnnual} aria-label={t("landing.pricing.toggleAria")} />
           <span className={cn("text-sm", annual && "font-medium text-foreground", !annual && "text-muted-foreground")}>
-            Annual
+            {t("landing.pricing.annual")}
           </span>
           <Badge className="bg-gold/15 text-gold border-gold/30" variant="outline">
-            2 months free
+            {t("landing.pricing.twoMonthsFree")}
           </Badge>
         </div>
       </div>
@@ -680,11 +648,11 @@ function PricingSection() {
               {tier.highlight && <PlotGridMotif className="rounded-2xl opacity-60" />}
               {tier.highlight && (
                 <span className="absolute -top-3 start-7 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
-                  Most popular
+                  {t("landing.pricing.mostPopular")}
                 </span>
               )}
               <div className="relative flex items-center justify-between">
-                <h3 className="font-heading text-lg font-semibold">{tier.name}</h3>
+                <h3 className="font-heading text-lg font-semibold">{t(`plan.${tier.id}`)}</h3>
                 <div
                   className={cn(
                     "flex size-9 items-center justify-center rounded-lg",
@@ -694,21 +662,21 @@ function PricingSection() {
                   <Icon className="size-4.5" />
                 </div>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{tier.tagline}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t(`pricing.${tier.id}.tagline`)}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="font-heading text-3xl font-semibold">
                   <AnimatedNumber value={monthlyEquivalent} format={(n) => formatPkr(n)} />
                 </span>
-                <span className="text-sm text-muted-foreground">/month</span>
+                <span className="text-sm text-muted-foreground">{t("landing.pricing.perMonth")}</span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {annual ? "billed annually" : tier.seats}
+                {annual ? t("landing.pricing.billedAnnually") : t(`pricing.${tier.id}.seats`, { count: tier.seats.replace(/\D/g, "") })}
               </p>
               <ul className="mt-6 flex-1 space-y-2.5">
-                {tier.features.map((f) => (
+                {tier.features.map((f, fi) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <span className="text-foreground/85">{f}</span>
+                    <span className="text-foreground/85">{t(`pricing.${tier.id}.f${fi + 1}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -717,19 +685,19 @@ function PricingSection() {
                 variant={tier.highlight ? "default" : "outline"}
                 asChild
               >
-                <Link href="/dashboard">Get started</Link>
+                <Link href="/dashboard">{t("landing.pricing.getStarted")}</Link>
               </Button>
             </motion.div>
           );
         })}
       </div>
       <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-border/70 bg-card/60 p-5 text-center">
-        <p className="font-heading text-lg font-semibold">Need more users?</p>
-        <p className="mt-1 text-sm text-muted-foreground">Add seats to any plan, billed monthly.</p>
+        <p className="font-heading text-lg font-semibold">{t("landing.pricing.moreUsers")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("landing.pricing.moreUsersSub")}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-3">
           {SEAT_PACKS.map((p) => (
             <span key={p.seats} className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-sm">
-              <span className="font-semibold">+{p.seats} seats</span> · {formatPkr(p.priceMonthlyPkr)}/month
+              <span className="font-semibold">{t("landing.pricing.seatPack", { seats: p.seats })}</span> · {t("landing.pricing.seatPrice", { price: formatPkr(p.priceMonthlyPkr) })}
             </span>
           ))}
         </div>
@@ -739,6 +707,7 @@ function PricingSection() {
 }
 
 function CtaBanner() {
+  const t = useT();
   return (
     <section className="mx-auto max-w-6xl px-4 pb-24 md:px-6">
       <div className="surface-hero sheen relative isolate overflow-hidden rounded-3xl px-8 py-16 text-primary-foreground shadow-2xl shadow-primary/25">
@@ -754,14 +723,14 @@ function CtaBanner() {
         <div className="pointer-events-none absolute -end-10 -top-16 size-56 rounded-full bg-gold/25 blur-3xl" />
         <div className="relative flex flex-col items-center gap-5 text-center md:flex-row md:justify-between md:text-start">
           <div>
-            <h3 className="font-heading text-3xl font-semibold md:text-4xl">Ready to modernize <span className="text-gradient-gold italic">your agency?</span></h3>
+            <h3 className="font-heading text-3xl font-semibold md:text-4xl"><Emph text={t("landing.cta.title")} className="text-gradient-gold italic rtl:not-italic" /></h3>
             <p className="mt-1.5 text-primary-foreground/80">
-              Explore the full prototype with dummy data — no signup required.
+              {t("landing.cta.sub")}
             </p>
           </div>
           <Button size="lg" className="h-11 bg-gold px-6 text-gold-foreground shadow-lg shadow-gold/30 transition-transform hover:-translate-y-0.5 hover:bg-gold/90" asChild>
             <Link href="/dashboard">
-              Open the demo
+              {t("landing.cta.button")}
               <ArrowRight className="size-4 rtl:-scale-x-100" />
             </Link>
           </Button>
@@ -772,20 +741,21 @@ function CtaBanner() {
 }
 
 function SiteFooter() {
+  const t = useT();
   const columns = [
     {
-      title: "Product",
+      title: t("landing.footer.product"),
       links: [
-        { label: "Features", href: "#features" },
-        { label: "How it works", href: "#how-it-works" },
-        { label: "Pricing", href: "#pricing" },
+        { label: t("landing.nav.features"), href: "#features" },
+        { label: t("landing.nav.how"), href: "#how-it-works" },
+        { label: t("landing.nav.pricing"), href: "#pricing" },
       ],
     },
     {
-      title: "Explore",
+      title: t("landing.footer.explore"),
       links: [
-        { label: "Dashboard demo", href: "/dashboard" },
-        { label: "Billing & plans", href: "/dashboard/settings/billing" },
+        { label: t("landing.footer.demo"), href: "/dashboard" },
+        { label: t("landing.footer.billing"), href: "/dashboard/settings/billing" },
       ],
     },
   ];
@@ -799,9 +769,7 @@ function SiteFooter() {
             <Logomark />
             <span className="font-heading text-[15px] font-semibold">{APP_NAME}</span>
           </Link>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">{APP_TAGLINE} — {" "}
-            bookings, installments, accounts and reports in one workspace.
-          </p>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">{t("landing.footer.tagline")}</p>
         </div>
         {columns.map((col) => (
           <div key={col.title}>
@@ -823,8 +791,8 @@ function SiteFooter() {
       </div>
       <div className="border-t border-border/60 py-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-muted-foreground md:flex-row md:px-6">
-          <span>© 2026 {APP_NAME}. Prototype build — dummy data only.</span>
-          <span>Made for the Pakistani property market</span>
+          <span>{t("landing.footer.copyright", { name: APP_NAME })}</span>
+          <span>{t("landing.footer.made")}</span>
         </div>
       </div>
     </footer>

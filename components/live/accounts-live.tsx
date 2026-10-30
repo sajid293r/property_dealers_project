@@ -21,10 +21,10 @@ import { useBankAccounts, useChartAccounts, usePermissions } from "@/lib/hooks/u
 import { num, trialBalance } from "@/lib/api/finance";
 import { fiscalYearOf, todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
-
-const CLASS_LABEL = { asset: "Assets", liability: "Liabilities", equity: "Capital", income: "Income", expense: "Expenses" } as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function LiveAccounts() {
+  const t = useT();
   const { company } = useCompany();
   const { can } = usePermissions();
   const banks = useBankAccounts();
@@ -53,15 +53,15 @@ export function LiveAccounts() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={Landmark}
-        eyebrow="Finance"
-        title="Accounts"
-        description="Your bank accounts and the chart of accounts, straight from the ledger"
+        eyebrow={t("nav.section.finance")}
+        title={t("acc.title")}
+        description={t("acc.description")}
         actions={
           <div className="flex flex-wrap gap-2">
             {can("accounts.create") && (
               <>
-                <Button variant="outline" className="gap-1.5" onClick={() => setAccountDialog(true)}><BookOpen className="size-4" /> New account</Button>
-                <Button className="gap-1.5" onClick={() => setBankDialog(true)}><Plus className="size-4" /> Add bank account</Button>
+                <Button variant="outline" className="gap-1.5" onClick={() => setAccountDialog(true)}><BookOpen className="size-4" /> {t("acc.newAccount")}</Button>
+                <Button className="gap-1.5" onClick={() => setBankDialog(true)}><Plus className="size-4" /> {t("acc.addBank")}</Button>
               </>
             )}
           </div>
@@ -69,15 +69,15 @@ export function LiveAccounts() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatTile icon={Landmark} label="Bank accounts" value={(banks.data ?? []).length} />
-        <StatTile icon={Wallet} label="Money in banks" value={formatMoney(bankTotal, { compact: true })} accent="success" />
-        <StatTile icon={Scale} label="Cash in hand" value={cashAccount ? formatMoney(balanceById.get(cashAccount.id) ?? 0, { compact: true }) : "—"} accent="gold" />
+        <StatTile icon={Landmark} label={t("acc.tile.banks")} value={(banks.data ?? []).length} />
+        <StatTile icon={Wallet} label={t("acc.tile.inBanks")} value={formatMoney(bankTotal, { compact: true })} accent="success" />
+        <StatTile icon={Scale} label={t("acc.tile.cash")} value={cashAccount ? formatMoney(balanceById.get(cashAccount.id) ?? 0, { compact: true }) : "—"} accent="gold" />
       </div>
 
       <Tabs defaultValue="banks">
         <TabsList>
-          <TabsTrigger value="banks">Bank accounts</TabsTrigger>
-          <TabsTrigger value="chart">Chart of accounts</TabsTrigger>
+          <TabsTrigger value="banks">{t("acc.tab.banks")}</TabsTrigger>
+          <TabsTrigger value="chart">{t("acc.tab.chart")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="banks" className="mt-4">
@@ -86,8 +86,8 @@ export function LiveAccounts() {
           ) : (banks.data ?? []).length === 0 ? (
             <Card className="p-10 text-center">
               <Landmark className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium">No bank accounts yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Add the company’s accounts to record bank payments, receipts and reconcile statements.</p>
+              <p className="mt-3 text-sm font-medium">{t("acc.noBanks")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("acc.noBanksHint")}</p>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -103,15 +103,15 @@ export function LiveAccounts() {
                     </div>
                     <p className="font-mono text-xs text-muted-foreground">{b.accountNo}{b.iban ? ` · ${b.iban}` : ""}</p>
                     <div>
-                      <p className="text-xs text-muted-foreground">Book balance</p>
+                      <p className="text-xs text-muted-foreground">{t("acc.bookBalance")}</p>
                       <p className="break-words font-heading text-xl font-semibold tabular-nums">{formatMoney(num(b.bookBalance))}</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {b.unclearedCount} uncleared · {b.lastReconciledOn ? `reconciled ${formatDate(b.lastReconciledOn)}` : "never reconciled"}
+                      {t("acc.uncleared", { count: b.unclearedCount })} · {b.lastReconciledOn ? t("acc.reconciledOn", { date: formatDate(b.lastReconciledOn) }) : t("acc.neverReconciled")}
                     </p>
                     <div className="flex gap-2 pt-1">
-                      <Button size="sm" variant="outline" onClick={() => setLedger({ id: b.glAccountId, title: `${b.bankName} · ${b.accountNo}` })}>Transactions</Button>
-                      <Button size="sm" variant="outline" asChild><Link href={`/dashboard/bank-reconciliation?account=${b.id}`}>Reconcile</Link></Button>
+                      <Button size="sm" variant="outline" onClick={() => setLedger({ id: b.glAccountId, title: `${b.bankName} · ${b.accountNo}` })}>{t("acc.transactions")}</Button>
+                      <Button size="sm" variant="outline" asChild><Link href={`/dashboard/bank-reconciliation?account=${b.id}`}>{t("acc.reconcile")}</Link></Button>
                     </div>
                   </Card>
                 </motion.div>
@@ -123,17 +123,17 @@ export function LiveAccounts() {
         <TabsContent value="chart" className="mt-4">
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <DataTableSearch value={search} onChange={setSearch} placeholder="Search name or code…" />
-              <span className="text-xs text-muted-foreground">{rows.length} accounts</span>
+              <DataTableSearch value={search} onChange={setSearch} placeholder={t("acc.search")} />
+              <span className="text-xs text-muted-foreground">{t("acc.count", { count: rows.length })}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2 font-medium">Code</th>
-                    <th className="pb-2 font-medium">Name</th>
-                    <th className="pb-2 font-medium">Type</th>
-                    <th className="pb-2 pe-3 text-end font-medium">Balance</th>
+                    <th className="pb-2 font-medium">{t("acc.col.code")}</th>
+                    <th className="pb-2 font-medium">{t("acc.col.name")}</th>
+                    <th className="pb-2 font-medium">{t("acc.col.type")}</th>
+                    <th className="pb-2 pe-3 text-end font-medium">{t("acc.col.balance")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -150,7 +150,7 @@ export function LiveAccounts() {
                           >
                             <td className="whitespace-nowrap py-2 font-mono text-xs text-muted-foreground">{a.code}</td>
                             <td className="py-2" style={{ paddingLeft: depth * 12 }}>{a.name}</td>
-                            <td className="py-2 text-muted-foreground">{CLASS_LABEL[a.class]}</td>
+                            <td className="py-2 text-muted-foreground">{t(`acc.class.${a.class}`)}</td>
                             <td className="whitespace-nowrap py-2 pe-3 text-end font-mono tabular-nums">{bal !== undefined && bal !== 0 ? formatMoney(bal) : ""}</td>
                           </tr>
                         );
@@ -158,7 +158,7 @@ export function LiveAccounts() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Financial year {fiscalYearOf(todayIso()).name}. Click an account to see its transactions.</p>
+            <p className="mt-3 text-xs text-muted-foreground">{t("acc.fyNote", { year: fiscalYearOf(todayIso()).name })}</p>
           </Card>
         </TabsContent>
       </Tabs>

@@ -1,6 +1,7 @@
 import { Ban, CheckCircle2, Clock, FileEdit, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { liveVoucherMeta, STATUS_LABEL } from "@/lib/live-vouchers";
+import { liveVoucherMeta, voucherStatusLabel } from "@/lib/live-vouchers";
+import { useT } from "@/lib/i18n/provider";
 import type { VoucherStatus, VoucherType } from "@/lib/api/finance";
 import { cn } from "@/lib/utils";
 
@@ -30,12 +31,13 @@ const STATUS = {
 } as const;
 
 export function LiveVoucherStatusBadge({ status, className }: { status: VoucherStatus; className?: string }) {
+  useT();
   const s = STATUS[status];
   const Icon = s.icon;
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", s.classes, className)}>
       <Icon className="size-3" />
-      {STATUS_LABEL[status]}
+      {voucherStatusLabel(status)}
     </span>
   );
 }

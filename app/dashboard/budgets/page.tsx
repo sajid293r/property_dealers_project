@@ -62,8 +62,11 @@ import {
 import { formatPkr, formatAxis } from "@/lib/format";
 import type { Budget, BudgetLine } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 function DemoBudgetsPage() {
+  const t = useT();
   const { data: budgets, isLoading } = useBudgets();
   const { data: lines } = useBudgetLines();
   const { data: projects } = useProjects();
@@ -104,23 +107,23 @@ function DemoBudgetsPage() {
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader
         icon={PiggyBank}
-        eyebrow="Finance"
-        title="Budgets"
-        description={`${budgets?.length ?? 0} budgets · plan the spend, watch it live against the ledger, and stop overruns before they happen`}
+        eyebrow={t("nav.section.finance")}
+        title={t("perm.module.budgets")}
+        description={t("dm.bud.description", { count: budgets?.length ?? 0 })}
         actions={
           <Button className="gap-1.5" onClick={() => setNewOpen(true)}>
             <PlusCircle className="size-4" />
-            New Budget
+            {t("dm.new_budget")}
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Project budgets (approved)" value={liveTotals.budget} format={(n) => formatPkr(n, { compact: true })} icon={PiggyBank} index={0} />
-        <KpiCard label="Paid to date" value={liveTotals.actual} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} accent="gold" index={1} />
-        <KpiCard label="Committed, not yet paid" value={liveTotals.committed} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} index={2} />
+        <KpiCard label={t("dm.project_budgets_approved")} value={liveTotals.budget} format={(n) => formatPkr(n, { compact: true })} icon={PiggyBank} index={0} />
+        <KpiCard label={t("dm.paid_to_date")} value={liveTotals.actual} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} accent="gold" index={1} />
+        <KpiCard label={t("dm.committed_not_yet_paid")} value={liveTotals.committed} format={(n) => formatPkr(n, { compact: true })} icon={HandCoins} index={2} />
         <KpiCard
-          label="Still available"
+          label={t("dm.still_available")}
           value={Math.max(liveTotals.available, 0)}
           format={(n) => formatPkr(n, { compact: true })}
           icon={Gauge}
@@ -138,11 +141,11 @@ function DemoBudgetsPage() {
             </span>
             <div>
               <h3 className="font-heading text-base font-semibold">
-                {attention.length ? `${attention.length} budget line${attention.length > 1 ? "s need" : " needs"} attention` : "All budgets are on track"}
+                {attention.length ? t("dm.bud.attention", { count: attention.length }) : t("dm.bud.on_track")}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Alerts fire at 85 % of a line and again when it goes over.
-                {pendingApproval > 0 && ` ${pendingApproval} budget${pendingApproval > 1 ? "s are" : " is"} waiting for approval.`}
+                {t("dm.alerts_fire_at_85_of")}
+                {pendingApproval > 0 && ` ${t("dm.bud.waiting", { count: pendingApproval })}`}
               </p>
             </div>
           </div>
@@ -179,9 +182,9 @@ function DemoBudgetsPage() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="projects" className="gap-1.5"><FolderKanban /> Project budgets</TabsTrigger>
-          <TabsTrigger value="operating" className="gap-1.5"><CalendarRange /> Operating {BUDGET_FY}</TabsTrigger>
-          <TabsTrigger value="variance" className="gap-1.5"><ScrollText /> Variance report</TabsTrigger>
+          <TabsTrigger value="projects" className="gap-1.5"><FolderKanban /> {t("dm.project_budgets")}</TabsTrigger>
+          <TabsTrigger value="operating" className="gap-1.5"><CalendarRange /> {t("dm.bud.operating", { year: BUDGET_FY })}</TabsTrigger>
+          <TabsTrigger value="variance" className="gap-1.5"><ScrollText /> {t("dm.variance_report")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="mt-5">
@@ -223,7 +226,7 @@ function DemoBudgetsPage() {
       <BudgetDetailSheet
         budget={selected}
         lines={selected ? linesOf(allLines, selected.id) : []}
-        subtitle={selected ? (selected.kind === "project" ? `Project budget · ${projectName(selected) ?? ""}` : `Annual operating budget · ${selected.fiscalYear}`) : undefined}
+        subtitle={selected ? (selected.kind === "project" ? t("dm.bud.project_budget", { name: projectName(selected) ?? "" }) : t("dm.bud.annual_budget", { year: selected.fiscalYear })) : undefined}
         open={selected !== null}
         onOpenChange={(o) => !o && setSelectedId(null)}
       />
@@ -237,6 +240,7 @@ function DemoBudgetsPage() {
 }
 
 function EmptyState({ onNew, operating }: { onNew: () => void; operating?: boolean }) {
+  const t = useT();
   return (
     <SpotlightCard className="flex flex-col items-center gap-3 border-dashed p-14 text-center">
       <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -244,9 +248,9 @@ function EmptyState({ onNew, operating }: { onNew: () => void; operating?: boole
       </span>
       <p className="font-heading text-lg font-semibold">{operating ? "No operating budget yet" : "No project budgets yet"}</p>
       <p className="max-w-sm text-sm text-muted-foreground">
-        Set a limit first, then every voucher, order and bill is measured against it automatically.
+        {t("dm.set_a_limit_first_then")}
       </p>
-      <Button className="gap-1.5" onClick={onNew}><PlusCircle className="size-4" /> Create a budget</Button>
+      <Button className="gap-1.5" onClick={onNew}><PlusCircle className="size-4" /> {t("dm.create_a_budget")}</Button>
     </SpotlightCard>
   );
 }
@@ -285,7 +289,8 @@ function ProjectBudgetCard({
   index: number;
   onOpen: () => void;
 }) {
-  const t = sumLines(lines);
+  const t = useT();
+  const tot = sumLines(lines);
   const hot = lines.map((l) => ({ l, m: lineMetrics(l) })).filter((x) => x.m.health !== "ok").sort((a, b) => b.m.utilization - a.m.utilization);
   const forecast = lines.reduce((s, l) => s + l.forecastAmount, 0);
   const pendingRev = budget.revisions.filter((r) => r.status === "pending").length;
@@ -299,26 +304,26 @@ function ProjectBudgetCard({
       <SpotlightCard className="group h-full cursor-pointer p-5" onClick={onOpen} role="button" tabIndex={0}
         onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
         <div className="flex items-start gap-4">
-          <Ring value={t.utilization} health={t.health} />
+          <Ring value={tot.utilization} health={tot.health} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <BudgetStatusBadge status={budget.status} />
               <ControlModeChip mode={budget.controlMode} />
-              {pendingRev > 0 && <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">{pendingRev} revision pending</span>}
+              {pendingRev > 0 && <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">{t("dm.bud.revpending", { count: pendingRev })}</span>}
             </div>
             <h3 className="mt-1.5 truncate font-heading text-lg font-semibold">{projectName}</h3>
-            <p className="text-xs text-muted-foreground">v{budget.version} · {lines.length} lines</p>
+            <p className="text-xs text-muted-foreground">{t("dm.bud.vlines", { version: budget.version, count: lines.length })}</p>
           </div>
-          <HealthChip health={t.health} />
+          <HealthChip health={tot.health} />
         </div>
 
         <div className="mt-4">
-          <UtilizationBar budget={t.budget} actual={t.actual} committed={t.committed} delay={index * 0.07} />
+          <UtilizationBar budget={tot.budget} actual={tot.actual} committed={tot.committed} delay={index * 0.07} />
           <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-            <Figure label="Budget" value={t.budget} />
-            <Figure label="Paid" value={t.actual} />
-            <Figure label="Committed" value={t.committed} />
-            <Figure label={t.available >= 0 ? "Available" : "Over by"} value={Math.abs(t.available)} tone={t.available < 0 ? "over" : undefined} />
+            <Figure label={t("audit.entity.budgets")} value={tot.budget} />
+            <Figure label={t("deals.col.paid")} value={tot.actual} />
+            <Figure label={t("bud.sheet.committed")} value={tot.committed} />
+            <Figure label={tot.available >= 0 ? t("dm.bud.available") : t("dm.bud.over_by")} value={Math.abs(tot.available)} tone={tot.available < 0 ? "over" : undefined} />
           </div>
         </div>
 
@@ -327,15 +332,15 @@ function ProjectBudgetCard({
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="size-1.5 shrink-0 rounded-full" style={{ background: HEALTH_META[hot[0].m.health].color }} />
               <span className="truncate text-muted-foreground">
-                {hot[0].l.category} at <span className={cn("font-semibold", HEALTH_META[hot[0].m.health].text)}>{Math.round(hot[0].m.utilization * 100)}%</span>
-                {hot.length > 1 && ` · +${hot.length - 1} more`}
+                {hot[0].l.category} {t("dm.bud.at")} <span className={cn("font-semibold", HEALTH_META[hot[0].m.health].text)}>{Math.round(hot[0].m.utilization * 100)}%</span>
+                {hot.length > 1 && ` · ${t("dm.bud.more", { count: hot.length - 1 })}`}
               </span>
             </span>
           ) : (
-            <span className="text-muted-foreground">All lines on track</span>
+            <span className="text-muted-foreground">{t("dm.all_lines_on_track")}</span>
           )}
           <span className="flex shrink-0 items-center gap-1 font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-            Forecast {formatPkr(forecast, { compact: true })}
+            {t("dm.bud.forecast", { amount: formatPkr(forecast, { compact: true }) })}
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
           </span>
         </div>
@@ -354,6 +359,7 @@ function Figure({ label, value, tone }: { label: string; value: number; tone?: "
 }
 
 function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: BudgetLine[]; onOpen: () => void }) {
+  const t = useT();
   const monthly = FY_MONTHS.map((m, i) => ({
     month: m,
     Budget: lines.reduce((s, l) => s + (l.monthlyBudgetAmounts?.[i] ?? 0), 0),
@@ -368,19 +374,19 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Annual budget" value={annual} format={(n) => formatPkr(n, { compact: true })} icon={CalendarRange} index={0} />
-        <KpiCard label={`Spent so far (${FY_MONTHS[0]}–${FY_MONTHS[BUDGET_ELAPSED_MONTHS - 1]})`} value={ytdActual} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} accent="gold" index={1} />
-        <KpiCard label={variance >= 0 ? "Under plan to date" : "Over plan to date"} value={Math.abs(variance)} format={(n) => formatPkr(n, { compact: true })} icon={Gauge} index={2} />
-        <KpiCard label="Full-year outlook" value={forecast} format={(n) => formatPkr(n, { compact: true })} icon={ScrollText} accent="gold" index={3} />
+        <KpiCard label={t("dm.annual_budget")} value={annual} format={(n) => formatPkr(n, { compact: true })} icon={CalendarRange} index={0} />
+        <KpiCard label={t("dm.bud.spent_range", { from: FY_MONTHS[0]!, to: FY_MONTHS[BUDGET_ELAPSED_MONTHS - 1]! })} value={ytdActual} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} accent="gold" index={1} />
+        <KpiCard label={variance >= 0 ? t("dm.bud.under_plan") : t("dm.bud.over_plan")} value={Math.abs(variance)} format={(n) => formatPkr(n, { compact: true })} icon={Gauge} index={2} />
+        <KpiCard label={t("dm.full_year_outlook")} value={forecast} format={(n) => formatPkr(n, { compact: true })} icon={ScrollText} accent="gold" index={3} />
       </div>
 
       <SpotlightCard className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3 className="font-heading text-base font-semibold">Month by month — plan vs actual</h3>
+            <h3 className="font-heading text-base font-semibold">{t("dm.month_by_month_plan_vs")}</h3>
             <p className="text-xs text-muted-foreground">{budget.name} · fiscal year runs July to June</p>
           </div>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={onOpen}>Details <ArrowRight className="size-3.5 rtl:-scale-x-100" /></Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={onOpen}>{t("dm.details")} <ArrowRight className="size-3.5 rtl:-scale-x-100" /></Button>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <ComposedChart data={monthly} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -411,9 +417,9 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
               }
             />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="Budget" name="Budget" fill="url(#opBudgetFill)" radius={[6, 6, 0, 0]} maxBarSize={36} />
-            <Area dataKey="Actual" name="Actual" legendType="none" type="monotone" stroke="none" fill="url(#opActualFill)" connectNulls={false} />
-            <Line dataKey="Actual" name="Actual" type="monotone" stroke="var(--chart-1)" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: "var(--card)" }} connectNulls={false} />
+            <Bar dataKey="Budget" name={tx("dm.x.budget")} fill="url(#opBudgetFill)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+            <Area dataKey="Actual" name={tx("dm.x.actual")} legendType="none" type="monotone" stroke="none" fill="url(#opActualFill)" connectNulls={false} />
+            <Line dataKey="Actual" name={tx("Actual")} type="monotone" stroke="var(--chart-1)" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: "var(--card)" }} connectNulls={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </SpotlightCard>
@@ -423,13 +429,13 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start">
-                <th className="p-3 ps-5">Category</th>
-                <th className="p-3 text-end">Annual</th>
-                <th className="p-3 text-end">Plan to date</th>
-                <th className="p-3 text-end">Actual</th>
-                <th className="p-3 text-end">Variance</th>
-                <th className="hidden p-3 md:table-cell">Phasing</th>
-                <th className="p-3 pe-5 text-end">Outlook</th>
+                <th className="p-3 ps-5">{t("bud.line.categoryAria")}</th>
+                <th className="p-3 text-end">{t("landing.pricing.annual")}</th>
+                <th className="p-3 text-end">{t("dm.plan_to_date")}</th>
+                <th className="p-3 text-end">{t("dm.actual")}</th>
+                <th className="p-3 text-end">{t("dm.variance")}</th>
+                <th className="hidden p-3 md:table-cell">{t("dm.phasing")}</th>
+                <th className="p-3 pe-5 text-end">{t("dm.outlook")}</th>
               </tr>
             </thead>
             <tbody>
@@ -468,6 +474,7 @@ function OperatingView({ budget, lines, onOpen }: { budget: Budget; lines: Budge
 }
 
 function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: BudgetLine[]; onOpen: (id: string) => void }) {
+  const t = useT();
   const [budgetFilter, setBudgetFilter] = React.useState("all");
   const [healthFilter, setHealthFilter] = React.useState<"all" | BudgetHealth>("all");
   const nameOf = (id: string) => budgets.find((b) => b.id === id)?.name.replace(" — Project Budget", "") ?? "—";
@@ -482,19 +489,19 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
     <SpotlightCard className="p-4">
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <Select value={budgetFilter} onValueChange={setBudgetFilter}>
-          <SelectTrigger size="sm" className="w-64"><SelectValue placeholder="All budgets" /></SelectTrigger>
+          <SelectTrigger size="sm" className="w-64"><SelectValue placeholder={t("dm.all_budgets")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All budgets</SelectItem>
+            <SelectItem value="all">{t("dm.all_budgets")}</SelectItem>
             {budgets.map((b) => <SelectItem key={b.id} value={b.id}>{nameOf(b.id)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={healthFilter} onValueChange={(v) => setHealthFilter(v as typeof healthFilter)}>
           <SelectTrigger size="sm" className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Any status</SelectItem>
-            <SelectItem value="over">Over budget</SelectItem>
-            <SelectItem value="watch">Watch</SelectItem>
-            <SelectItem value="ok">On track</SelectItem>
+            <SelectItem value="all">{t("dm.any_status")}</SelectItem>
+            <SelectItem value="over">{t("dm.over_budget")}</SelectItem>
+            <SelectItem value="watch">{t("dm.watch")}</SelectItem>
+            <SelectItem value="ok">{t("dm.on_track")}</SelectItem>
           </SelectContent>
         </Select>
         <span className="ms-auto text-xs text-muted-foreground">{rows.length} lines · sorted by utilization</span>
@@ -503,13 +510,13 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/70 text-start">
-              <th className="pb-2.5">Budget</th>
-              <th className="pb-2.5">Category</th>
-              <th className="pb-2.5 text-end">Budget</th>
-              <th className="pb-2.5 text-end">Used</th>
-              <th className="pb-2.5 text-end">Available</th>
-              <th className="w-40 pb-2.5">Utilization</th>
-              <th className="pb-2.5">Status</th>
+              <th className="pb-2.5">{t("audit.entity.budgets")}</th>
+              <th className="pb-2.5">{t("bud.line.categoryAria")}</th>
+              <th className="pb-2.5 text-end">{t("audit.entity.budgets")}</th>
+              <th className="pb-2.5 text-end">{t("dm.used")}</th>
+              <th className="pb-2.5 text-end">{t("status.available")}</th>
+              <th className="w-40 pb-2.5">{t("dm.utilization")}</th>
+              <th className="pb-2.5">{t("common.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -531,7 +538,7 @@ function VarianceReport({ budgets, lines, onOpen }: { budgets: Budget[]; lines: 
               </motion.tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">No lines match these filters.</td></tr>
+              <tr><td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_lines_match_these_filters")}</td></tr>
             )}
           </tbody>
         </table>

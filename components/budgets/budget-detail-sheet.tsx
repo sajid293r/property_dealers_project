@@ -20,6 +20,8 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { Budget, BudgetLine, BudgetRevision } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 const REVISION_ICON: Record<BudgetRevision["type"], typeof FilePlus2> = {
   supplementary: FilePlus2,
@@ -40,6 +42,7 @@ export function BudgetDetailSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const totals = React.useMemo(() => sumLines(lines), [lines]);
   const chartData = lines.map((l) => ({
     name: l.category.split(/[ &]+/)[0],
@@ -67,11 +70,11 @@ export function BudgetDetailSheet({
 
             <div className="space-y-6 px-4 pb-8">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Tile label="Budget" value={formatPkr(totals.budget, { compact: true })} />
-                <Tile label="Paid" value={formatPkr(totals.actual, { compact: true })} />
-                <Tile label="Committed" value={formatPkr(totals.committed, { compact: true })} />
+                <Tile label={t("audit.entity.budgets")} value={formatPkr(totals.budget, { compact: true })} />
+                <Tile label={t("deals.col.paid")} value={formatPkr(totals.actual, { compact: true })} />
+                <Tile label={t("bud.sheet.committed")} value={formatPkr(totals.committed, { compact: true })} />
                 <Tile
-                  label={totals.available >= 0 ? "Available" : "Over by"}
+                  label={totals.available >= 0 ? t("dm.bud.available") : t("dm.bud.over_by")}
                   value={formatPkr(Math.abs(totals.available), { compact: true })}
                   tone={totals.available >= 0 ? "ok" : "over"}
                 />
@@ -79,21 +82,21 @@ export function BudgetDetailSheet({
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Utilization (paid + committed)</span>
+                  <span className="text-muted-foreground">{t("dm.utilization_paid_committed")}</span>
                   <span className={cn("font-semibold tabular-nums", HEALTH_META[totals.health].text)}>
                     {Math.round(totals.utilization * 100)}%
                   </span>
                 </div>
                 <UtilizationBar budget={totals.budget} actual={totals.actual} committed={totals.committed} height="h-3" />
                 <div className="mt-2 flex flex-wrap gap-4 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-primary" />Paid</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-[repeating-linear-gradient(135deg,var(--gold)_0_2px,white_2px_4px)]" />Committed</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-secondary ring-1 ring-border" />Remaining</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-primary" />{t("deals.col.paid")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-[repeating-linear-gradient(135deg,var(--gold)_0_2px,white_2px_4px)]" />{t("bud.sheet.committed")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-secondary ring-1 ring-border" />{t("dm.remaining")}</span>
                 </div>
               </div>
 
               <div className="rounded-xl border border-border/70 p-4">
-                <p className="mb-2 font-heading text-sm font-semibold">Where the money goes</p>
+                <p className="mb-2 font-heading text-sm font-semibold">{t("dm.where_the_money_goes")}</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={chartData} margin={{ top: 4, right: 4, left: -8, bottom: 0 }} barGap={2}>
                     <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 8" />
@@ -114,24 +117,24 @@ export function BudgetDetailSheet({
                         ) : null
                       }
                     />
-                    <Bar dataKey="Budget" fill="var(--border)" radius={[4, 4, 0, 0]} stackId="a" />
-                    <Bar dataKey="Paid" fill="var(--chart-1)" stackId="b" />
-                    <Bar dataKey="Committed" fill="var(--gold)" radius={[4, 4, 0, 0]} stackId="b" />
+                    <Bar dataKey="Budget" name={tx("Budget")} fill="var(--border)" radius={[4, 4, 0, 0]} stackId="a" />
+                    <Bar dataKey="Paid" name={tx("dm.x.paid")} fill="var(--chart-1)" stackId="b" />
+                    <Bar dataKey="Committed" name={tx("dm.x.committed")} fill="var(--gold)" radius={[4, 4, 0, 0]} stackId="b" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
               <div>
-                <p className="mb-2 font-heading text-sm font-semibold">Budget lines</p>
+                <p className="mb-2 font-heading text-sm font-semibold">{t("dm.budget_lines")}</p>
                 <div className="overflow-hidden rounded-xl border border-border/70">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-secondary/50 text-start">
-                        <th className="px-3 py-2 font-medium">Category</th>
-                        <th className="px-3 py-2 text-end font-medium">Budget</th>
-                        <th className="px-3 py-2 text-end font-medium">Used</th>
-                        <th className="px-3 py-2 text-end font-medium">Available</th>
-                        <th className="w-36 px-3 py-2 font-medium">Status</th>
+                        <th className="px-3 py-2 font-medium">{t("bud.line.categoryAria")}</th>
+                        <th className="px-3 py-2 text-end font-medium">{t("audit.entity.budgets")}</th>
+                        <th className="px-3 py-2 text-end font-medium">{t("dm.used")}</th>
+                        <th className="px-3 py-2 text-end font-medium">{t("status.available")}</th>
+                        <th className="w-36 px-3 py-2 font-medium">{t("common.status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -171,25 +174,25 @@ export function BudgetDetailSheet({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-secondary/50 p-4">
-                  <p className="text-xs text-muted-foreground">Forecast at completion</p>
+                  <p className="text-xs text-muted-foreground">{t("dm.forecast_at_completion")}</p>
                   <p className="mt-1 font-heading text-xl font-semibold tabular-nums">{formatPkr(forecastTotal, { compact: true })}</p>
                   <p className={cn("mt-1 text-xs font-medium", forecastGap >= 0 ? "text-success" : "text-destructive")}>
-                    {forecastGap >= 0 ? `${formatPkr(forecastGap, { compact: true })} under budget` : `${formatPkr(-forecastGap, { compact: true })} over budget`}
+                    {forecastGap >= 0 ? t("dm.bud.under_budget", { amount: formatPkr(forecastGap, { compact: true }) }) : t("dm.bud.over_budget", { amount: formatPkr(-forecastGap, { compact: true }) })}
                   </p>
                 </div>
                 <div className="rounded-xl bg-secondary/50 p-4">
-                  <p className="text-xs text-muted-foreground">Approval</p>
+                  <p className="text-xs text-muted-foreground">{t("dm.approval")}</p>
                   <p className="mt-1 text-sm font-medium">
-                    {budget.approvedBy ? `Approved by ${budget.approvedBy}` : "Not yet approved"}
+                    {budget.approvedBy ? t("vch.d.approvedBy", { name: budget.approvedBy }) : t("dm.bud.not_approved")}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {budget.approvedAt ? formatDate(budget.approvedAt) : `Created ${formatDate(budget.createdAt)} by ${budget.createdBy}`}
+                    {budget.approvedAt ? formatDate(budget.approvedAt) : t("dm.bud.created_by", { date: formatDate(budget.createdAt), name: budget.createdBy })}
                   </p>
                 </div>
               </div>
 
               <div>
-                <p className="mb-3 font-heading text-sm font-semibold">Revision history</p>
+                <p className="mb-3 font-heading text-sm font-semibold">{t("dm.revision_history")}</p>
                 <ol className="relative space-y-3 before:absolute before:bottom-2 before:start-[13px] before:top-2 before:w-px before:bg-border">
                   {[...budget.revisions].reverse().map((r) => {
                     const Icon = REVISION_ICON[r.type];
@@ -226,26 +229,26 @@ export function BudgetDetailSheet({
               <Separator />
               <div className="flex flex-wrap gap-2">
                 {budget.status === "draft" && (
-                  <Button className="gap-1.5" onClick={() => toast.success("Budget submitted for approval")}>
-                    <Send className="size-4" /> Submit for approval
+                  <Button className="gap-1.5" onClick={() => toast.success(t("dm.budget_submitted_for_approval"))}>
+                    <Send className="size-4" /> {t("vch.d.submit")}
                   </Button>
                 )}
                 {budget.status === "submitted" && (
-                  <Button className="gap-1.5" onClick={() => toast.success("Budget approved")}>
-                    <CheckCircle2 className="size-4" /> Approve budget
+                  <Button className="gap-1.5" onClick={() => toast.success(t("bud.sheet.approvedDone"))}>
+                    <CheckCircle2 className="size-4" /> {t("dm.approve_budget")}
                   </Button>
                 )}
                 {(budget.status === "approved" || budget.status === "locked") && (
                   <>
-                    <Button className="gap-1.5" onClick={() => toast.success("Revision request created — it goes to the approver")}>
-                      <FilePlus2 className="size-4" /> Request revision
+                    <Button className="gap-1.5" onClick={() => toast.success(t("dm.revision_request_created_it_goes"))}>
+                      <FilePlus2 className="size-4" /> {t("dm.request_revision")}
                     </Button>
-                    <Button variant="outline" className="gap-1.5" onClick={() => toast.info("Budget lines are locked; changes go through revisions")}>
+                    <Button variant="outline" className="gap-1.5" onClick={() => toast.info(t("dm.budget_lines_are_locked_changes"))}>
                       <Lock className="size-4" /> {budget.status === "locked" ? "Locked" : "Lock budget"}
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+                <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("common.close")}</Button>
               </div>
             </div>
           </>

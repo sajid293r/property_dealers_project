@@ -1,6 +1,9 @@
+"use client";
+
 import { Ban, CheckCircle2, Clock, FileEdit } from "lucide-react";
 import type { VoucherStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 const STATUS_CONFIG: Record<VoucherStatus, { label: string; classes: string; icon: typeof Clock }> = {
   draft: { label: "Draft", classes: "bg-muted text-muted-foreground", icon: FileEdit },
@@ -10,6 +13,7 @@ const STATUS_CONFIG: Record<VoucherStatus, { label: string; classes: string; ico
 };
 
 export function VoucherStatusBadge({ status, className }: { status: VoucherStatus; className?: string }) {
+  const t = useT();
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
   return (
@@ -21,7 +25,7 @@ export function VoucherStatusBadge({ status, className }: { status: VoucherStatu
       )}
     >
       <Icon className="size-3" />
-      {config.label}
+      {t(`vch.status.${status}`)}
     </span>
   );
 }

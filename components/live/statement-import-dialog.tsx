@@ -10,6 +10,7 @@ import { useCompany } from "@/lib/providers/company-provider";
 import { useInvalidateFinance } from "@/lib/hooks/use-live";
 import { createStatement, type NewStatementInput } from "@/lib/api/finance";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const cleanAmount = (s: string) => s.replace(/[",\s]/g, "").replace(/^\((.*)\)$/, "-$1");
 
@@ -80,6 +81,7 @@ export function StatementImportDialog({
   bankAccountId: string;
   onCreated?: (id: string) => void;
 }) {
+  const t = useT();
   const { company } = useCompany();
   const invalidate = useInvalidateFinance();
   const [from, setFrom] = React.useState("");
@@ -94,9 +96,9 @@ export function StatementImportDialog({
       open={open}
       onOpenChange={onOpenChange}
       icon={FileSpreadsheet}
-      title="Add bank statement"
-      description="Paste the rows from your bank’s statement: date, description, reference, money in, money out."
-      submitLabel="Save statement"
+      title={t("stmt.title")}
+      description={t("stmt.description")}
+      submitLabel={t("stmt.submit")}
       submitDisabled={!from || !to || opening === "" || closing === "" || parsed.lines.length === 0}
       onSubmit={async () => {
         const r = await createStatement(company.id, bankAccountId, {
@@ -108,20 +110,20 @@ export function StatementImportDialog({
           lines: parsed.lines,
         });
         await invalidate();
-        toast.success(r.linesAddUp ? "Statement saved" : "Statement saved — but the lines don’t add up to the closing balance");
+        toast.success(r.linesAddUp ? t("stmt.saved") : t("stmt.savedMismatch"));
         onCreated?.(r.id);
         setText("");
       }}
     >
       <FieldRow>
-        <Field label="Period from"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="Period to"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
+        <Field label={t("stmt.from")}><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
+        <Field label={t("stmt.to")}><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
       </FieldRow>
       <FieldRow>
-        <Field label="Opening balance"><AmountInput value={opening} onChange={setOpening} allowNegative /></Field>
-        <Field label="Closing balance"><AmountInput value={closing} onChange={setClosing} allowNegative /></Field>
+        <Field label={t("stmt.opening")}><AmountInput value={opening} onChange={setOpening} allowNegative /></Field>
+        <Field label={t("stmt.closing")}><AmountInput value={closing} onChange={setClosing} allowNegative /></Field>
       </FieldRow>
-      <Field label="Statement rows">
+      <Field label={t("stmt.rows")}>
         <Textarea
           rows={7}
           value={text}
@@ -131,7 +133,7 @@ export function StatementImportDialog({
         />
       </Field>
       <p className="text-xs text-muted-foreground">
-        {parsed.lines.length} rows read{parsed.skipped ? ` · ${parsed.skipped} skipped (no valid date — headers are ignored)` : ""}. Dates can be 2026-09-02 or 02/09/2026.
+        {parsed.skipped ? t("stmt.infoSkipped", { count: parsed.lines.length, skipped: parsed.skipped }) : t("stmt.info", { count: parsed.lines.length })}
       </p>
     </FormDialog>
   );

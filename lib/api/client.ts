@@ -1,4 +1,5 @@
 import { API_URL, supabase } from "@/lib/supabase";
+import { runtimeLanguage, tOr, translate } from "@/lib/i18n/runtime";
 
 /** An error from the PropIQ API, with a message that is already written for a person to read. */
 export class ApiError extends Error {
@@ -9,7 +10,10 @@ export class ApiError extends Error {
     readonly details?: unknown,
     readonly requestId?: string,
   ) {
-    super(message);
+    // A code with one fixed meaning is shown in the language on screen; a code whose message carries specifics
+    // (a name, an amount) keeps the server's sentence. See "err.*" in messages/en/output.ts.
+    // English keeps the server's own, more specific sentence ("Booking not found.").
+    super(runtimeLanguage() === "en" ? message : tOr(translate, `err.${code}`, message));
   }
 }
 
@@ -60,7 +64,7 @@ export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T
   }
   if (!res.ok) {
     const e = (json as { error?: { code?: string; message?: string; details?: unknown; requestId?: string } } | null)?.error;
-    throw new ApiError(res.status, e?.code ?? "error", e?.message ?? "Something went wrong. Please try again.", e?.details, e?.requestId);
+    throw new ApiError(res.status, e?.code ?? "error", e?.message ?? translate("err.generic"), e?.details, e?.requestId);
   }
   return json as T;
 }
@@ -79,7 +83,7 @@ export async function apiBlob(path: string, opts: { companyId?: string } = {}): 
   } catch {
     throw new ApiError(0, "unreachable", "Cannot reach the server. Check your connection and try again.");
   }
-  if (!res.ok) throw new ApiError(res.status, "error", res.status === 404 ? "That file is no longer available." : "Could not open the file.");
+  if (!res.ok) throw new ApiError(res.status, "error", translate(res.status === 404 ? "err.fileGone" : "err.fileOpen"));
   const blob = await res.blob();
   return { blob, type: res.headers.get("content-type") ?? blob.type };
 }

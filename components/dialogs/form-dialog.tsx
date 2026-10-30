@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/lib/i18n/provider";
 import { PlotGridMotif } from "@/components/plot-grid-motif";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ export function FormDialog({
   submitDisabled?: boolean;
   children: React.ReactNode;
 }) {
+  const t = useT();
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -56,7 +58,7 @@ export function FormDialog({
       else await new Promise((resolve) => window.setTimeout(resolve, 500));
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setError(e instanceof Error ? e.message : t("common.somethingWrong"));
     } finally {
       setSubmitting(false);
     }
@@ -84,7 +86,7 @@ export function FormDialog({
               size="icon-sm"
               className="absolute end-3 top-3 text-white/70 hover:bg-white/10 hover:text-white"
             >
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{t("common.close")}</span>
               <X className="size-4" />
             </Button>
           </DialogClose>
@@ -112,11 +114,11 @@ export function FormDialog({
 
         <DialogFooter className="mx-0 mb-0 rounded-b-xl border-t border-border bg-muted/40 px-6 py-4">
           <DialogClose asChild>
-            <Button variant="outline" disabled={submitting}>Cancel</Button>
+            <Button variant="outline" disabled={submitting}>{t("common.cancel")}</Button>
           </DialogClose>
           <Button onClick={handleSubmit} disabled={submitDisabled || submitting} className="gap-1.5">
             {submitting && <Loader2 className="size-3.5 animate-spin" />}
-            {submitting ? "Saving..." : submitLabel}
+            {submitting ? t("common.saving") : submitLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

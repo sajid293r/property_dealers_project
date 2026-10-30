@@ -18,8 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NewStaffDialog } from "@/components/dialogs/new-staff-dialog";
 import { useStaff } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoStaffPage() {
+  const t = useT();
   const { data: staff, isLoading } = useStaff();
   const [open, setOpen] = React.useState(false);
 
@@ -31,22 +33,22 @@ function DemoStaffPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="People"
-        title="Staff"
+        eyebrow={t("dashboard.people.title")}
+        title={t("perm.module.staff")}
         description={<>{staff?.length ?? 0} team members</>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          Add Staff
+          {t("dm.add_staff")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Team members" value={staff?.length ?? 0} format={(n) => n.toString()} icon={KpiUserSquare2} index={0} />
-        <KpiCard label="Monthly payroll" value={payroll} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={1} />
-        <KpiCard label="Departments" value={departments} format={(n) => n.toString()} icon={KpiBuilding} index={2} />
-        <KpiCard label="Average salary" value={avgSalary} format={(n) => formatPkr(n, { compact: true })} icon={KpiCalculator} accent="gold" index={3} />
+        <KpiCard label={t("dashboard.people.members")} value={staff?.length ?? 0} format={(n) => n.toString()} icon={KpiUserSquare2} index={0} />
+        <KpiCard label={t("dm.monthly_payroll")} value={payroll} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={1} />
+        <KpiCard label={t("dm.departments")} value={departments} format={(n) => n.toString()} icon={KpiBuilding} index={2} />
+        <KpiCard label={t("dm.average_salary")} value={avgSalary} format={(n) => formatPkr(n, { compact: true })} icon={KpiCalculator} accent="gold" index={3} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -79,7 +81,7 @@ function DemoStaffPage() {
                     <span className="text-xs text-muted-foreground">Since {formatDate(s.joinedAt)}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-sm">
-                    <span className="text-muted-foreground">Salary</span>
+                    <span className="text-muted-foreground">{t("dm.salary")}</span>
                     <span className="tabular-nums font-medium">{formatPkr(s.salary)}</span>
                   </div>
                   </div>

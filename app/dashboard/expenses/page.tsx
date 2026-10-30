@@ -18,8 +18,10 @@ import { NewExpenseDialog } from "@/components/dialogs/new-expense-dialog";
 import { useExpenses } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoExpensesPage() {
+  const t = useT();
   const { data: expenses, isLoading } = useExpenses();
   const unpaidTotal = expenses?.filter((e) => e.status === "unpaid").reduce((s, e) => s + e.amount, 0) ?? 0;
   const [open, setOpen] = React.useState(false);
@@ -31,23 +33,23 @@ function DemoExpensesPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Finance"
-        title="Expenses"
+        eyebrow={t("nav.section.finance")}
+        title={t("perm.module.expenses")}
         description={<>{expenses?.length ?? 0} vouchers ·{" "}
             <span className="text-warning">{formatPkr(unpaidTotal)} unpaid</span></>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Expense
+          {t("dm.new_expense")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total expenses" value={totalSpend} format={(n) => formatPkr(n, { compact: true })} icon={KpiTrendingDown} index={0} />
-        <KpiCard label="Paid" value={paidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleCheck} index={1} />
-        <KpiCard label="Unpaid" value={unpaidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleAlert} accent="gold" index={2} />
-        <KpiCard label="Open vouchers" value={unpaidCount} format={(n) => n.toString()} icon={KpiReceipt} accent="gold" index={3} />
+        <KpiCard label={t("rep.totalExpenses")} value={totalSpend} format={(n) => formatPkr(n, { compact: true })} icon={KpiTrendingDown} index={0} />
+        <KpiCard label={t("deals.col.paid")} value={paidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleCheck} index={1} />
+        <KpiCard label={t("sinv.status.unpaid")} value={unpaidTotal} format={(n) => formatPkr(n, { compact: true })} icon={KpiCircleAlert} accent="gold" index={2} />
+        <KpiCard label={t("dm.open_vouchers")} value={unpaidCount} format={(n) => n.toString()} icon={KpiReceipt} accent="gold" index={3} />
       </div>
 
       <Card className="p-5">
@@ -55,12 +57,12 @@ function DemoExpensesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Title</th>
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium">Paid via</th>
-                <th className="pb-2.5 font-medium">Amount</th>
-                <th className="pb-2.5 font-medium">Date</th>
-                <th className="pb-2.5 font-medium">Status</th>
+                <th className="pb-2.5 font-medium">{t("properties.new.name")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.paid_via")}</th>
+                <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                <th className="pb-2.5 font-medium">{t("common.date")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
               </tr>
             </thead>
             <tbody>

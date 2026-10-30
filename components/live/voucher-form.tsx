@@ -25,9 +25,11 @@ import { useProjects } from "@/lib/hooks/use-data";
 import { useCompany } from "@/lib/providers/company-provider";
 import { createVoucher, getVoucher, updateVoucher, voucherAction, type ChartAccount, type InstrumentType, type VoucherInput, type VoucherType } from "@/lib/api/finance";
 import { ApiError } from "@/lib/api/client";
-import { INSTRUMENTS, LIVE_VOUCHER_TYPES, isVoucherType, liveVoucherMeta } from "@/lib/live-vouchers";
+import { INSTRUMENTS, LIVE_VOUCHER_TYPES, instrumentLabel, isVoucherType, localMeta } from "@/lib/live-vouchers";
 import { amountInWords } from "@/lib/amount-words";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { groupLabel } from "@/lib/live-vouchers";
 
 interface FormLine {
   key: string;
@@ -53,6 +55,7 @@ function VoucherLineTable({
   list: FormLine[]; set: LineSet; title: string; hint?: string; onlyAccounts: (a: ChartAccount) => boolean; side: "debit" | "credit";
   accounts: ChartAccount[]; headerPartyId: string; projectOptions: { value: string; label: string; hint?: string }[]; remountKey: string;
 }) {
+  const t = useT();
   const updateLine = (key: string, patch: Partial<FormLine>) => set((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const removeLine = (key: string) => set((ls) => (ls.length > 1 ? ls.filter((l) => l.key !== key) : ls));
   const sum = list.reduce((t, l) => t + cents(l.amount), 0);
@@ -66,10 +69,10 @@ function VoucherLineTable({
         <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
-              <th className="w-[32%] py-2 ps-3 font-medium">Account</th>
-              <th className="w-[22%] py-2 pe-2 text-end font-medium">{side === "debit" ? "Debit" : "Credit"} amount</th>
-              <th className="py-2 ps-2 pe-2 font-medium">Narration</th>
-              {projectOptions.length > 0 && <th className="w-[16%] py-2 pe-2 font-medium">Project</th>}
+              <th className="w-[32%] py-2 ps-3 font-medium">{t("vch.f.colAccount")}</th>
+              <th className="w-[22%] py-2 pe-2 text-end font-medium">{side === "debit" ? t("vch.f.colDebitAmount") : t("vch.f.colCreditAmount")}</th>
+              <th className="py-2 ps-2 pe-2 font-medium">{t("vch.f.colNarration")}</th>
+              {projectOptions.length > 0 && <th className="w-[16%] py-2 pe-2 font-medium">{t("vch.f.colProject")}</th>}
               <th className="w-9 py-2" />
             </tr>
           </thead>
@@ -84,10 +87,10 @@ function VoucherLineTable({
                       <AccountPicker key={remountKey} value={l.accountId} only={onlyAccounts} onChange={(id) => updateLine(l.key, { accountId: id })} />
                     </td>
                     <td className="py-1.5 pe-2">
-                      <AmountInput value={l.amount} onChange={(v) => updateLine(l.key, { amount: v })} aria-label={`${side} amount`} />
+                      <AmountInput value={l.amount} onChange={(v) => updateLine(l.key, { amount: v })} aria-label={side === "debit" ? t("vch.f.colDebitAmount") : t("vch.f.colCreditAmount")} />
                     </td>
                     <td className="py-1.5 ps-2 pe-2">
-                      <Input value={l.remarks} onChange={(e) => updateLine(l.key, { remarks: e.target.value })} placeholder="Optional" maxLength={300} />
+                      <Input value={l.remarks} onChange={(e) => updateLine(l.key, { remarks: e.target.value })} placeholder={t("common.optional")} maxLength={300} />
                     </td>
                     {projectOptions.length > 0 && (
                       <td className="py-1.5 pe-2">
@@ -95,7 +98,7 @@ function VoucherLineTable({
                       </td>
                     )}
                     <td className="py-1.5 pe-2 text-end">
-                      <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeLine(l.key)} disabled={list.length <= 1} aria-label="Remove line">
+                      <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeLine(l.key)} disabled={list.length <= 1} aria-label={t("vch.f.removeLine")}>
                         <Trash2 className="size-3.5 text-muted-foreground" />
                       </Button>
                     </td>
@@ -104,9 +107,9 @@ function VoucherLineTable({
                     <tr>
                       <td colSpan={projectOptions.length > 0 ? 5 : 4} className="pb-2 ps-3 pe-2">
                         <div className="flex items-center gap-3 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2">
-                          <span className="text-xs">{account?.name} needs a customer / supplier:</span>
+                          <span className="text-xs">{t("vch.f.needsParty", { name: account?.name ?? "" })}</span>
                           <div className="w-64">
-                            <PartySelect value={l.partyId} onChange={(id) => updateLine(l.key, { partyId: id })} placeholder="Choose…" />
+                            <PartySelect value={l.partyId} onChange={(id) => updateLine(l.key, { partyId: id })} placeholder={t("common.select")} />
                           </div>
                         </div>
                       </td>
@@ -120,10 +123,10 @@ function VoucherLineTable({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => set((ls) => [...ls, newLine()])}>
-          <Plus className="size-3.5" /> Add line
+          <Plus className="size-3.5" /> {t("vch.f.addLine")}
         </Button>
         <p className="text-sm text-muted-foreground">
-          {side === "debit" ? "Debit" : "Credit"} total <span className="ms-1 font-mono text-base font-semibold tabular-nums text-foreground">{money(sum)}</span>
+          {side === "debit" ? t("vch.f.debitTotal") : t("vch.f.creditTotal")} <span className="ms-1 font-mono text-base font-semibold tabular-nums text-foreground">{money(sum)}</span>
         </p>
       </div>
     </div>
@@ -131,6 +134,7 @@ function VoucherLineTable({
 }
 
 export function LiveVoucherForm() {
+  const t = useT();
   const router = useRouter();
   const search = useSearchParams();
   const editId = search.get("edit");
@@ -164,7 +168,7 @@ export function LiveVoucherForm() {
   const [busy, setBusy] = React.useState<"draft" | "submit" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  const meta = liveVoucherMeta(type);
+  const meta = localMeta(type);
 
   // editing an existing draft or rejected voucher: load it once
   const existing = useQuery({ queryKey: ["live", "voucher", editId], queryFn: () => getVoucher(company.id, editId!), enabled: !!editId, staleTime: Infinity });
@@ -173,7 +177,7 @@ export function LiveVoucherForm() {
     const v = existing.data;
     if (!v || loadedFor.current === v.id) return;
     loadedFor.current = v.id;
-    const m = liveVoucherMeta(v.type);
+    const m = localMeta(v.type);
     /* eslint-disable react-hooks/set-state-in-effect */
     setType(v.type);
     setNumber(v.number);
@@ -229,19 +233,19 @@ export function LiveVoucherForm() {
   const usable = (l: FormLine) => l.accountId && cents(l.amount) > 0;
   function problems(): string[] {
     const out: string[] = [];
-    if (!date) out.push("Choose the voucher date.");
-    if (meta.partyRequired && !partyId) out.push(`Choose the ${meta.partyLabel?.toLowerCase()}.`);
+    if (!date) out.push(t("vch.p.date"));
+    if (meta.partyRequired && !partyId) out.push(t(type === "CRV" || type === "BRV" ? "vch.p.partyFrom" : type === "SV" || type === "CN" ? "vch.p.partyCustomer" : "vch.p.partySupplier"));
     if (meta.layout === "bank") {
-      if (!bankAccountId) out.push("Choose the bank account.");
-      if (instrumentType === "cheque" && !instrumentNo.trim()) out.push("Enter the cheque number.");
+      if (!bankAccountId) out.push(t("vch.p.bank"));
+      if (instrumentType === "cheque" && !instrumentNo.trim()) out.push(t("vch.p.chequeNo"));
     }
-    if (meta.layout === "contra" && !controlAccountId) out.push("Choose the account the money moves from.");
-    if (meta.layout === "contra" && lines.some((l) => l.accountId && l.accountId === controlAccountId)) out.push("The money must move to a different account.");
+    if (meta.layout === "contra" && !controlAccountId) out.push(t("vch.p.contraFrom"));
+    if (meta.layout === "contra" && lines.some((l) => l.accountId && l.accountId === controlAccountId)) out.push(t("vch.p.contraDifferent"));
     if (meta.side === null) {
-      if (!debitLines.some(usable) || !creditLines.some(usable)) out.push("Enter at least one debit and one credit line.");
-      else if (difference !== 0) out.push(`Debits and credits differ by ${money(Math.abs(difference))}.`);
+      if (!debitLines.some(usable) || !creditLines.some(usable)) out.push(t("vch.p.needBoth"));
+      else if (difference !== 0) out.push(t("vch.p.differ", { amount: money(Math.abs(difference)) }));
     } else if (!lines.some(usable)) {
-      out.push("Add at least one line with an account and an amount.");
+      out.push(t("vch.p.oneLine"));
     }
     return out;
   }
@@ -281,7 +285,7 @@ export function LiveVoucherForm() {
     setBusy(submit ? "submit" : "draft");
     try {
       const input = buildInput();
-      if (input.lines.length === 0) throw new Error("Add at least one line with an account and an amount.");
+      if (input.lines.length === 0) throw new Error(t("vch.p.oneLine"));
       const saved = savedId ? await updateVoucher(company.id, savedId, input) : await createVoucher(company.id, type, input);
       setSavedId(saved.id);
       setNumber(saved.number);
@@ -289,10 +293,10 @@ export function LiveVoucherForm() {
         await voucherAction(company.id, saved.id, "submit");
       }
       await invalidate();
-      toast.success(submit ? `${saved.number} submitted for approval` : `${saved.number} saved as draft`, { description: meta.label });
+      toast.success(submit ? t("vch.f.submitted", { number: saved.number }) : t("vch.f.savedDraft", { number: saved.number }), { description: meta.label });
       router.push(`/dashboard/vouchers/${saved.id}`);
     } catch (e) {
-      setError(e instanceof ApiError || e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setError(e instanceof ApiError || e instanceof Error ? e.message : t("common.somethingWrong"));
       setBusy(null);
     }
   }
@@ -304,7 +308,7 @@ export function LiveVoucherForm() {
     if (!account || !(rate > 0)) return;
     const base = lines.filter((l) => l.accountId && l.accountId !== account.id).reduce((t, l) => t + cents(l.amount), 0);
     const tax = Math.round((base * rate) / 100);
-    setLines((ls) => [...ls.filter((l) => l.accountId !== account.id || cents(l.amount) > 0), { ...newLine(), accountId: account.id, amount: fromCents(tax), remarks: `Tax at ${taxRate}%` }]);
+    setLines((ls) => [...ls.filter((l) => l.accountId !== account.id || cents(l.amount) > 0), { ...newLine(), accountId: account.id, amount: fromCents(tax), remarks: t("vch.f.taxRemark", { rate: taxRate }) }]);
     setTaxRate("");
   }
 
@@ -319,7 +323,7 @@ export function LiveVoucherForm() {
     );
   }
   if (editId && existing.error) {
-    return <div className="mx-auto max-w-xl py-16 text-center text-sm text-muted-foreground">This voucher could not be opened. It may have been deleted, or you may not have access.</div>;
+    return <div className="mx-auto max-w-xl py-16 text-center text-sm text-muted-foreground">{t("vch.f.couldNotOpen")}</div>;
   }
 
   const instrument = INSTRUMENTS.find((i) => i.value === instrumentType);
@@ -332,8 +336,8 @@ export function LiveVoucherForm() {
     <div className="mx-auto max-w-[1240px] space-y-5">
       <PageHeader
         icon={meta.icon}
-        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
-        title={`${savedId ? "Edit" : "New"} ${meta.label}`}
+        back={{ href: "/dashboard/vouchers", label: t("vch.title") }}
+        title={t(savedId ? "vch.f.editTitle" : "vch.f.newTitle", { label: meta.label })}
         badge={<LiveVoucherTypeBadge type={type} />}
         description={meta.description}
       />
@@ -350,15 +354,15 @@ export function LiveVoucherForm() {
           <Card className="space-y-5 p-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Voucher type</Label>
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.type")}</Label>
                 <Select value={type} onValueChange={(v) => changeType(v as VoucherType)} disabled={!!savedId}>
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {grouped.map((g) => (
                       <SelectGroup key={g}>
-                        <SelectLabel>{g}</SelectLabel>
-                        {LIVE_VOUCHER_TYPES.filter((t) => t.group === g).map((t) => (
-                          <SelectItem key={t.type} value={t.type}>{t.label} ({t.type})</SelectItem>
+                        <SelectLabel>{groupLabel(g)}</SelectLabel>
+                        {LIVE_VOUCHER_TYPES.filter((v) => v.group === g).map((v) => (
+                          <SelectItem key={v.type} value={v.type}>{localMeta(v.type).label} ({v.type})</SelectItem>
                         ))}
                       </SelectGroup>
                     ))}
@@ -366,17 +370,17 @@ export function LiveVoucherForm() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Voucher no.</Label>
-                <Input value={number ?? "Given when saved"} disabled className="font-mono" />
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.number")}</Label>
+                <Input value={number ?? t("vch.f.givenWhenSaved")} disabled className="font-mono" />
               </div>
 
               <div>
-                <Label htmlFor="v-date" className="mb-1.5 text-xs font-medium text-muted-foreground">{meta.layout === "invoice" ? "Invoice date" : "Voucher date"}</Label>
+                <Label htmlFor="v-date" className="mb-1.5 text-xs font-medium text-muted-foreground">{meta.layout === "invoice" ? t("vch.f.invoiceDate") : t("vch.f.voucherDate")}</Label>
                 <Input id="v-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               {meta.layout === "invoice" && (
                 <div>
-                  <Label htmlFor="v-due" className="mb-1.5 text-xs font-medium text-muted-foreground">Due date</Label>
+                  <Label htmlFor="v-due" className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.dueDate")}</Label>
                   <Input id="v-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                 </div>
               )}
@@ -385,20 +389,20 @@ export function LiveVoucherForm() {
                 <div className={meta.layout === "invoice" ? "" : "sm:col-span-2"}>
                   <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
                     {meta.partyLabel}
-                    {!meta.partyRequired && <span className="ms-1 font-normal">(optional)</span>}
+                    {!meta.partyRequired && <span className="ms-1 font-normal">{t("vch.f.optional")}</span>}
                   </Label>
-                  <PartySelect key={type} value={partyId} role={meta.partyRole} onChange={(id) => setPartyId(id)} placeholder={`Choose ${meta.partyLabel.toLowerCase()}`} />
+                  <PartySelect key={type} value={partyId} role={meta.partyRole} onChange={(id) => setPartyId(id)} placeholder={t("common.select")} />
                 </div>
               )}
               {type === "PIV" && (
                 <div>
-                  <Label htmlFor="v-inv" className="mb-1.5 text-xs font-medium text-muted-foreground">Supplier&apos;s invoice no.</Label>
+                  <Label htmlFor="v-inv" className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.supplierInvoice")}</Label>
                   <Input id="v-inv" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="INV-5521" maxLength={60} />
                 </div>
               )}
               {meta.layout === "invoice" && type !== "PIV" && (
                 <div>
-                  <Label htmlFor="v-ref" className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "SV" ? "Reference (plot / booking)" : "Against invoice no."}</Label>
+                  <Label htmlFor="v-ref" className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "SV" ? t("vch.f.refSales") : t("vch.f.againstInvoice")}</Label>
                   <Input id="v-ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
                 </div>
               )}
@@ -407,16 +411,16 @@ export function LiveVoucherForm() {
             {/* cash vouchers: which cash account */}
             {meta.layout === "cash" && (
               <div className="sm:max-w-sm">
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Cash account</Label>
-                <AccountPicker value={effectiveControl} only={(a) => a.category === "asset_cash"} onChange={(id) => setControlAccountId(id)} placeholder="Choose the cash account" />
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.cashAccount")}</Label>
+                <AccountPicker value={effectiveControl} only={(a) => a.category === "asset_cash"} onChange={(id) => setControlAccountId(id)} placeholder={t("vch.f.chooseCash")} />
               </div>
             )}
 
             {/* contra: where the money comes from */}
             {meta.layout === "contra" && (
               <div className="sm:max-w-sm">
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Money moves from</Label>
-                <AccountPicker value={controlAccountId} only={(a) => a.category === "asset_cash" || a.category === "asset_bank"} onChange={(id) => setControlAccountId(id)} placeholder="Cash or bank account" />
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.moneyFrom")}</Label>
+                <AccountPicker value={controlAccountId} only={(a) => a.category === "asset_cash" || a.category === "asset_bank"} onChange={(id) => setControlAccountId(id)} placeholder={t("vch.f.cashOrBank")} />
               </div>
             )}
 
@@ -425,49 +429,49 @@ export function LiveVoucherForm() {
               <div className="space-y-4 rounded-xl border border-border/70 bg-secondary/30 p-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BPV" ? "Pay from bank account" : "Deposit into bank account"}</Label>
+                    <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BPV" ? t("vch.f.payFrom") : t("vch.f.depositInto")}</Label>
                     <SearchSelect
                       options={(bankAccounts ?? []).filter((b) => b.active).map((b) => ({ value: b.id, label: `${b.bankName} — ${b.accountNo}`, hint: b.bankShortName ?? undefined, group: undefined }))}
                       value={bankAccountId}
-                      placeholder={bankAccounts && bankAccounts.length === 0 ? "Add your bank account first" : "Choose the bank account"}
-                      searchPlaceholder="Search your bank accounts"
-                      emptyText="No bank account yet"
+                      placeholder={bankAccounts && bankAccounts.length === 0 ? t("vch.f.addBankFirst") : t("vch.f.chooseBankAccount")}
+                      searchPlaceholder={t("vch.f.searchBankAccounts")}
+                      emptyText={t("vch.f.noBankYet")}
                       onChange={(id) => setBankAccountId(id)}
                       onCreate={() => setAddingBank(true)}
-                      createLabel="Add a bank account (choose from all Pakistani banks)"
+                      createLabel={t("vch.f.addBankLabel")}
                     />
-                    {bankAccount && <p className="mt-1.5 text-xs text-muted-foreground">{bankAccount.accountTitle}{bankAccount.branchName ? ` · ${bankAccount.branchName}` : ""} · ledger {bankAccount.glCode}</p>}
+                    {bankAccount && <p className="mt-1.5 text-xs text-muted-foreground">{bankAccount.accountTitle}{bankAccount.branchName ? ` · ${bankAccount.branchName}` : ""} · {t("vch.f.ledger", { code: bankAccount.glCode })}</p>}
                   </div>
                   <div>
-                    <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BPV" ? "Paid by" : "Received by"}</Label>
+                    <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BPV" ? t("vch.f.paidBy") : t("vch.f.receivedBy")}</Label>
                     <Select value={instrumentType || undefined} onValueChange={(v) => setInstrumentType(v as InstrumentType)}>
-                      <SelectTrigger className="w-full"><SelectValue placeholder="Cheque, transfer, pay order…" /></SelectTrigger>
+                      <SelectTrigger className="w-full"><SelectValue placeholder={t("vch.f.instrumentPlaceholder")} /></SelectTrigger>
                       <SelectContent>
-                        {INSTRUMENTS.map((i) => <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>)}
+                        {INSTRUMENTS.map((i) => <SelectItem key={i.value} value={i.value}>{instrumentLabel(i.value)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   {instrument?.needsNumber && (
                     <div>
-                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{instrument.label} number</Label>
+                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.instrNumber", { label: instrumentLabel(instrument.value) })}</Label>
                       <Input value={instrumentNo} onChange={(e) => setInstrumentNo(e.target.value)} placeholder="000123" maxLength={60} className="font-mono" />
                     </div>
                   )}
                   {instrumentType === "cheque" && (
                     <div>
-                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Cheque date</Label>
+                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.chequeDate")}</Label>
                       <Input type="date" value={chequeDate} onChange={(e) => setChequeDate(e.target.value)} />
                     </div>
                   )}
                   {showInstrumentBank && (
                     <div className="sm:col-span-2">
-                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BRV" ? "Drawn on (the payer's bank)" : "Payee's bank (optional)"}</Label>
-                      <BankSelect value={instrumentBank} onChange={setInstrumentBank} placeholder="Choose the bank" />
+                      <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "BRV" ? t("vch.f.drawnOn") : t("vch.f.payeeBank")}</Label>
+                      <BankSelect value={instrumentBank} onChange={setInstrumentBank} placeholder={t("vch.f.chooseTheBank")} />
                     </div>
                   )}
                   <div className="sm:col-span-2">
                     <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
-                      {instrumentType === "online_transfer" ? "Transaction / reference no." : instrumentType === "cash_deposit" ? "Deposit slip no." : "Reference (optional)"}
+                      {instrumentType === "online_transfer" ? t("vch.f.refTransaction") : instrumentType === "cash_deposit" ? t("vch.f.refDepositSlip") : t("vch.f.refOptional")}
                     </Label>
                     <Input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
                   </div>
@@ -476,18 +480,18 @@ export function LiveVoucherForm() {
             )}
 
             <div>
-              <Label htmlFor="v-desc" className="mb-1.5 text-xs font-medium text-muted-foreground">Narration</Label>
-              <Textarea id="v-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this voucher for…" rows={2} maxLength={500} />
+              <Label htmlFor="v-desc" className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.narration")}</Label>
+              <Textarea id="v-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("vch.f.narrationPlaceholder")} rows={2} maxLength={500} />
             </div>
           </Card>
 
           {meta.side === null ? (
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
               <Card className="p-5">
-                <VoucherLineTable list={debitLines} set={setDebitLines} title="Debit entries" hint="Accounts that receive value." onlyAccounts={meta.lineAccounts} side="debit" accounts={accounts ?? []} headerPartyId={partyId} projectOptions={projectOptions} remountKey={`${type}-debit`} />
+                <VoucherLineTable list={debitLines} set={setDebitLines} title={t("vch.f.debitEntries")} hint={t("vch.f.debitHint")} onlyAccounts={meta.lineAccounts} side="debit" accounts={accounts ?? []} headerPartyId={partyId} projectOptions={projectOptions} remountKey={`${type}-debit`} />
               </Card>
               <Card className="p-5">
-                <VoucherLineTable list={creditLines} set={setCreditLines} title="Credit entries" hint="Accounts that give value." onlyAccounts={meta.lineAccounts} side="credit" accounts={accounts ?? []} headerPartyId={partyId} projectOptions={projectOptions} remountKey={`${type}-credit`} />
+                <VoucherLineTable list={creditLines} set={setCreditLines} title={t("vch.f.creditEntries")} hint={t("vch.f.creditHint")} onlyAccounts={meta.lineAccounts} side="credit" accounts={accounts ?? []} headerPartyId={partyId} projectOptions={projectOptions} remountKey={`${type}-credit`} />
               </Card>
             </div>
           ) : (
@@ -496,13 +500,13 @@ export function LiveVoucherForm() {
               {meta.layout === "invoice" && (
                 <div className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-border bg-secondary/30 p-3">
                   <div>
-                    <Label htmlFor="tax-rate" className="mb-1 block text-xs font-medium text-muted-foreground">Tax rate % (as per your tax setup)</Label>
-                    <Input id="tax-rate" value={taxRate} onChange={(e) => setTaxRate(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder="e.g. 16" className="w-32" />
+                    <Label htmlFor="tax-rate" className="mb-1 block text-xs font-medium text-muted-foreground">{t("vch.f.taxRate")}</Label>
+                    <Input id="tax-rate" value={taxRate} onChange={(e) => setTaxRate(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder={t("vch.f.taxPlaceholder")} className="w-32" />
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={addTaxLine} disabled={!(parseFloat(taxRate) > 0) || !lines.some((l) => usable(l))}>
-                    Add {type === "SV" || type === "CN" ? "sales tax" : "input tax"} line
+                    {type === "SV" || type === "CN" ? t("vch.f.addSalesTax") : t("vch.f.addInputTax")}
                   </Button>
-                  <p className="text-xs text-muted-foreground">Works out the tax on the lines above and adds it as a line you can still edit.</p>
+                  <p className="text-xs text-muted-foreground">{t("vch.f.taxHint")}</p>
                 </div>
               )}
             </Card>
@@ -513,31 +517,31 @@ export function LiveVoucherForm() {
         <div className="space-y-5 lg:sticky lg:top-20 lg:self-start">
           <Card className="space-y-4 p-5">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Voucher total</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("vch.f.total")}</p>
               <p className="mt-1 break-all font-heading text-3xl font-semibold tabular-nums">Rs {money(total)}</p>
               {words && <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{words}</p>}
             </div>
             <div className="space-y-2 border-t border-border/70 pt-3 text-sm">
               {meta.side === null ? (
                 <>
-                  <SummaryRow label="Total debits" value={money(debitTotal)} />
-                  <SummaryRow label="Total credits" value={money(creditTotal)} />
+                  <SummaryRow label={t("vch.f.totalDebits")} value={money(debitTotal)} />
+                  <SummaryRow label={t("vch.f.totalCredits")} value={money(creditTotal)} />
                   <div className={difference === 0 && debitTotal > 0 ? "flex items-center gap-1.5 text-success" : "flex items-center gap-1.5 text-warning"}>
                     {difference === 0 && debitTotal > 0 ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
-                    <span className="text-xs font-medium">{difference === 0 && debitTotal > 0 ? "Balanced" : difference === 0 ? "Enter amounts" : `Out of balance by ${money(Math.abs(difference))}`}</span>
+                    <span className="text-xs font-medium">{difference === 0 && debitTotal > 0 ? t("vch.f.balanced") : difference === 0 ? t("vch.f.enterAmounts") : t("vch.f.outOfBalance", { amount: money(Math.abs(difference)) })}</span>
                   </div>
                 </>
               ) : (
                 <>
-                  <SummaryRow label={meta.side === "debit" ? "Debited (your lines)" : "Credited (your lines)"} value={money(typedTotal)} />
+                  <SummaryRow label={meta.side === "debit" ? t("vch.f.debitedLines") : t("vch.f.creditedLines")} value={money(typedTotal)} />
                   <SummaryRow
-                    label={meta.fixedSideLabel ?? "Other side"}
+                    label={meta.fixedSideLabel ?? t("vch.f.otherSide")}
                     value={money(typedTotal)}
                     sub={
-                      meta.layout === "bank" ? (bankAccount ? `${bankAccount.bankName} ${bankAccount.accountNo}` : "choose the bank account")
-                        : meta.layout === "cash" ? accountName(effectiveControl) || "choose the cash account"
-                        : meta.layout === "contra" ? accountName(controlAccountId) || "choose the account"
-                        : type === "SV" || type === "CN" ? "Customer's receivable" : "Supplier's payable"
+                      meta.layout === "bank" ? (bankAccount ? `${bankAccount.bankName} ${bankAccount.accountNo}` : t("vch.f.chooseBankAccountSub"))
+                        : meta.layout === "cash" ? accountName(effectiveControl) || t("vch.f.chooseCashAccountSub")
+                        : meta.layout === "contra" ? accountName(controlAccountId) || t("vch.f.chooseAccountSub")
+                        : type === "SV" || type === "CN" ? t("vch.f.customerReceivable") : t("vch.f.supplierPayable")
                     }
                   />
                 </>
@@ -555,13 +559,13 @@ export function LiveVoucherForm() {
           <Card className="space-y-2.5 p-4">
             <Button className="w-full gap-1.5" disabled={blockers.length > 0 || busy !== null} onClick={() => void persist(true)}>
               <Send className="size-4" />
-              {busy === "submit" ? "Submitting…" : "Submit for approval"}
+              {busy === "submit" ? t("vch.f.submitting") : t("vch.d.submit")}
             </Button>
             <Button variant="outline" className="w-full" disabled={busy !== null} onClick={() => void persist(false)}>
-              {busy === "draft" ? "Saving…" : "Save as draft"}
+              {busy === "draft" ? t("common.saving") : t("vch.f.saveDraft")}
             </Button>
             <Button variant="ghost" className="w-full" asChild disabled={busy !== null}>
-              <Link href="/dashboard/vouchers">Cancel</Link>
+              <Link href="/dashboard/vouchers">{t("common.cancel")}</Link>
             </Button>
           </Card>
         </div>

@@ -17,6 +17,7 @@ import { useCompany } from "@/lib/providers/company-provider";
 import { createProperty } from "@/lib/api/live";
 import type { Unit, UnitPaymentType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80";
 
@@ -27,6 +28,7 @@ export function NewUnitDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { company, live } = useCompany();
   const { data: units } = useUnits();
@@ -68,9 +70,9 @@ export function NewUnitDialog({
 
   async function handleSubmit() {
     if (live) {
-      const typeName = categoryOptions.find((c) => c.value === category)?.label ?? "Property";
+      const typeName = categoryOptions.find((c) => c.value === category)?.label ?? t("properties.new.defaultType");
       const created = await createProperty(company.id, {
-        title: title.trim() || `${typeName}${block.trim() ? `, Block ${block.trim()}` : ""}`,
+        title: title.trim() || (block.trim() ? t("properties.new.defaultTitle", { type: typeName, block: block.trim() }) : typeName),
         typeId: category,
         projectId: project,
         block: block.trim() || undefined,
@@ -82,7 +84,7 @@ export function NewUnitDialog({
         queryClient.invalidateQueries({ queryKey: ["units"] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
       ]);
-      toast.success(`Property ${created.code} added`, { description: `${created.title} · ${created.project}` });
+      toast.success(t("properties.new.added", { code: created.code }), { description: `${created.title} · ${created.project}` });
       return;
     }
     const code = `PRP-${Math.floor(1000 + Math.random() * 8999)}`;
@@ -102,7 +104,7 @@ export function NewUnitDialog({
     };
 
     queryClient.setQueryData<Unit[]>(["units"], (old = []) => [newUnit, ...old]);
-    toast.success(`Property ${code} added`, { description: `${newUnit.title} · ${project}` });
+    toast.success(t("properties.new.added", { code }), { description: `${newUnit.title} · ${project}` });
   }
 
   return (
@@ -110,26 +112,26 @@ export function NewUnitDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Building2}
-      title="Add Property"
-      description="List a new plot or property in your portfolio."
-      submitLabel="Add Property"
+      title={t("properties.new.title")}
+      description={t("properties.new.description")}
+      submitLabel={t("properties.new.submit")}
       submitDisabled={!project || !category || !sizeMarla || !price}
       onSubmit={handleSubmit}
     >
-      <Field label="Title">
+      <Field label={t("properties.new.name")}>
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Corner plot, Block A" />
       </Field>
 
       {live && projectOptions.length === 0 && (
         <p className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-sm">
-          Create a project first (Projects → New Project), then add properties to it.
+          {t("properties.new.createProjectFirst")}
         </p>
       )}
 
       <FieldRow>
-        <Field label="Project">
+        <Field label={t("properties.new.project")}>
           <Select value={project} onValueChange={setProject}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("properties.new.selectProject")} /></SelectTrigger>
             <SelectContent>
               {projectOptions.map((p) => (
                 <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
@@ -137,9 +139,9 @@ export function NewUnitDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Category">
+        <Field label={t("properties.new.category")}>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select category" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("properties.new.selectCategory")} /></SelectTrigger>
             <SelectContent>
               {categoryOptions.map((c) => (
                 <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
@@ -150,24 +152,24 @@ export function NewUnitDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="Block">
+        <Field label={t("properties.new.block")}>
           <Input value={block} onChange={(e) => setBlock(e.target.value)} placeholder="A" maxLength={live ? 60 : 2} />
         </Field>
-        <Field label="Size (Marla)">
+        <Field label={t("properties.new.size")}>
           <Input type="number" value={sizeMarla} onChange={(e) => setSizeMarla(e.target.value)} placeholder="10" />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="Price (PKR)">
+        <Field label={t("properties.new.price")}>
           <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="15000000" />
         </Field>
-        <Field label="Payment type">
+        <Field label={t("properties.new.paymentType")}>
           <Select value={paymentType} onValueChange={(v) => setPaymentType(v as UnitPaymentType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="installment">Installment</SelectItem>
+              <SelectItem value="cash">{t("properties.new.cash")}</SelectItem>
+              <SelectItem value="installment">{t("properties.new.installment")}</SelectItem>
             </SelectContent>
           </Select>
         </Field>

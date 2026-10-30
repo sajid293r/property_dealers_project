@@ -28,8 +28,10 @@ import { getDataset, getTrends } from "@/lib/mock-data/company-data";
 import { useCompany } from "@/lib/providers/company-provider";
 import { formatPkr } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export default function GroupOverviewPage() {
+  const t = useT();
   const router = useRouter();
   const { companies, company: active, setCompanyId } = useCompany();
   const [addOpen, setAddOpen] = React.useState(false);
@@ -72,23 +74,23 @@ export default function GroupOverviewPage() {
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader
         icon={Network}
-        eyebrow="Group"
-        title="Group Overview"
-        description={`${companies.length} companies under one login — each with fully separate projects, properties, people and books.`}
+        eyebrow={t("dm.group")}
+        title={t("nav.item.companies")}
+        description={t("dm.co.description", { count: companies.length })}
         actions={
           <Button className="gap-1.5" onClick={() => setAddOpen(true)}>
             <Plus className="size-4" />
-            Add Company
+            {t("dm.add_company")}
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Companies" value={companies.length} format={(n) => n.toString()} icon={Building} index={0} />
-        <KpiCard label="Projects (all)" value={totals.projects} format={(n) => n.toString()} icon={FolderKanban} index={1} accent="gold" />
-        <KpiCard label="Properties (all)" value={totals.properties} format={(n) => n.toString()} icon={Building2} index={2} />
+        <KpiCard label={t("dm.companies")} value={companies.length} format={(n) => n.toString()} icon={Building} index={0} />
+        <KpiCard label={t("dm.projects_all")} value={totals.projects} format={(n) => n.toString()} icon={FolderKanban} index={1} accent="gold" />
+        <KpiCard label={t("dm.properties_all")} value={totals.properties} format={(n) => n.toString()} icon={Building2} index={2} />
         <KpiCard
-          label="Group collections"
+          label={t("dm.group_collections")}
           value={totals.collections}
           format={(n) => formatPkr(n, { compact: true })}
           icon={HandCoins}
@@ -132,11 +134,11 @@ export default function GroupOverviewPage() {
                       </p>
                     </div>
                     {isActive && (
-                      <Badge className="border-0 bg-gold text-gold-foreground">Open now</Badge>
+                      <Badge className="border-0 bg-gold text-gold-foreground">{t("dm.open_now")}</Badge>
                     )}
                   </div>
                   <div className="relative mt-4">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Collections</p>
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">{t("dashboard.health.collections")}</p>
                     <p className="font-heading text-2xl font-semibold tabular-nums">
                       {formatPkr(r.collections, { compact: true })}
                     </p>
@@ -145,18 +147,18 @@ export default function GroupOverviewPage() {
                 </div>
 
                 <div className="grid flex-1 grid-cols-3 gap-3 px-5 py-4 text-center">
-                  <Stat icon={FolderKanban} label="Projects" value={r.projects} />
-                  <Stat icon={Building2} label="Properties" value={r.properties} />
-                  <Stat icon={Users2} label="Customers" value={r.customers} />
-                  <Stat icon={UserSquare2} label="Staff" value={r.staff} />
-                  <Stat icon={Building2} label="Available" value={r.available} />
-                  <Stat icon={Banknote} label="Cash" value={formatPkr(r.cash, { compact: true })} />
+                  <Stat icon={FolderKanban} label={t("nav.section.projects")} value={r.projects} />
+                  <Stat icon={Building2} label={t("perm.module.inventory")} value={r.properties} />
+                  <Stat icon={Users2} label={t("perm.module.customers")} value={r.customers} />
+                  <Stat icon={UserSquare2} label={t("perm.module.staff")} value={r.staff} />
+                  <Stat icon={Building2} label={t("status.available")} value={r.available} />
+                  <Stat icon={Banknote} label={t("deals.method.cash")} value={formatPkr(r.cash, { compact: true })} />
                 </div>
 
                 <div className="flex items-center gap-3 border-t border-border/60 px-5 py-3.5">
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-                      <span>Share of group collections</span>
+                      <span>{t("dm.share_of_group_collections")}</span>
                       <span className="font-medium text-foreground">{share}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
@@ -169,7 +171,7 @@ export default function GroupOverviewPage() {
                     </div>
                   </div>
                   <Button size="sm" variant={isActive ? "outline" : "default"} className="group gap-1" onClick={() => open(r.company.id)}>
-                    {isActive ? "Go to dashboard" : "Open workspace"}
+                    {isActive ? t("edge.notFound.home") : t("dm.co.open_workspace")}
                     <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
                   </Button>
                 </div>
@@ -189,9 +191,9 @@ export default function GroupOverviewPage() {
           <span className="flex size-12 items-center justify-center rounded-2xl bg-secondary transition-transform duration-300 group-hover:rotate-90 group-hover:bg-gold group-hover:text-gold-foreground">
             <Plus className="size-5" />
           </span>
-          <span className="font-heading text-base font-semibold">Add another company</span>
+          <span className="font-heading text-base font-semibold">{t("dm.add_another_company")}</span>
           <span className="max-w-[16rem] text-center text-xs">
-            Starts as an empty, fully separate workspace.
+            {t("dm.starts_as_an_empty_fully")}
           </span>
         </motion.button>
       </div>

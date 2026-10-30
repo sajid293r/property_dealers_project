@@ -13,6 +13,7 @@ import {
 import { AccountSelect } from "@/components/vouchers/account-select";
 import { COST_CENTERS, emptyLine } from "@/lib/vouchers";
 import type { LedgerAccountNode, VoucherLine } from "@/lib/types";
+import { useT } from "@/lib/i18n/provider";
 
 export function VoucherLineEditor({
   lines,
@@ -25,6 +26,7 @@ export function VoucherLineEditor({
   accounts: LedgerAccountNode[];
   projects: string[];
 }) {
+  const t = useT();
   function updateLine(id: string, patch: Partial<VoucherLine>) {
     onChange(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   }
@@ -43,12 +45,12 @@ export function VoucherLineEditor({
         <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
-              <th className="w-[26%] py-2 ps-3 font-medium">Account</th>
-              <th className="w-[11%] py-2 pe-2 font-medium">Debit</th>
-              <th className="w-[11%] py-2 pe-2 font-medium">Credit</th>
-              <th className="w-[20%] py-2 pe-2 font-medium">Remarks</th>
-              <th className="w-[14%] py-2 pe-2 font-medium">Cost Center</th>
-              <th className="w-[14%] py-2 pe-2 font-medium">Project</th>
+              <th className="w-[26%] py-2 ps-3 font-medium">{t("account.eyebrow")}</th>
+              <th className="w-[11%] py-2 pe-2 font-medium">{t("vch.d.colDebit")}</th>
+              <th className="w-[11%] py-2 pe-2 font-medium">{t("vch.d.colCredit")}</th>
+              <th className="w-[20%] py-2 pe-2 font-medium">{t("dm.remarks")}</th>
+              <th className="w-[14%] py-2 pe-2 font-medium">{t("dm.cost_center")}</th>
+              <th className="w-[14%] py-2 pe-2 font-medium">{t("audit.entity.projects")}</th>
               <th className="w-8 py-2" />
             </tr>
           </thead>
@@ -84,7 +86,7 @@ export function VoucherLineEditor({
                   <Input
                     value={line.remarks ?? ""}
                     onChange={(e) => updateLine(line.id, { remarks: e.target.value })}
-                    placeholder="Remarks"
+                    placeholder={t("dm.remarks")}
                   />
                 </td>
                 <td className="py-1.5 pe-2">
@@ -133,7 +135,7 @@ export function VoucherLineEditor({
       </div>
       <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addLine}>
         <Plus className="size-3.5" />
-        Add line
+        {t("vch.f.addLine")}
       </Button>
     </div>
   );

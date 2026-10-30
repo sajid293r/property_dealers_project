@@ -16,6 +16,7 @@ import { useAccounts } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
 import type { Account, Transaction } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function TransferPaymentDialog({
   open,
@@ -24,6 +25,7 @@ export function TransferPaymentDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: accounts } = useAccounts();
 
@@ -93,16 +95,16 @@ export function TransferPaymentDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={ArrowLeftRight}
-      title="Transfer Payment"
-      description="Move funds between your cash and bank accounts."
-      submitLabel="Transfer"
+      title={t("dm.transfer_payment")}
+      description={t("dm.move_funds_between_your_cash")}
+      submitLabel={t("deals.xfer.dlgSubmit")}
       submitDisabled={!fromId || !toId || fromId === toId || !amount}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="From account">
+        <Field label={t("dm.from_account")}>
           <Select value={fromId} onValueChange={setFromId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Source" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("leads.csv.source")} /></SelectTrigger>
             <SelectContent>
               {accounts?.map((a) => (
                 <SelectItem key={a.id} value={a.id} disabled={a.id === toId}>
@@ -112,9 +114,9 @@ export function TransferPaymentDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="To account">
+        <Field label={t("dm.to_account")}>
           <Select value={toId} onValueChange={setToId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Destination" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.destination")} /></SelectTrigger>
             <SelectContent>
               {accounts?.map((a) => (
                 <SelectItem key={a.id} value={a.id} disabled={a.id === fromId}>
@@ -126,12 +128,12 @@ export function TransferPaymentDialog({
         </Field>
       </FieldRow>
 
-      <Field label="Amount (PKR)">
+      <Field label={t("dm.amount_pkr")}>
         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100000" />
       </Field>
 
-      <Field label="Description (optional)">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Petty cash top-up" />
+      <Field label={t("adm.roles.edit.descriptionLabel")}>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("dm.petty_cash_top_up")} />
       </Field>
     </FormDialog>
   );

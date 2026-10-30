@@ -20,6 +20,7 @@ import { PROJECT_TYPES, nextProjectCode } from "@/lib/projects";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { Project, ProjectType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const CITIES = ["Lahore", "Islamabad", "Rawalpindi", "Karachi", "Faisalabad"] as const;
 
@@ -30,6 +31,7 @@ export function NewProjectDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { company, live } = useCompany();
   const { data: staff } = useStaff();
@@ -80,7 +82,7 @@ export function NewProjectDialog({
         plannedEnd: plannedEndDate || undefined,
       });
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success(`${created.code} — ${created.name} created`, { description: "Add properties to it from Properties." });
+      toast.success(t("projects.new.created", { code: created.code, name: created.name }), { description: t("projects.new.createdHintLive") });
       return;
     }
     const code = nextProjectCode(projects ?? []);
@@ -103,7 +105,7 @@ export function NewProjectDialog({
     };
 
     queryClient.setQueryData<Project[]>(["projects"], (old = []) => [newProject, ...old]);
-    toast.success(`${code} — ${name} created`, { description: "Add properties to it from Properties once approvals are through." });
+    toast.success(t("projects.new.created", { code, name }), { description: t("projects.new.createdHintDemo") });
   }
 
   return (
@@ -111,31 +113,31 @@ export function NewProjectDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={FolderKanban}
-      title="New Project"
-      description="Open a new development scheme — properties and contractors attach to it once it's live."
-      submitLabel="Create Project"
+      title={t("projects.new.title")}
+      description={t("projects.new.description")}
+      submitLabel={t("projects.new.submit")}
       submitDisabled={!name || !address || !landAreaMarla || (!live && !projectManagerId) || !budget}
       onSubmit={handleSubmit}
     >
-      <Field label="Project name">
+      <Field label={t("projects.new.name")}>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Willow Park Residencia" />
       </Field>
 
       <FieldRow>
-        <Field label="Type">
+        <Field label={t("projects.new.type")}>
           <Select value={type} onValueChange={(v) => setType(v as ProjectType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {PROJECT_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
+              {PROJECT_TYPES.map((pt) => (
+                <SelectItem key={pt} value={pt}>{t(`projects.type.${pt}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
         {!live && (
-          <Field label="Project manager">
+          <Field label={t("projects.new.manager")}>
             <Select value={projectManagerId} onValueChange={setProjectManagerId}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder={t("projects.new.selectStaff")} /></SelectTrigger>
               <SelectContent>
                 {managers.map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -147,7 +149,7 @@ export function NewProjectDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="City">
+        <Field label={t("projects.new.city")}>
           <Select value={city} onValueChange={setCity}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -157,30 +159,30 @@ export function NewProjectDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Land area (Marla)">
+        <Field label={t("projects.new.land")}>
           <Input type="number" value={landAreaMarla} onChange={(e) => setLandAreaMarla(e.target.value)} placeholder="1200" />
         </Field>
       </FieldRow>
 
-      <Field label="Address">
+      <Field label={t("projects.new.address")}>
         <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Main GT Road, near..." />
       </Field>
 
       <FieldRow>
-        <Field label="Approved budget (PKR)">
+        <Field label={t("projects.new.budget")}>
           <Input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Planned start">
+        <Field label={t("projects.new.start")}>
           <Input type="date" value={plannedStartDate} onChange={(e) => setPlannedStartDate(e.target.value)} />
         </Field>
       </FieldRow>
 
-      <Field label="Planned completion">
+      <Field label={t("projects.new.end")}>
         <Input type="date" value={plannedEndDate} onChange={(e) => setPlannedEndDate(e.target.value)} />
       </Field>
 
-      <Field label="Description">
-        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this scheme is..." rows={2} />
+      <Field label={t("projects.new.about")}>
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("projects.new.aboutPlaceholder")} rows={2} />
       </Field>
     </FormDialog>
   );

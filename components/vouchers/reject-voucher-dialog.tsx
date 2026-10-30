@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/lib/i18n/provider";
 
 export function RejectVoucherDialog({
   open,
@@ -26,6 +27,7 @@ export function RejectVoucherDialog({
   voucherNumber: string;
   onConfirm: (note: string) => void;
 }) {
+  const t = useT();
   const [note, setNote] = React.useState("");
 
   function handleOpenChange(next: boolean) {
@@ -42,23 +44,23 @@ export function RejectVoucherDialog({
             Reject {voucherNumber}?
           </DialogTitle>
           <DialogDescription>
-            It goes back to the preparer as un-approved. Add a note so they know what to fix.
+            {t("dm.it_goes_back_to_the")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Reason (optional)</Label>
+          <Label className="text-xs text-muted-foreground">{t("leave.new.reason")}</Label>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. Missing supporting invoice..."
+            placeholder={t("dm.e_g_missing_supporting_invoice")}
             rows={3}
           />
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">{t("common.cancel")}</Button>
           </DialogClose>
           <Button
             variant="destructive"
@@ -67,7 +69,7 @@ export function RejectVoucherDialog({
               handleOpenChange(false);
             }}
           >
-            Reject voucher
+            {t("vch.d.rejectSubmit")}
           </Button>
         </DialogFooter>
       </DialogContent>

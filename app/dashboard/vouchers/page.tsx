@@ -47,10 +47,12 @@ import { VOUCHER_TYPES, voucherTotal, voucherTypeMeta } from "@/lib/vouchers";
 import { formatDate, formatPkr } from "@/lib/format";
 import type { Voucher, VoucherStatus, VoucherType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 type TypeFilter = "all" | VoucherType;
 
 function DemoVouchersPage() {
+  const t = useT();
   const { data: vouchers, isLoading } = useVouchers();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -98,15 +100,15 @@ function DemoVouchersPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Finance"
-        title="Vouchers"
-        description={<>{vouchers?.length ?? 0} vouchers · cash, bank &amp; journal entries</>}
+        eyebrow={t("nav.section.finance")}
+        title={t("nav.item.vouchers")}
+        description={t("vch.description", { count: vouchers?.length ?? 0 })}
         actions={<>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="gap-1.5">
               <Plus className="size-4" />
-              New Voucher
+              {t("dashboard.hero.newVoucher")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
@@ -125,32 +127,32 @@ function DemoVouchersPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={ScrollText} label="Total vouchers" value={stats.total} />
-        <StatTile icon={Clock} label="Pending approval" value={stats.pending} accent="warning" />
-        <StatTile icon={FileEdit} label="Drafts" value={stats.draft} accent="muted" />
-        <StatTile icon={Wallet} label="Approved value" value={formatPkr(stats.value, { compact: true })} accent="success" />
+        <StatTile icon={ScrollText} label={t("vch.tile.total")} value={stats.total} />
+        <StatTile icon={Clock} label={t("vch.status.pending")} value={stats.pending} accent="warning" />
+        <StatTile icon={FileEdit} label={t("vch.tile.drafts")} value={stats.draft} accent="muted" />
+        <StatTile icon={Wallet} label={t("vch.tile.value")} value={formatPkr(stats.value, { compact: true })} accent="success" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
           <Tabs value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
             <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
               {VOUCHER_TYPES.map((t) => (
                 <TabsTrigger key={t.type} value={t.type}>{t.type}</TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
           <div className="flex flex-wrap items-center gap-2.5">
-            <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, party, description..." />
+            <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_number_party_description")} />
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as VoucherStatus | "all")}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Pending Approval</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="all">{t("deals.allStatuses")}</SelectItem>
+                <SelectItem value="draft">{t("bud.status.draft")}</SelectItem>
+                <SelectItem value="pending">{t("dm.pending_approval")}</SelectItem>
+                <SelectItem value="approved">{t("bud.status.approved")}</SelectItem>
+                <SelectItem value="rejected">{t("bud.rev.rejected")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -160,12 +162,12 @@ function DemoVouchersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Voucher</th>
-                <th className="pb-2.5 font-medium">Date</th>
-                <th className="pb-2.5 font-medium">Party / Description</th>
-                <th className="pb-2.5 font-medium">Amount</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.vouchers")}</th>
+                <th className="pb-2.5 font-medium">{t("common.date")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.party_description")}</th>
+                <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -208,18 +210,18 @@ function DemoVouchersPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/vouchers/${v.id}`}>View detail</Link>
+                                <Link href={`/dashboard/vouchers/${v.id}`}>{t("vch.viewDetail")}</Link>
                               </DropdownMenuItem>
                               {v.status === "pending" && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onSelect={() => decide(v, "approved")}>
                                     <CheckCircle2 className="text-success" />
-                                    Approve
+                                    {t("perm.action.approve")}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem variant="destructive" onSelect={() => decide(v, "rejected")}>
                                     <XCircle />
-                                    Un-Approve (Reject)
+                                    {t("dm.un_approve_reject")}
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -228,7 +230,7 @@ function DemoVouchersPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem variant="destructive" onSelect={() => deleteDraft(v)}>
                                     <Trash2 />
-                                    Delete draft
+                                    {t("dm.delete_draft")}
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -241,7 +243,7 @@ function DemoVouchersPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No vouchers match your filters.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_vouchers_match_your_filters")}</p>
           )}
         </div>
       </Card>

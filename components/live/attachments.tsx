@@ -12,6 +12,8 @@ import { useInvalidateFinance } from "@/lib/hooks/use-live";
 import { api, apiBlob } from "@/lib/api/client";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tOr, translate, type TranslateFn } from "@/lib/i18n/runtime";
 
 export type AttachmentEntity = "party" | "property" | "project" | "booking" | "voucher" | "contract" | "cheque" | "quotation" | "lead" | "employee" | "construction_contract";
 
@@ -21,11 +23,13 @@ const MAX = 4 * 1024 * 1024;
 const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const icon = (mime: string) => (mime.startsWith("image/") ? FileImage : mime.includes("sheet") || mime.includes("excel") || mime === "text/csv" ? FileSpreadsheet : FileText);
 
+const catLabel = (t: TranslateFn, c: string) => tOr(t, `files.cat.${c.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, c);
+
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
-    r.onerror = () => reject(new Error("Could not read the file."));
+    r.onerror = () => reject(new Error(translate("files.couldNotRead")));
     r.readAsDataURL(file);
   });
 }
@@ -33,6 +37,7 @@ function toBase64(file: File): Promise<string> {
 /** The files kept against one record. Shown in a side panel opened by <AttachmentsButton />. */
 export function AttachmentsPanel({ entityType, entityId, canEdit = true, categories }: { entityType: AttachmentEntity; entityId: string; canEdit?: boolean; categories?: string[] }) {
   const { company } = useCompany();
+  const t = useT();
   const invalidate = useInvalidateFinance();
   const input = React.useRef<HTMLInputElement>(null);
   const [category, setCategory] = React.useState(categories?.[0] ?? "");
@@ -45,15 +50,15 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
     setBusy(true);
     try {
       for (const f of Array.from(files)) {
-        if (f.size > MAX) throw new Error(`${f.name} is larger than 4 MB. Compress it or split it.`);
+        if (f.size > MAX) throw new Error(t("files.tooLarge", { name: f.name }));
         const data = await toBase64(f);
         await api("/v1/attachments", { method: "POST", companyId: company.id, body: { entityType, entityId, fileName: f.name, mime: f.type || "application/octet-stream", data, category: category || undefined, note: note.trim() || undefined } });
       }
       setNote("");
       await invalidate();
-      toast.success(files.length > 1 ? "Files added" : "File added");
+      toast.success(files.length > 1 ? t("files.addedMany") : t("files.added"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not upload.");
+      toast.error(e instanceof Error ? e.message : t("files.couldNotUpload"));
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";
@@ -73,7 +78,7 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
       }
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not open the file.");
+      toast.error(e instanceof Error ? e.message : t("common.couldNotOpen"));
     }
   }
 
@@ -81,9 +86,9 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
     try {
       await api(`/v1/attachments/${f.id}`, { method: "DELETE", companyId: company.id });
       await invalidate();
-      toast.success("File removed");
+      toast.success(t("files.removed"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not remove it.");
+      toast.error(e instanceof Error ? e.message : t("files.couldNotRemove"));
     }
   }
 
@@ -93,19 +98,19 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
         <div className="space-y-2 rounded-xl border border-dashed border-border p-3">
           <div className="flex flex-wrap gap-2">
             {categories && (
-              <select className="h-8 rounded-md border border-input bg-background px-2 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="What is this file?">
-                {categories.map((c) => <option key={c}>{c}</option>)}
+              <select className="h-8 rounded-md border border-input bg-background px-2 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t("files.whatIsThis")}>
+                {categories.map((c) => <option key={c} value={c}>{catLabel(t, c)}</option>)}
               </select>
             )}
-            <Input className="h-8 min-w-[160px] flex-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" maxLength={300} />
+            <Input className="h-8 min-w-[160px] flex-1" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("files.notePlaceholder")} maxLength={300} />
           </div>
           <input ref={input} type="file" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.xls,.xlsx,.csv,.txt" onChange={(e) => void upload(e.target.files)} />
-          <Button size="sm" className="gap-1.5" disabled={busy} onClick={() => input.current?.click()}><Upload className="size-3.5" /> {busy ? "Uploading…" : "Choose file"}</Button>
-          <p className="text-xs text-muted-foreground">PDF, photos, Word or Excel. Up to 4 MB each.</p>
+          <Button size="sm" className="gap-1.5" disabled={busy} onClick={() => input.current?.click()}><Upload className="size-3.5" /> {busy ? t("files.uploading") : t("files.choose")}</Button>
+          <p className="text-xs text-muted-foreground">{t("files.hint")}</p>
         </div>
       )}
       {q.isLoading ? <Skeleton className="h-24 w-full" /> : (q.data ?? []).length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No files yet.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">{t("files.none")}</p>
       ) : (
         <ul className="space-y-2">
           {(q.data ?? []).map((f) => {
@@ -115,9 +120,9 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
                 <Icon className="size-5 shrink-0 text-muted-foreground" />
                 <button type="button" className="min-w-0 flex-1 text-start" onClick={() => void open(f)}>
                   <span className="block truncate font-medium hover:text-primary hover:underline">{f.fileName}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{[f.category, kb(f.sizeBytes), formatDate(f.createdAt), f.uploadedBy, f.note].filter(Boolean).join(" · ")}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{[f.category ? catLabel(t, f.category) : null, kb(f.sizeBytes), formatDate(f.createdAt), f.uploadedBy, f.note].filter(Boolean).join(" · ")}</span>
                 </button>
-                {canEdit && <Button size="icon-sm" variant="ghost" aria-label="Remove file" onClick={() => void remove(f)}><Trash2 className="size-4" /></Button>}
+                {canEdit && <Button size="icon-sm" variant="ghost" aria-label={t("files.remove")} onClick={() => void remove(f)}><Trash2 className="size-4" /></Button>}
               </li>
             );
           })}
@@ -130,18 +135,19 @@ export function AttachmentsPanel({ entityType, entityId, canEdit = true, categor
 /** A "Documents" button that opens the panel in a side sheet. */
 export function AttachmentsButton({ entityType, entityId, title, canEdit = true, categories, iconOnly, size = "sm" }: { entityType: AttachmentEntity; entityId: string; title: string; canEdit?: boolean; categories?: string[]; iconOnly?: boolean; size?: "sm" | "default" }) {
   const { company } = useCompany();
+  const t = useT();
   const [open, setOpen] = React.useState(false);
   const count = useQuery({ queryKey: ["live", "attachments", entityType, entityId], queryFn: () => api<FileRow[]>(`/v1/attachments?entityType=${entityType}&entityId=${entityId}`, { companyId: company.id }), staleTime: 20_000, retry: false });
   const n = count.data?.length ?? 0;
   return (
     <>
-      <Button size={iconOnly ? "icon-sm" : size} variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); setOpen(true); }} aria-label={iconOnly ? "Documents" : undefined}>
-        <Paperclip className="size-3.5" /> {!iconOnly && "Documents"}{n > 0 && <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">{n}</span>}
+      <Button size={iconOnly ? "icon-sm" : size} variant="outline" className="gap-1.5" onClick={(e) => { e.stopPropagation(); setOpen(true); }} aria-label={iconOnly ? t("files.title") : undefined}>
+        <Paperclip className="size-3.5" /> {!iconOnly && t("files.title")}{n > 0 && <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">{n}</span>}
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Documents</SheetTitle>
+            <SheetTitle>{t("files.title")}</SheetTitle>
             <SheetDescription>{title}</SheetDescription>
           </SheetHeader>
           <div className="px-4 pb-6">{open && <AttachmentsPanel entityType={entityType} entityId={entityId} canEdit={canEdit} categories={categories} />}</div>

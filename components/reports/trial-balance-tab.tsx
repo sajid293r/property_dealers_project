@@ -17,8 +17,10 @@ import {
   useUnits,
 } from "@/lib/hooks/use-data";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function TrialBalanceTab() {
+  const t = useT();
   const { data: units, isLoading: l1 } = useUnits();
   const { data: customers, isLoading: l2 } = useCustomers();
   const { data: staff, isLoading: l3 } = useStaff();
@@ -65,8 +67,8 @@ export function TrialBalanceTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Total Debit" value={totalDebit} format={(n) => formatLedgerBalance(n)} icon={Scale} index={0} />
-        <KpiCard label="Total Credit" value={totalCredit} format={(n) => formatLedgerBalance(n)} icon={Scale} index={1} accent="gold" />
+        <KpiCard label={t("dm.total_debit")} value={totalDebit} format={(n) => formatLedgerBalance(n)} icon={Scale} index={0} />
+        <KpiCard label={t("dm.total_credit")} value={totalCredit} format={(n) => formatLedgerBalance(n)} icon={Scale} index={1} accent="gold" />
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -80,7 +82,7 @@ export function TrialBalanceTab() {
             {balanced ? <CheckCircle2 className="size-4.5" /> : <AlertTriangle className="size-4.5" />}
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Balance check</p>
+            <p className="text-xs font-medium text-muted-foreground">{t("dm.balance_check")}</p>
             <p className="mt-0.5 text-sm font-semibold">{balanced ? "Debit = Credit" : "Out of balance"}</p>
           </div>
         </motion.div>
@@ -88,19 +90,19 @@ export function TrialBalanceTab() {
 
       <Card className="p-5">
         <div className="mb-4">
-          <h3 className="font-heading text-base font-semibold">Trial Balance</h3>
+          <h3 className="font-heading text-base font-semibold">{t("dm.trial_balance")}</h3>
           <p className="text-xs text-muted-foreground">
-            Balance-sheet accounts only — income and expenses close to Retained Earnings each period.
+            {t("dm.balance_sheet_accounts_only_income")}
           </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Code</th>
-                <th className="pb-2.5 font-medium">Account</th>
-                <th className="pb-2.5 pe-3 text-end font-medium">Debit</th>
-                <th className="pb-2.5 text-end font-medium">Credit</th>
+                <th className="pb-2.5 font-medium">{t("acc.col.code")}</th>
+                <th className="pb-2.5 font-medium">{t("account.eyebrow")}</th>
+                <th className="pb-2.5 pe-3 text-end font-medium">{t("vch.d.colDebit")}</th>
+                <th className="pb-2.5 text-end font-medium">{t("vch.d.colCredit")}</th>
               </tr>
             </thead>
             <tbody>
@@ -124,7 +126,7 @@ export function TrialBalanceTab() {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-border">
-                <td colSpan={2} className="py-2.5 font-semibold">Total</td>
+                <td colSpan={2} className="py-2.5 font-semibold">{t("common.total")}</td>
                 <td className="py-2.5 pe-3 text-end tabular-nums font-semibold">{formatLedgerBalance(totalDebit)}</td>
                 <td className="py-2.5 text-end tabular-nums font-semibold">{formatLedgerBalance(totalCredit)}</td>
               </tr>

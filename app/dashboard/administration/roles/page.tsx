@@ -17,8 +17,10 @@ import { useRoles, useSystemUsers } from "@/lib/hooks/use-data";
 import { ROLE_COLOR_CLASSES, moduleCount, PERMISSION_MODULES } from "@/lib/permissions";
 import type { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoRolesPage() {
+  const t = useT();
   const { data: roles, isLoading } = useRoles();
   const { data: users } = useSystemUsers();
 
@@ -37,13 +39,13 @@ function DemoRolesPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Administration"
-        title="Roles &amp; Permissions"
+        eyebrow={t("perm.module.administration")}
+        title={t("dm.roles_amp_permissions")}
         description={<>{roles?.length ?? 0} roles · default org-chart roles plus anything custom you add</>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setNewRoleOpen(true)}>
           <ShieldPlus className="size-4" />
-          New Role
+          {t("dm.new_role")}
         </Button>
         </>}
       />
@@ -78,7 +80,7 @@ function DemoRolesPage() {
                       </div>
                       {role.isSystem && (
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          System
+                          {t("dm.system")}
                         </span>
                       )}
                     </div>

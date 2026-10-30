@@ -17,9 +17,11 @@ import { amountInWords } from "@/lib/amount-words";
 import { todayIso } from "@/lib/fiscal";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 /** Record money received from a customer. It is applied to the oldest unpaid installments automatically. */
 export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open: boolean; onOpenChange: (o: boolean) => void; bookingId?: string }) {
+  const t = useT();
   const { company } = useCompany();
   const invalidate = useInvalidateFinance();
   const banks = useBankAccounts();
@@ -42,9 +44,9 @@ export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open:
       open={open}
       onOpenChange={onOpenChange}
       icon={HandCoins}
-      title="Receive payment"
-      description="Record money received from the customer. It goes into the books straight away."
-      submitLabel="Save receipt"
+      title={t("deals.receivePayment")}
+      description={t("deals.rcpt.description")}
+      submitLabel={t("deals.rcpt.submit")}
       submitDisabled={!bookingId || num(amount) <= 0 || (m.needsRef && !ref.trim()) || (method !== "cash" && into === "cash")}
       onSubmit={async () => {
         const r = await createReceipt(company.id, {
@@ -56,28 +58,28 @@ export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open:
           instrumentRef: ref.trim() || undefined,
         });
         await invalidate();
-        toast.success(`${r.receiptNo} saved`);
+        toast.success(t("deals.rcpt.saved", { no: r.receiptNo }));
         setAmount("");
         setRef("");
       }}
     >
       {!preset && (
-        <Field label="Booking">
-          <SearchSelect options={openBookings} value={bookingId} onChange={setBookingId} placeholder="Choose the booking" searchPlaceholder="Search booking or customer" emptyText="No booking found" />
+        <Field label={t("deals.rcpt.booking")}>
+          <SearchSelect options={openBookings} value={bookingId} onChange={setBookingId} placeholder={t("deals.rcpt.chooseBooking")} searchPlaceholder={t("deals.rcpt.searchBooking")} emptyText={t("deals.rcpt.noBooking")} />
         </Field>
       )}
       {detail.data && (
         <div className="rounded-lg bg-secondary/50 px-3 py-2.5 text-sm">
           <p className="font-medium">{detail.data.customerName} · {detail.data.propertyCode}</p>
-          <p className="text-muted-foreground">Due on installments: <span className="font-mono">{formatMoney(dueNow)}</span></p>
+          <p className="text-muted-foreground">{t("deals.rcpt.dueOn")} <span className="font-mono">{formatMoney(dueNow)}</span></p>
         </div>
       )}
-      <Field label="Amount received">
+      <Field label={t("deals.rcpt.amount")}>
         <AmountInput value={amount} onChange={setAmount} />
       </Field>
       {num(amount) > 0 && <p className="-mt-2 text-xs italic text-muted-foreground">{amountInWords(amount)}</p>}
       <FieldRow>
-        <Field label="Paid by">
+        <Field label={t("deals.rcpt.paidBy")}>
           <Select
             value={method}
             onValueChange={(v) => {
@@ -87,25 +89,25 @@ export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open:
             }}
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{RECEIPT_METHODS.map((x) => <SelectItem key={x.value} value={x.value}>{x.label}</SelectItem>)}</SelectContent>
+            <SelectContent>{RECEIPT_METHODS.map((x) => <SelectItem key={x.value} value={x.value}>{t(`deals.method.${x.value}`)}</SelectItem>)}</SelectContent>
           </Select>
         </Field>
-        <Field label="Received on"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        <Field label={t("deals.rcpt.receivedOn")}><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
       </FieldRow>
       <FieldRow>
-        <Field label="Deposited into">
+        <Field label={t("deals.rcpt.depositedInto")}>
           <Select value={into} onValueChange={setInto}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {method === "cash" && <SelectItem value="cash">Cash in hand</SelectItem>}
+              {method === "cash" && <SelectItem value="cash">{t("deals.rcpt.cashInHand")}</SelectItem>}
               {(banks.data ?? []).map((b) => <SelectItem key={b.id} value={b.id}>{b.bankName} · {b.accountNo}</SelectItem>)}
             </SelectContent>
           </Select>
         </Field>
-        {m.needsRef && <Field label={m.refLabel}><Input value={ref} onChange={(e) => setRef(e.target.value)} maxLength={60} /></Field>}
+        {m.needsRef && <Field label={t(`deals.ref.${m.value}`)}><Input value={ref} onChange={(e) => setRef(e.target.value)} maxLength={60} /></Field>}
       </FieldRow>
       {method !== "cash" && (banks.data ?? []).length === 0 && (
-        <p className="text-xs text-warning">Add a bank account under Accounts first, to deposit a cheque or transfer into.</p>
+        <p className="text-xs text-warning">{t("deals.rcpt.needBank")}</p>
       )}
     </FormDialog>
   );

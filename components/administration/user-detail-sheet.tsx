@@ -19,6 +19,7 @@ import { useRoles } from "@/lib/hooks/use-data";
 import { formatDate } from "@/lib/format";
 import type { SystemUser } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function initials(name: string) {
   return name
@@ -38,6 +39,7 @@ export function UserDetailSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: roles } = useRoles();
   const role = roles?.find((r) => r.id === user?.roleId);
@@ -59,7 +61,7 @@ export function UserDetailSheet({
       <SheetContent className="w-full gap-0 overflow-y-auto p-0 sm:max-w-md">
         <SheetHeader className="sr-only">
           <SheetTitle>{user.name}</SheetTitle>
-          <SheetDescription>User detail and permissions</SheetDescription>
+          <SheetDescription>{t("dm.user_detail_and_permissions")}</SheetDescription>
         </SheetHeader>
 
         <div className="relative isolate overflow-hidden border-b border-border/60 bg-gradient-to-br from-primary/[0.07] via-transparent to-gold/[0.06] px-6 py-6">
@@ -93,19 +95,19 @@ export function UserDetailSheet({
 
           <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/40 p-3 text-xs">
             <div>
-              <p className="text-muted-foreground">Department</p>
+              <p className="text-muted-foreground">{t("staff.csv.department")}</p>
               <p className="mt-0.5 font-medium text-foreground">{user.department}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Last active</p>
+              <p className="text-muted-foreground">{t("dm.last_active")}</p>
               <p className="mt-0.5 font-medium text-foreground">{formatDate(user.lastActiveAt)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Member since</p>
+              <p className="text-muted-foreground">{t("dm.member_since")}</p>
               <p className="mt-0.5 font-medium text-foreground">{formatDate(user.createdAt)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">User ID</p>
+              <p className="text-muted-foreground">{t("dm.user_id")}</p>
               <p className="mt-0.5 font-mono font-medium text-foreground">{user.id}</p>
             </div>
           </div>
@@ -123,16 +125,16 @@ export function UserDetailSheet({
           <Separator />
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Account actions</p>
+            <p className="text-xs font-medium text-muted-foreground">{t("dm.account_actions")}</p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 size="sm"
                 className="flex-1 gap-1.5"
-                onClick={() => toast.success(`Password reset link sent to ${user.email}`)}
+                onClick={() => toast.success(t("dm.user.reset_sent", { email: user.email }))}
               >
                 <KeyRound className="size-3.5" />
-                Reset password
+                {t("dm.reset_password")}
               </Button>
               <Button
                 variant="outline"
@@ -143,12 +145,12 @@ export function UserDetailSheet({
                 {user.status === "suspended" ? (
                   <>
                     <CheckCircle2 className="size-3.5" />
-                    Reactivate
+                    {t("dm.reactivate")}
                   </>
                 ) : (
                   <>
                     <Ban className="size-3.5" />
-                    Suspend
+                    {t("adm.users.suspend")}
                   </>
                 )}
               </Button>

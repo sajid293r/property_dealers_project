@@ -1,4 +1,5 @@
 import type { Budget, BudgetControlMode, BudgetLine, BudgetStatus } from "@/lib/types";
+import { tx } from "@/lib/i18n/runtime";
 
 export const BUDGET_FY = "FY2026-27";
 /** Fiscal year runs July → June (Pakistan default). */
@@ -66,23 +67,23 @@ export function linesOf(lines: BudgetLine[], budgetId: string) {
 }
 
 export const HEALTH_META: Record<BudgetHealth, { label: string; chip: string; text: string; color: string }> = {
-  ok: { label: "On track", chip: "bg-success/12 text-success", text: "text-success", color: "var(--success)" },
-  watch: { label: "Watch", chip: "bg-warning/15 text-warning", text: "text-warning", color: "var(--warning)" },
-  over: { label: "Over budget", chip: "bg-destructive/12 text-destructive", text: "text-destructive", color: "var(--destructive)" },
+  ok: { get label() { return tx("On track"); }, chip: "bg-success/12 text-success", text: "text-success", color: "var(--success)" },
+  watch: { get label() { return tx("Watch"); }, chip: "bg-warning/15 text-warning", text: "text-warning", color: "var(--warning)" },
+  over: { get label() { return tx("Over budget"); }, chip: "bg-destructive/12 text-destructive", text: "text-destructive", color: "var(--destructive)" },
 };
 
 export const BUDGET_STATUS_META: Record<BudgetStatus, { label: string; chip: string }> = {
-  draft: { label: "Draft", chip: "bg-muted text-muted-foreground" },
-  submitted: { label: "Awaiting approval", chip: "bg-warning/15 text-warning" },
-  approved: { label: "Approved", chip: "bg-success/12 text-success" },
-  locked: { label: "Locked", chip: "bg-primary/12 text-primary" },
-  closed: { label: "Closed", chip: "bg-secondary text-secondary-foreground" },
+  draft: { get label() { return tx("Draft"); }, chip: "bg-muted text-muted-foreground" },
+  submitted: { get label() { return tx("Awaiting approval"); }, chip: "bg-warning/15 text-warning" },
+  approved: { get label() { return tx("Approved"); }, chip: "bg-success/12 text-success" },
+  locked: { get label() { return tx("Locked"); }, chip: "bg-primary/12 text-primary" },
+  closed: { get label() { return tx("Closed"); }, chip: "bg-secondary text-secondary-foreground" },
 };
 
 export const CONTROL_MODE_META: Record<BudgetControlMode, { label: string; hint: string }> = {
-  none: { label: "No control", hint: "Spending is tracked but never blocked" },
-  warn: { label: "Warn", hint: "Users see a warning when a line would go over budget" },
-  block: { label: "Block", hint: "Vouchers, orders and bills that exceed the line are stopped until a revision is approved" },
+  none: { get label() { return tx("No control"); }, get hint() { return tx("Spending is tracked but never blocked"); } },
+  warn: { get label() { return tx("Warn"); }, get hint() { return tx("Users see a warning when a line would go over budget"); } },
+  block: { get label() { return tx("Block"); }, get hint() { return tx("Vouchers, orders and bills that exceed the line are stopped until a revision is approved"); } },
 };
 
 /** Splits a total across the standard categories, rounding to the nearest thousand. */

@@ -19,7 +19,7 @@ export function AccountSelect({
   accounts,
   value,
   onChange,
-  placeholder = "Select account",
+  placeholder,
 }: {
   accounts: LedgerAccountNode[];
   value: string;

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import type { StaffMember, StaffRole } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const ROLES: StaffRole[] = ["admin", "manager", "agent", "accountant", "dealer"];
 const DEPARTMENTS = ["Sales", "Accounts", "Marketing", "Operations"] as const;
@@ -25,6 +26,7 @@ export function NewStaffDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
 
   const [name, setName] = React.useState("");
@@ -61,7 +63,7 @@ export function NewStaffDialog({
     };
 
     queryClient.setQueryData<StaffMember[]>(["staff"], (old = []) => [newStaff, ...old]);
-    toast.success(`${name} added to staff`, { description: `${department} · ${role}` });
+    toast.success(t("dm.staff.added", { name }), { description: `${department} · ${role}` });
   }
 
   return (
@@ -69,20 +71,20 @@ export function NewStaffDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={UserSquare2}
-      title="Add Staff"
-      description="Bring a new team member onto the roster."
-      submitLabel="Add Staff"
+      title={t("dm.add_staff")}
+      description={t("dm.bring_a_new_team_member")}
+      submitLabel={t("dm.add_staff")}
       submitDisabled={!name || !role || !department || !salary}
       onSubmit={handleSubmit}
     >
-      <Field label="Full name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Bilal Khan" />
+      <Field label={t("customers.new.fullName")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dm.bilal_khan")} />
       </Field>
 
       <FieldRow>
-        <Field label="Role">
+        <Field label={t("adm.users.col.role")}>
           <Select value={role} onValueChange={(v) => setRole(v as StaffRole)}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select role" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_role")} /></SelectTrigger>
             <SelectContent>
               {ROLES.map((r) => (
                 <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>
@@ -90,9 +92,9 @@ export function NewStaffDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Department">
+        <Field label={t("staff.csv.department")}>
           <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select department" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_department")} /></SelectTrigger>
             <SelectContent>
               {DEPARTMENTS.map((d) => (
                 <SelectItem key={d} value={d}>{d}</SelectItem>
@@ -103,10 +105,10 @@ export function NewStaffDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="Phone">
+        <Field label={t("common.phone")}>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03001234567" />
         </Field>
-        <Field label="Monthly salary (PKR)">
+        <Field label={t("dm.monthly_salary_pkr")}>
           <Input type="number" value={salary} onChange={(e) => setSalary(e.target.value)} placeholder="60000" />
         </Field>
       </FieldRow>

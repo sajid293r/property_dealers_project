@@ -17,6 +17,7 @@ import { PAKISTANI_BANKS } from "@/lib/sales";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { PostDatedCheque } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function NewChequeDialog({
   open,
@@ -25,6 +26,7 @@ export function NewChequeDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: customers } = useCustomers();
   const { data: deals } = useDeals();
@@ -78,14 +80,14 @@ export function NewChequeDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={CalendarClock}
-      title="Record Post-Dated Cheque"
-      description="Log a cheque collected from a customer against an installment."
-      submitLabel="Save Cheque"
+      title={t("dm.record_post_dated_cheque")}
+      description={t("dm.log_a_cheque_collected_from")}
+      submitLabel={t("dm.save_cheque")}
       submitDisabled={!customerId || !chequeNo || !amount}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Customer">
+        <Field label={t("common.customer")}>
           <Select
             value={customerId}
             onValueChange={(v) => {
@@ -93,7 +95,7 @@ export function NewChequeDialog({
               setDealId("");
             }}
           >
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_customer")} /></SelectTrigger>
             <SelectContent>
               {customers?.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -101,9 +103,9 @@ export function NewChequeDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Related deal (optional)">
+        <Field label={t("dm.related_deal_optional")}>
           <Select value={dealId} onValueChange={setDealId} disabled={!customerId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="None" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("common.none")} /></SelectTrigger>
             <SelectContent>
               {customerDeals.map((d) => (
                 <SelectItem key={d.id} value={d.id}>{d.voucherNo}</SelectItem>
@@ -114,10 +116,10 @@ export function NewChequeDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="Cheque no.">
+        <Field label={t("dm.cheque_no")}>
           <Input value={chequeNo} onChange={(e) => setChequeNo(e.target.value)} placeholder="1234567" />
         </Field>
-        <Field label="Bank">
+        <Field label={t("chq.csv.bank")}>
           <Select value={bankName} onValueChange={setBankName}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -130,16 +132,16 @@ export function NewChequeDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="Amount (PKR)">
+        <Field label={t("dm.amount_pkr")}>
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Cheque date">
+        <Field label={t("chq.csv.date")}>
           <Input type="date" value={chequeDate} onChange={(e) => setChequeDate(e.target.value)} />
         </Field>
       </FieldRow>
 
-      <Field label="Remarks">
-        <Input value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional" />
+      <Field label={t("dm.remarks")}>
+        <Input value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder={t("common.optional")} />
       </Field>
     </FormDialog>
   );

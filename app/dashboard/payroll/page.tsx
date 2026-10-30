@@ -46,8 +46,11 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { Account, PayrollAdjustment, StaffMember, Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { tx, translate } from "@/lib/i18n/runtime";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoPayrollPage() {
+  const t = useT();
   const { data: staff, isLoading } = useStaff();
   const { data: accounts } = useAccounts();
   const { data: adjustments, isLoading: adjustmentsLoading } = usePayrollAdjustments();
@@ -103,7 +106,7 @@ function DemoPayrollPage() {
         accountId: cashAccount.id,
         kind: "debit",
         amount: net,
-        title: `Salary — ${s.name}`,
+        title: translate("dm.pay.salary_name", { name: s.name }),
         category: "Salary",
         date: new Date().toISOString().slice(0, 10),
         confirmed: true,
@@ -112,14 +115,14 @@ function DemoPayrollPage() {
     ]);
 
     setPaidIds((prev) => new Set(prev).add(s.id));
-    toast.success(`${formatPkr(net)} disbursed to ${s.name}`);
+    toast.success(t("dm.pay.disbursed_to", { amount: formatPkr(net), name: s.name }));
   }
 
   function disburseAll() {
     const pending = filtered.filter((s) => !paidIds.has(s.id));
     pending.forEach(disburse);
     if (pending.length > 0) {
-      toast.success(`Payroll disbursed for ${pending.length} staff member${pending.length > 1 ? "s" : ""}`);
+      toast.success(t("dm.pay.disbursed_all", { count: pending.length }));
     }
   }
 
@@ -138,8 +141,8 @@ function DemoPayrollPage() {
     const member = staff?.find((s) => s.id === adj.staffId);
     toast.success(
       status === "approved"
-        ? `${adj.type === "increment" ? "Increment" : "Adjustment"} approved for ${member?.name ?? "staff member"}`
-        : `Adjustment rejected for ${member?.name ?? "staff member"}`,
+        ? t(adj.type === "increment" ? "dm.pay.increment_approved" : "dm.pay.adjustment_approved", { name: member?.name ?? tx("dm.x.staff_member") })
+        : t("dm.pay.adjustment_rejected", { name: member?.name ?? tx("staff member") }),
     );
   }
 
@@ -147,28 +150,28 @@ function DemoPayrollPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="People"
-        title="Payroll"
-        description="Salary disbursement, increments, allowances, deductions and loans"
+        eyebrow={t("dashboard.people.title")}
+        title={t("perm.module.payroll")}
+        description={t("dm.salary_disbursement_increments_allowan")}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          label="Monthly Payroll"
+          label={t("dm.monthly_payroll_2")}
           value={totalPayroll}
           format={(n) => formatPkr(n, { compact: true })}
           icon={Banknote}
           index={0}
         />
         <KpiCard
-          label="Staff on Payroll"
+          label={t("dm.staff_on_payroll")}
           value={staff?.length ?? 0}
           format={(n) => n.toString()}
           icon={UserSquare2}
           index={1}
         />
         <KpiCard
-          label="Outstanding Advances"
+          label={t("dm.outstanding_advances")}
           value={outstandingAdvances}
           format={(n) => formatPkr(n, { compact: true })}
           icon={HandCoins}
@@ -176,7 +179,7 @@ function DemoPayrollPage() {
           accent="gold"
         />
         <KpiCard
-          label="Pending Approvals"
+          label={t("dm.pending_approvals")}
           value={pendingCount + pendingAdjustments}
           format={(n) => n.toString()}
           icon={TimerReset}
@@ -186,9 +189,9 @@ function DemoPayrollPage() {
 
       <Tabs defaultValue="disbursement">
         <TabsList>
-          <TabsTrigger value="disbursement">Disbursement</TabsTrigger>
+          <TabsTrigger value="disbursement">{t("dm.disbursement")}</TabsTrigger>
           <TabsTrigger value="adjustments">
-            Adjustments
+            {t("dm.adjustments")}
             {pendingAdjustments > 0 && (
               <Badge variant="secondary" className="ms-1.5 h-4 min-w-4 px-1 text-[10px]">{pendingAdjustments}</Badge>
             )}
@@ -199,11 +202,11 @@ function DemoPayrollPage() {
           <Card className="p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <DataTableSearch value={search} onChange={setSearch} placeholder="Search name, role..." />
+                <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_name_role")} />
                 <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger size="sm" className="w-44"><SelectValue placeholder="Department" /></SelectTrigger>
+                  <SelectTrigger size="sm" className="w-44"><SelectValue placeholder={t("staff.csv.department")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All departments</SelectItem>
+                    <SelectItem value="all">{t("dm.all_departments")}</SelectItem>
                     {departments.map((d) => (
                       <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
@@ -213,11 +216,11 @@ function DemoPayrollPage() {
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAdvanceOpen(true)}>
                   <PlusCircle className="size-3.5" />
-                  Record Advance
+                  {t("dm.record_advance")}
                 </Button>
                 <Button size="sm" className="gap-1.5" onClick={disburseAll} disabled={pendingCount === 0}>
                   <CheckCircle2 className="size-3.5" />
-                  Disburse All
+                  {t("dm.disburse_all")}
                 </Button>
               </div>
             </div>
@@ -226,12 +229,12 @@ function DemoPayrollPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Staff</th>
-                    <th className="pb-2.5 font-medium">Role</th>
-                    <th className="pb-2.5 font-medium">Base Salary</th>
-                    <th className="pb-2.5 font-medium">Advance Balance</th>
-                    <th className="pb-2.5 font-medium">Net Payable</th>
-                    <th className="pb-2.5 font-medium">Status</th>
+                    <th className="pb-2.5 font-medium">{t("perm.module.staff")}</th>
+                    <th className="pb-2.5 font-medium">{t("adm.users.col.role")}</th>
+                    <th className="pb-2.5 font-medium">{t("dm.base_salary")}</th>
+                    <th className="pb-2.5 font-medium">{t("dm.advance_balance")}</th>
+                    <th className="pb-2.5 font-medium">{t("dm.net_payable")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.status")}</th>
                     <th className="pb-2.5 font-medium" />
                   </tr>
                 </thead>
@@ -281,11 +284,11 @@ function DemoPayrollPage() {
                             <td className="py-2.5">
                               {paid ? (
                                 <Badge variant="outline" className="bg-success/15 text-success border-success/30">
-                                  Paid
+                                  {t("deals.col.paid")}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30">
-                                  Pending
+                                  {t("status.pending")}
                                 </Badge>
                               )}
                             </td>
@@ -296,7 +299,7 @@ function DemoPayrollPage() {
                                 disabled={paid}
                                 onClick={() => disburse(s)}
                               >
-                                {paid ? "Disbursed" : "Disburse"}
+                                {paid ? t("dm.pay.disbursed") : t("dm.pay.disburse")}
                               </Button>
                             </td>
                           </motion.tr>
@@ -305,7 +308,7 @@ function DemoPayrollPage() {
                   {!isLoading && filtered.length === 0 && (
                     <tr>
                       <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                        No staff match these filters.
+                        {t("dm.no_staff_match_these_filters")}
                       </td>
                     </tr>
                   )}
@@ -323,7 +326,7 @@ function DemoPayrollPage() {
               </p>
               <Button size="sm" className="gap-1.5" onClick={() => setAdjustmentOpen(true)}>
                 <PlusCircle className="size-3.5" />
-                New Adjustment
+                {t("dm.new_adjustment")}
               </Button>
             </div>
 
@@ -331,13 +334,13 @@ function DemoPayrollPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Staff</th>
-                    <th className="pb-2.5 font-medium">Type</th>
-                    <th className="pb-2.5 font-medium">Reason</th>
-                    <th className="pb-2.5 font-medium">Amount</th>
-                    <th className="pb-2.5 font-medium">Effective</th>
-                    <th className="pb-2.5 font-medium">Status</th>
-                    <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                    <th className="pb-2.5 font-medium">{t("perm.module.staff")}</th>
+                    <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.reason")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                    <th className="pb-2.5 font-medium">{t("dm.effective")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                    <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -373,16 +376,16 @@ function DemoPayrollPage() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onSelect={() => decideAdjustment(a, "approved")}>
-                                      Approve
+                                      {t("perm.action.approve")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem variant="destructive" onSelect={() => decideAdjustment(a, "rejected")}>
-                                      Reject
+                                      {t("bud.rev.reject")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               ) : (
                                 <span className="text-xs text-muted-foreground">
-                                  {a.status === "approved" ? "Approved" : "Rejected"} by {a.approvedBy}
+                                  {t(a.status === "approved" ? "vch.d.approvedBy" : "vch.d.rejectedBy", { name: a.approvedBy ?? "" })}
                                 </span>
                               )}
                             </td>
@@ -392,7 +395,7 @@ function DemoPayrollPage() {
                   {!adjustmentsLoading && (adjustments?.length ?? 0) === 0 && (
                     <tr>
                       <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                        No payroll adjustments yet.
+                        {t("dm.no_payroll_adjustments_yet")}
                       </td>
                     </tr>
                   )}

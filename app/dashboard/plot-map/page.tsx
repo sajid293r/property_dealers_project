@@ -37,6 +37,7 @@ import type { Unit, UnitStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { useT } from "@/lib/i18n/provider";
 
 const STATUS_CELL: Record<UnitStatus, string> = {
   available: "bg-[var(--chart-1)]/85 hover:bg-[var(--chart-1)] text-white",
@@ -55,6 +56,7 @@ const ZOOM_MAX = 1.5;
 const ZOOM_STEP = 0.15;
 
 export default function PlotMapPage() {
+  const t = useT();
   const { data: units, isLoading } = useUnits();
 
   const projects = React.useMemo(
@@ -121,15 +123,15 @@ export default function PlotMapPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={MapPinned}
-        eyebrow="Portfolio"
-        title="Plot Map"
+        eyebrow={t("nav.section.portfolio")}
+        title={t("plotmap.title")}
         badge={
           <Badge variant="outline" className="gap-1 border-gold/40 bg-gold/10 text-gold">
             <Sparkles className="size-3" />
-            Premium
+            {t("plan.premium")}
           </Badge>
         }
-        description="Pick a plot visually — click any property to see pricing and booking status."
+        description={t("plotmap.description")}
       />
 
       <Card className="p-4">
@@ -153,21 +155,21 @@ export default function PlotMapPage() {
           <Select value={block} onValueChange={setBlock}>
             <SelectTrigger size="sm" className="w-32">
               <Layers className="size-3.5 text-muted-foreground" />
-              <SelectValue placeholder="Block" />
+              <SelectValue placeholder={t("plotmap.block")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All blocks</SelectItem>
+              <SelectItem value="all">{t("plotmap.allBlocks")}</SelectItem>
               {blocks.map((b) => (
-                <SelectItem key={b} value={b}>Block {b}</SelectItem>
+                <SelectItem key={b} value={b}>{t("plotmap.blockName", { name: b })}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <DataTableSearch value={query} onChange={setQuery} placeholder="Highlight a plot code..." />
+          <DataTableSearch value={query} onChange={setQuery} placeholder={t("plotmap.highlight")} />
           {query && (
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => setQuery("")}>
               <X className="size-3.5" />
-              Remove highlight
+              {t("plotmap.removeHighlight")}
             </Button>
           )}
 
@@ -180,7 +182,7 @@ export default function PlotMapPage() {
                 onClick={() => setViewMode("scheme")}
               >
                 <MapIcon className="size-3.5" />
-                Scheme
+                {t("plotmap.scheme")}
               </Button>
               <Button
                 variant={viewMode === "satellite" ? "secondary" : "ghost"}
@@ -189,7 +191,7 @@ export default function PlotMapPage() {
                 onClick={() => setViewMode("satellite")}
               >
                 <Satellite className="size-3.5" />
-                Satellite
+                {t("plotmap.satellite")}
               </Button>
             </div>
             <div className="flex items-center overflow-hidden rounded-md border border-border">
@@ -222,7 +224,7 @@ export default function PlotMapPage() {
           {(["available", "reserved", "sold"] as const).map((s) => (
             <div key={s} className="flex items-center gap-1.5 text-xs">
               <span className={cn("size-2.5 rounded-[3px]", STATUS_CELL[s].split(" ")[0])} />
-              <span className="capitalize text-muted-foreground">{s}</span>
+              <span className="text-muted-foreground">{t(`status.${s}`)}</span>
               <span className="font-medium tabular-nums">{counts[s]}</span>
             </div>
           ))}
@@ -283,8 +285,7 @@ export default function PlotMapPage() {
                           viewMode === "satellite" ? "text-white/70" : "text-muted-foreground",
                         )}
                       >
-                        Block {blockName} · {blockUnits.length} plots ·{" "}
-                        {blockUnits.filter((u) => u.status === "available").length} available
+                        {t("plotmap.blockSummary", { block: blockName, count: blockUnits.length, available: blockUnits.filter((u) => u.status === "available").length })}
                       </span>
                       <span
                         className={cn(
@@ -324,8 +325,8 @@ export default function PlotMapPage() {
                             </motion.button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="font-medium">{unit.code} · Block {unit.block}</p>
-                            <p className="text-muted-foreground">{formatPkr(unit.price)} · {unit.status}</p>
+                            <p className="font-medium">{t("plotmap.tooltipTitle", { code: unit.code, block: unit.block })}</p>
+                            <p className="text-muted-foreground">{t("plotmap.tooltipPrice", { price: formatPkr(unit.price), status: t(`status.${unit.status}`) })}</p>
                           </TooltipContent>
                         </Tooltip>
                       );
@@ -357,11 +358,11 @@ export default function PlotMapPage() {
                     <X className="size-3.5" />
                   </Button>
                 </div>
-                <Badge variant="outline" className={cn("mt-2 capitalize", STATUS_BADGE[selectedUnit.status])}>
-                  {selectedUnit.status}
+                <Badge variant="outline" className={cn("mt-2", STATUS_BADGE[selectedUnit.status])}>
+                  {t(`status.${selectedUnit.status}`)}
                 </Badge>
                 <div className="surface-hero relative mt-4 overflow-hidden rounded-xl p-4">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">Asking price</p>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/60">{t("plotmap.askingPrice")}</p>
                   <p className="text-gradient-gold mt-1 font-heading text-3xl font-semibold tabular-nums">
                     {formatPkr(selectedUnit.price, { compact: true })}
                   </p>
@@ -369,27 +370,27 @@ export default function PlotMapPage() {
                 </div>
 
                 <div className="mt-4 space-y-3 border-t border-border/60 pt-4 text-sm">
-                  <DetailRow icon={Building2} label="Category" value={selectedUnit.category} />
-                  <DetailRow icon={Layers} label="Block" value={`Block ${selectedUnit.block}`} />
+                  <DetailRow icon={Building2} label={t("plotmap.category")} value={selectedUnit.category} />
+                  <DetailRow icon={Layers} label={t("plotmap.block")} value={t("plotmap.blockName", { name: selectedUnit.block })} />
                   <DetailRow
                     icon={Ruler}
-                    label="Size"
-                    value={`${selectedUnit.sizeMarla} Marla (${selectedUnit.sqft.toLocaleString()} sqft)`}
+                    label={t("plotmap.size")}
+                    value={t("plotmap.sizeValue", { marla: selectedUnit.sizeMarla, sqft: selectedUnit.sqft.toLocaleString("en") })}
                   />
-                  <DetailRow icon={Tag} label="Price" value={formatPkr(selectedUnit.price)} />
+                  <DetailRow icon={Tag} label={t("plotmap.price")} value={formatPkr(selectedUnit.price)} />
                 </div>
 
                 <div className="mt-5 flex flex-col gap-2">
                   <Button
                     className="h-9 bg-gold text-gold-foreground shadow-md shadow-gold/25 hover:bg-gold/90"
                     disabled={selectedUnit.status !== "available"}
-                    onClick={() => toast.success(`Booking started for ${selectedUnit.code}`)}
+                    onClick={() => toast.success(t("plotmap.bookingStarted", { code: selectedUnit.code }))}
                   >
-                    {selectedUnit.status === "available" ? "Book this property" : "Not available"}
+                    {selectedUnit.status === "available" ? t("plotmap.book") : t("plotmap.notAvailable")}
                   </Button>
                   <Button variant="outline" asChild>
                     <Link href="/dashboard/properties">
-                      View in properties
+                      {t("plotmap.viewInProperties")}
                       <ArrowRight className="size-3.5 rtl:-scale-x-100" />
                     </Link>
                   </Button>
@@ -405,7 +406,7 @@ export default function PlotMapPage() {
               transition={{ duration: 0.25 }}
             >
               <Card className="p-5">
-                <h3 className="font-heading text-base font-semibold">Project overview</h3>
+                <h3 className="font-heading text-base font-semibold">{t("plotmap.overview")}</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">{project}</p>
                 {isLoading ? (
                   <>
@@ -419,19 +420,19 @@ export default function PlotMapPage() {
                     </div>
                     <div className="mt-4 space-y-2 border-t border-border/60 pt-4 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total portfolio value</span>
+                        <span className="text-muted-foreground">{t("plotmap.portfolioValue")}</span>
                         <span className="tabular-nums font-medium">
                           {formatPkr(projectUnits.reduce((s, u) => s + u.price, 0), { compact: true })}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Blocks</span>
+                        <span className="text-muted-foreground">{t("plotmap.blocks")}</span>
                         <span className="tabular-nums font-medium">{blocks.length}</span>
                       </div>
                     </div>
                   </>
                 )}
-                <p className="mt-4 text-xs text-muted-foreground">Click any plot on the map to see its details here.</p>
+                <p className="mt-4 text-xs text-muted-foreground">{t("plotmap.clickHint")}</p>
               </Card>
             </motion.div>
           )}

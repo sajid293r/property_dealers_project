@@ -12,7 +12,8 @@ import { LanguageProvider } from "@/lib/i18n/provider";
 import { getServerLanguage } from "@/lib/i18n/server";
 import { loadMessages } from "@/lib/i18n/load";
 import { FONT_STYLESHEETS, languageInfo } from "@/lib/i18n/config";
-import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from "@/lib/brand";
+import { APP_NAME } from "@/lib/brand";
+import { makeTranslate } from "@/lib/i18n/runtime";
 
 const fraunces = Fraunces({
   variable: "--font-heading-latin",
@@ -36,10 +37,12 @@ const plexMono = IBM_Plex_Mono({
 const naskh = Noto_Naskh_Arabic({ variable: "--font-naskh", subsets: ["arabic"], display: "swap", preload: false });
 const nastaliq = Noto_Nastaliq_Urdu({ variable: "--font-nastaliq", subsets: ["arabic"], display: "swap", preload: false });
 
-export const metadata: Metadata = {
-  title: `${APP_NAME} — ${APP_TAGLINE}`,
-  description: APP_DESCRIPTION,
-};
+// The tab title and the description search engines and link previews show follow the visitor's language too.
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLanguage();
+  const t = makeTranslate(lang, await loadMessages(lang));
+  return { title: `${APP_NAME} — ${t("meta.tagline")}`, description: t("meta.description") };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // The language comes from the cookie the picker writes, so the very first paint has the right text,

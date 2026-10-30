@@ -28,6 +28,8 @@ import { useDeals, useUnits, useCustomers } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import type { Deal, DealStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import { Ltr } from "@/components/ltr";
 
 const STATUS_STYLES: Record<DealStatus, string> = {
   pending: "bg-warning/15 text-warning border-warning/30",
@@ -37,6 +39,7 @@ const STATUS_STYLES: Record<DealStatus, string> = {
 };
 
 function DemoDealsPage() {
+  const t = useT();
   const { data: deals, isLoading } = useDeals();
   const { data: units } = useUnits();
   const { data: customers } = useCustomers();
@@ -66,35 +69,35 @@ function DemoDealsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Deals &amp; Bookings"
-        description={<>{deals?.length ?? 0} bookings on record</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("nav.item.deals")}
+        description={t("deals.demoDescription", { count: deals?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setBookingOpen(true)}>
           <PlusCircle className="size-4" />
-          New Booking
+          {t("deals.newBookingDemo")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total bookings" value={deals?.length ?? 0} format={(n) => n.toString()} icon={KpiHandshake} index={0} />
-        <KpiCard label="Deal value" value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiHandCoins} accent="gold" index={1} />
-        <KpiCard label="Outstanding" value={outstanding} format={(n) => formatPkr(n, { compact: true })} icon={KpiTimerReset} index={2} />
-        <KpiCard label="Completed" value={completed} format={(n) => n.toString()} icon={KpiBadgeCheck} accent="gold" index={3} />
+        <KpiCard label={t("deals.kpi.total")} value={deals?.length ?? 0} format={(n) => n.toString()} icon={KpiHandshake} index={0} />
+        <KpiCard label={t("deals.kpi.value")} value={totalValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiHandCoins} accent="gold" index={1} />
+        <KpiCard label={t("deals.kpi.outstanding")} value={outstanding} format={(n) => formatPkr(n, { compact: true })} icon={KpiTimerReset} index={2} />
+        <KpiCard label={t("deals.kpi.completed")} value={completed} format={(n) => n.toString()} icon={KpiBadgeCheck} accent="gold" index={3} />
       </div>
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search voucher, customer, property..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("deals.searchDemo")} />
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder={t("common.status")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="all">{t("deals.allStatuses")}</SelectItem>
+              <SelectItem value="pending">{t("status.pending")}</SelectItem>
+              <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
+              <SelectItem value="completed">{t("status.completed")}</SelectItem>
+              <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -103,13 +106,13 @@ function DemoDealsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Voucher</th>
-                <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Property</th>
-                <th className="pb-2.5 font-medium">Progress</th>
-                <th className="pb-2.5 font-medium">Total</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium">Booked</th>
+                <th className="pb-2.5 font-medium">{t("common.voucher")}</th>
+                <th className="pb-2.5 font-medium">{t("common.customer")}</th>
+                <th className="pb-2.5 font-medium">{t("common.property")}</th>
+                <th className="pb-2.5 font-medium">{t("deals.col.progress")}</th>
+                <th className="pb-2.5 font-medium">{t("deals.col.total")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium">{t("deals.col.booked")}</th>
               </tr>
             </thead>
             <tbody>
@@ -143,6 +146,7 @@ function DealRow({
   customerName: string;
   unitCode: string;
 }) {
+  const t = useT();
   const pct = Math.round((deal.paidAmount / deal.totalAmount) * 100);
   return (
     <motion.tr
@@ -151,19 +155,19 @@ function DealRow({
       transition={{ delay: Math.min(index, 10) * 0.03 }}
       className="border-b border-border/40 transition-colors last:border-0 hover:bg-secondary/40"
     >
-      <td className="py-3 font-mono text-xs text-muted-foreground">{deal.voucherNo}</td>
+      <td className="py-3 font-mono text-xs text-muted-foreground"><Ltr>{deal.voucherNo}</Ltr></td>
       <td className="py-3 font-medium">{customerName}</td>
-      <td className="py-3 text-muted-foreground">{unitCode}</td>
+      <td className="py-3 text-muted-foreground"><Ltr>{unitCode}</Ltr></td>
       <td className="py-3">
         <div className="flex w-32 items-center gap-2">
           <Progress value={pct} className="h-1.5" />
           <span className="w-9 shrink-0 text-xs tabular-nums text-muted-foreground">{pct}%</span>
         </div>
       </td>
-      <td className="py-3 tabular-nums font-medium">{formatPkr(deal.totalAmount)}</td>
+      <td className="py-3 tabular-nums font-medium"><Ltr>{formatPkr(deal.totalAmount)}</Ltr></td>
       <td className="py-3">
-        <Badge variant="outline" className={cn("capitalize", STATUS_STYLES[deal.status])}>
-          {deal.status}
+        <Badge variant="outline" className={cn(STATUS_STYLES[deal.status])}>
+          {t(`status.${deal.status}`)}
         </Badge>
       </td>
       <td className="py-3 text-muted-foreground">{formatDate(deal.createdAt)}</td>

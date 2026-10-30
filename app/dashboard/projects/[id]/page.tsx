@@ -44,9 +44,13 @@ import { formatDate, formatPkr } from "@/lib/format";
 import type { ConstructionContract } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tOr } from "@/lib/i18n/runtime";
+import { Ltr } from "@/components/ltr";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const t = useT();
   const queryClient = useQueryClient();
 
   const { data: projects, isLoading: projectsLoading } = useProjects();
@@ -79,8 +83,8 @@ export default function ProjectDetailPage() {
     const contractor = contractors?.find((c) => c.id === contract.contractorId);
     toast.success(
       status === "completed"
-        ? `${contract.number} marked completed`
-        : `${contractor?.companyName ?? "Contractor"} removed from this project`,
+        ? t("projects.detail.markedCompleted", { number: contract.number })
+        : t("projects.detail.removed", { name: contractor?.companyName ?? t("projects.detail.contractor") }),
     );
   }
 
@@ -99,10 +103,10 @@ export default function ProjectDetailPage() {
       <div className="mx-auto max-w-[1400px] space-y-4">
         <Link href="/dashboard/projects" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          Back to projects
+          {t("projects.detail.back")}
         </Link>
         <Card className="p-10 text-center">
-          <p className="text-sm text-muted-foreground">This project doesn&apos;t exist, or was removed.</p>
+          <p className="text-sm text-muted-foreground">{t("projects.detail.notFound")}</p>
         </Card>
       </div>
     );
@@ -128,19 +132,19 @@ export default function ProjectDetailPage() {
           className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/20 hover:text-white"
         >
           <ArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          All projects
+          {t("projects.detail.all")}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-semibold text-white md:text-4xl">{project.name}</h1>
-          <span className="font-mono text-sm text-white/55">{project.code}</span>
+          <span className="font-mono text-sm text-white/55"><Ltr>{project.code}</Ltr></span>
           <ProjectStatusBadge status={project.status} className="bg-white/15 text-white" />
           <ProjectTypeBadge type={project.type} className="bg-white/15 text-white" />
         </div>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">{project.description}</p>
         <div className="mt-5 max-w-md">
           <div className="mb-1.5 flex items-center justify-between text-xs text-white/70">
-            <span>Budget utilized</span>
-            <span className="font-semibold text-gold">{utilization}%</span>
+            <span>{t("projects.card.budgetUtilized")}</span>
+            <span className="font-semibold text-gold"><Ltr>{utilization}%</Ltr></span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/15">
             <motion.div
@@ -154,38 +158,38 @@ export default function ProjectDetailPage() {
       </motion.section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Approved Budget" value={project.budget} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} index={0} />
-        <KpiCard label="Actual Spend" value={actualSpend} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} index={1} accent="gold" />
-        <KpiCard label="Remaining Budget" value={Math.max(project.budget - actualSpend, 0)} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} index={2} />
-        <KpiCard label="Contractors Engaged" value={projectContracts.filter((c) => c.status === "active").length} format={(n) => n.toString()} icon={HardHat} index={3} />
+        <KpiCard label={t("projects.detail.approvedBudget")} value={project.budget} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} index={0} />
+        <KpiCard label={t("projects.detail.actualSpend")} value={actualSpend} format={(n) => formatPkr(n, { compact: true })} icon={Wallet} index={1} accent="gold" />
+        <KpiCard label={t("projects.detail.remaining")} value={Math.max(project.budget - actualSpend, 0)} format={(n) => formatPkr(n, { compact: true })} icon={Banknote} index={2} />
+        <KpiCard label={t("projects.detail.contractorsEngaged")} value={projectContracts.filter((c) => c.status === "active").length} format={(n) => n.toString()} icon={HardHat} index={3} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="space-y-4 p-5 lg:col-span-2">
-          <h3 className="font-heading text-base font-semibold">Overview</h3>
+          <h3 className="font-heading text-base font-semibold">{t("projects.detail.overview")}</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <InfoRow icon={MapPin} label="Location" value={`${project.address}, ${project.city}`} />
-            <InfoRow icon={Ruler} label="Land area" value={formatLandArea(project.landAreaMarla)} />
-            <InfoRow icon={User} label="Project manager" value={manager?.name ?? "Unassigned"} />
-            <InfoRow icon={Calendar} label="Planned timeline" value={`${formatDate(project.plannedStartDate)} — ${formatDate(project.plannedEndDate)}`} />
-            {project.actualStartDate && <InfoRow icon={Calendar} label="Actual start" value={formatDate(project.actualStartDate)} />}
-            {project.handoverDate && <InfoRow icon={Calendar} label="Handed over" value={formatDate(project.handoverDate)} />}
+            <InfoRow icon={MapPin} label={t("projects.detail.location")} value={`${project.address}, ${project.city}`} />
+            <InfoRow icon={Ruler} label={t("projects.detail.landArea")} value={formatLandArea(project.landAreaMarla)} />
+            <InfoRow icon={User} label={t("projects.detail.manager")} value={manager?.name ?? t("projects.card.unassigned")} />
+            <InfoRow icon={Calendar} label={t("projects.detail.timeline")} value={`${formatDate(project.plannedStartDate)} — ${formatDate(project.plannedEndDate)}`} />
+            {project.actualStartDate && <InfoRow icon={Calendar} label={t("projects.detail.actualStart")} value={formatDate(project.actualStartDate)} />}
+            {project.handoverDate && <InfoRow icon={Calendar} label={t("projects.detail.handedOver")} value={formatDate(project.handoverDate)} />}
           </div>
 
           <div className="border-t border-border/60 pt-4">
             <div className="mb-1.5 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Budget utilization</span>
-              <span className="font-medium">{utilization}%</span>
+              <span className="text-muted-foreground">{t("projects.detail.utilization")}</span>
+              <span className="font-medium"><Ltr>{utilization}%</Ltr></span>
             </div>
             <Progress value={utilization} className={cn(utilization >= 100 && "[&>div]:bg-destructive")} />
           </div>
         </Card>
 
         <Card className="p-5">
-          <h3 className="mb-3 font-heading text-base font-semibold">Properties</h3>
+          <h3 className="mb-3 font-heading text-base font-semibold">{t("projects.detail.properties")}</h3>
           <UnitStatusDonut units={projectUnits} />
           <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-sm">
-            <span className="text-muted-foreground">Portfolio value</span>
+            <span className="text-muted-foreground">{t("projects.detail.portfolioValue")}</span>
             <span className="font-medium tabular-nums">{formatPkr(unitStats?.inventoryValue ?? 0, { compact: true })}</span>
           </div>
         </Card>
@@ -194,12 +198,12 @@ export default function ProjectDetailPage() {
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="font-heading text-base font-semibold">Contractors</h3>
-            <p className="text-xs text-muted-foreground">{projectContracts.length} engagements on this project</p>
+            <h3 className="font-heading text-base font-semibold">{t("projects.detail.contractors")}</h3>
+            <p className="text-xs text-muted-foreground">{t("projects.detail.engagements", { count: projectContracts.length })}</p>
           </div>
           <Button size="sm" className="gap-1.5" onClick={() => setAssignOpen(true)}>
             <HardHat className="size-3.5" />
-            Assign Contractor
+            {t("projects.detail.assign")}
           </Button>
         </div>
 
@@ -207,12 +211,12 @@ export default function ProjectDetailPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Contractor</th>
-                <th className="pb-2.5 font-medium">Scope</th>
-                <th className="pb-2.5 font-medium">Value</th>
-                <th className="pb-2.5 font-medium">Progress</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("projects.detail.colContractor")}</th>
+                <th className="pb-2.5 font-medium">{t("projects.detail.colScope")}</th>
+                <th className="pb-2.5 font-medium">{t("projects.detail.colValue")}</th>
+                <th className="pb-2.5 font-medium">{t("projects.detail.colProgress")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -222,7 +226,7 @@ export default function ProjectDetailPage() {
                   <tr key={c.id} className="border-b border-border/40 last:border-0 hover:bg-secondary/40">
                     <td className="py-2.5">
                       <p className="font-medium">{contractor?.companyName ?? "—"}</p>
-                      <p className="text-xs text-muted-foreground">{contractor?.trade}</p>
+                      <p className="text-xs text-muted-foreground">{contractor?.trade ? tOr(t, `projects.trade.${contractor.trade}`, contractor.trade) : ""}</p>
                     </td>
                     <td className="max-w-[240px] py-2.5 text-muted-foreground">{c.scopeOfWork}</td>
                     <td className="py-2.5 tabular-nums font-medium">{formatPkr(c.contractValue, { compact: true })}</td>
@@ -242,15 +246,15 @@ export default function ProjectDetailPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => decideContract(c, "completed")}>Mark completed</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => decideContract(c, "completed")}>{t("projects.detail.markCompleted")}</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem variant="destructive" onSelect={() => decideContract(c, "terminated")}>
-                              Remove from project
+                              {t("projects.detail.remove")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No further actions</span>
+                        <span className="text-xs text-muted-foreground">{t("projects.detail.noActions")}</span>
                       )}
                     </td>
                   </tr>
@@ -259,7 +263,7 @@ export default function ProjectDetailPage() {
               {projectContracts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                    No contractors assigned yet.
+                    {t("projects.detail.noContractors")}
                   </td>
                 </tr>
               )}

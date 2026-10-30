@@ -1,5 +1,6 @@
 import { Gift, HandCoins, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
 import type { LeaveRequest, LeaveType, PayrollAdjustment, PayrollAdjustmentType } from "@/lib/types";
+import { tx } from "@/lib/i18n/runtime";
 
 export interface AdjustmentTypeMeta {
   type: PayrollAdjustmentType;
@@ -11,10 +12,10 @@ export interface AdjustmentTypeMeta {
 }
 
 export const ADJUSTMENT_TYPES: AdjustmentTypeMeta[] = [
-  { type: "increment", label: "Increment", icon: TrendingUp, direction: "credit", accent: "success" },
-  { type: "allowance", label: "Allowance", icon: Gift, direction: "credit", accent: "gold" },
-  { type: "deduction", label: "Deduction", icon: TrendingDown, direction: "debit", accent: "destructive" },
-  { type: "loan", label: "Loan / Advance", icon: HandCoins, direction: "debit", accent: "primary" },
+  { type: "increment", get label() { return tx("Increment"); }, icon: TrendingUp, direction: "credit", accent: "success" },
+  { type: "allowance", get label() { return tx("Allowance"); }, icon: Gift, direction: "credit", accent: "gold" },
+  { type: "deduction", get label() { return tx("Deduction"); }, icon: TrendingDown, direction: "debit", accent: "destructive" },
+  { type: "loan", get label() { return tx("Loan / Advance"); }, icon: HandCoins, direction: "debit", accent: "primary" },
 ];
 
 export function adjustmentTypeMeta(type: PayrollAdjustmentType) {

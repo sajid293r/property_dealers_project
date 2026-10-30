@@ -17,6 +17,7 @@ import { useUnits, useCustomers } from "@/lib/hooks/use-data";
 import { formatPkr } from "@/lib/format";
 import type { Deal, Unit } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function NewBookingDialog({
   open,
@@ -25,6 +26,7 @@ export function NewBookingDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: units } = useUnits();
   const { data: customers } = useCustomers();
@@ -80,8 +82,8 @@ export function NewBookingDialog({
       old.map((u) => (u.id === selectedUnit.id ? { ...u, status: "reserved" as const } : u)),
     );
 
-    toast.success(`Booking ${voucherNo} created`, {
-      description: `${selectedUnit.code} reserved for ${customer?.name ?? "customer"}.`,
+    toast.success(t("deals.demo.created", { no: voucherNo }), {
+      description: t("deals.demo.reserved", { code: selectedUnit.code, name: customer?.name ?? t("deals.demo.customerFallback") }),
     });
   }
 
@@ -90,15 +92,15 @@ export function NewBookingDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Handshake}
-      title="New Booking"
-      description="Reserve a property and record the advance payment."
-      submitLabel="Create Booking"
+      title={t("deals.demo.title")}
+      description={t("deals.demo.description")}
+      submitLabel={t("deals.demo.submit")}
       submitDisabled={!customerId || !unitId || !advance}
       onSubmit={handleSubmit}
     >
-      <Field label="Customer">
+      <Field label={t("common.customer")}>
         <Select value={customerId} onValueChange={setCustomerId}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select a customer" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("deals.demo.selectCustomer")} /></SelectTrigger>
           <SelectContent>
             {customers?.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name} · {c.phone}</SelectItem>
@@ -107,9 +109,9 @@ export function NewBookingDialog({
         </Select>
       </Field>
 
-      <Field label="Property">
+      <Field label={t("common.property")}>
         <Select value={unitId} onValueChange={handleUnitChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select an available property" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("deals.demo.selectProperty")} /></SelectTrigger>
           <SelectContent>
             {availableUnits.map((u) => (
               <SelectItem key={u.id} value={u.id}>
@@ -124,17 +126,17 @@ export function NewBookingDialog({
         <div className="flex items-center justify-between rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-sm">
           <div>
             <p className="font-medium">{selectedUnit.title}</p>
-            <p className="text-xs text-muted-foreground">{selectedUnit.sizeMarla} Marla · {selectedUnit.category}</p>
+            <p className="text-xs text-muted-foreground">{t("properties.sizeLine", { marla: selectedUnit.sizeMarla })} · {selectedUnit.category}</p>
           </div>
-          <Badge variant="outline" className="capitalize">{selectedUnit.paymentType}</Badge>
+          <Badge variant="outline">{t(`status.${selectedUnit.paymentType}`)}</Badge>
         </div>
       )}
 
       <FieldRow>
-        <Field label="Total amount">
+        <Field label={t("deals.demo.total")}>
           <Input disabled value={selectedUnit ? formatPkr(selectedUnit.price) : "—"} />
         </Field>
-        <Field label="Advance / booking amount">
+        <Field label={t("deals.demo.advance")}>
           <Input
             type="number"
             value={advance}

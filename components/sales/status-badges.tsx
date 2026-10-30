@@ -2,6 +2,7 @@ import { Ban, CheckCircle2, Clock, FileEdit, Landmark, Send } from "lucide-react
 import type { ChequeStatus, QuotationStatus, ServiceInvoiceStatus } from "@/lib/types";
 import { isOverdue } from "@/lib/sales";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 function Pill({
   icon: Icon,
@@ -12,20 +13,21 @@ function Pill({
   label: string;
   classes: string;
 }) {
+  const t = useT();
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", classes)}>
       <Icon className="size-3" />
-      {label}
+      {t(label)}
     </span>
   );
 }
 
 const QUOTATION_CONFIG: Record<QuotationStatus, { label: string; icon: typeof Clock; classes: string }> = {
-  draft: { label: "Draft", icon: FileEdit, classes: "bg-muted text-muted-foreground" },
-  sent: { label: "Sent", icon: Send, classes: "bg-primary/12 text-primary" },
-  accepted: { label: "Accepted", icon: CheckCircle2, classes: "bg-success/12 text-success" },
-  expired: { label: "Expired", icon: Clock, classes: "bg-warning/12 text-warning" },
-  converted: { label: "Converted", icon: CheckCircle2, classes: "bg-gold/15 text-gold" },
+  draft: { label: "quotes.status.draft", icon: FileEdit, classes: "bg-muted text-muted-foreground" },
+  sent: { label: "quotes.status.sent", icon: Send, classes: "bg-primary/12 text-primary" },
+  accepted: { label: "quotes.status.accepted", icon: CheckCircle2, classes: "bg-success/12 text-success" },
+  expired: { label: "quotes.status.expired", icon: Clock, classes: "bg-warning/12 text-warning" },
+  converted: { label: "dm.quotes.converted", icon: CheckCircle2, classes: "bg-gold/15 text-gold" },
 };
 
 export function QuotationStatusBadge({ status }: { status: QuotationStatus }) {
@@ -34,16 +36,16 @@ export function QuotationStatusBadge({ status }: { status: QuotationStatus }) {
 }
 
 export function InvoiceStatusBadge({ status, dueDate }: { status: "unpaid" | "paid"; dueDate: string }) {
-  if (status === "paid") return <Pill icon={CheckCircle2} label="Paid" classes="bg-success/12 text-success" />;
-  if (isOverdue(dueDate, status)) return <Pill icon={Clock} label="Overdue" classes="bg-destructive/10 text-destructive" />;
-  return <Pill icon={Clock} label="Unpaid" classes="bg-warning/12 text-warning" />;
+  if (status === "paid") return <Pill icon={CheckCircle2} label="status.paid" classes="bg-success/12 text-success" />;
+  if (isOverdue(dueDate, status)) return <Pill icon={Clock} label="dm.badge.overdue" classes="bg-destructive/10 text-destructive" />;
+  return <Pill icon={Clock} label="sinv.status.unpaid" classes="bg-warning/12 text-warning" />;
 }
 
 const CHEQUE_CONFIG: Record<ChequeStatus, { label: string; icon: typeof Clock; classes: string }> = {
-  in_hand: { label: "In Hand", icon: Clock, classes: "bg-muted text-muted-foreground" },
-  deposited: { label: "Deposited", icon: Landmark, classes: "bg-primary/12 text-primary" },
-  cleared: { label: "Cleared", icon: CheckCircle2, classes: "bg-success/12 text-success" },
-  bounced: { label: "Bounced", icon: Ban, classes: "bg-destructive/10 text-destructive" },
+  in_hand: { label: "chq.status.in_hand", icon: Clock, classes: "bg-muted text-muted-foreground" },
+  deposited: { label: "chq.status.deposited", icon: Landmark, classes: "bg-primary/12 text-primary" },
+  cleared: { label: "chq.status.cleared", icon: CheckCircle2, classes: "bg-success/12 text-success" },
+  bounced: { label: "chq.status.bounced", icon: Ban, classes: "bg-destructive/10 text-destructive" },
 };
 
 export function ChequeStatusBadge({ status }: { status: ChequeStatus }) {

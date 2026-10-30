@@ -18,8 +18,11 @@ import { NewCustomerDialog } from "@/components/dialogs/new-customer-dialog";
 import { useCustomers } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import { Ltr } from "@/components/ltr";
 
 function DemoCustomersPage() {
+  const t = useT();
   const { data: customers, isLoading } = useCustomers();
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
@@ -36,39 +39,39 @@ function DemoCustomersPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="People"
-        title="Customers"
-        description={<>{customers?.length ?? 0} clients on record</>}
+        eyebrow={t("nav.section.people")}
+        title={t("customers.title")}
+        description={t("customers.demoDescription", { count: customers?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          Add Customer
+          {t("customers.addCustomer")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Customers" value={customers?.length ?? 0} format={(n) => n.toString()} icon={KpiUsers2} index={0} />
-        <KpiCard label="Total received" value={totalPaid} format={(n) => formatPkr(n, { compact: true })} icon={KpiHandCoins} accent="gold" index={1} />
-        <KpiCard label="Receivable balance" value={owed} format={(n) => formatPkr(n, { compact: true })} icon={KpiScale} index={2} />
-        <KpiCard label="Cities served" value={cities} format={(n) => n.toString()} icon={KpiMapPin} accent="gold" index={3} />
+        <KpiCard label={t("customers.kpi.customers")} value={customers?.length ?? 0} format={(n) => n.toString()} icon={KpiUsers2} index={0} />
+        <KpiCard label={t("customers.kpi.received")} value={totalPaid} format={(n) => formatPkr(n, { compact: true })} icon={KpiHandCoins} accent="gold" index={1} />
+        <KpiCard label={t("customers.kpi.receivable")} value={owed} format={(n) => formatPkr(n, { compact: true })} icon={KpiScale} index={2} />
+        <KpiCard label={t("customers.kpi.cities")} value={cities} format={(n) => n.toString()} icon={KpiMapPin} accent="gold" index={3} />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search name, CNIC, phone..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("customers.searchDemo")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Name</th>
-                <th className="pb-2.5 font-medium">CNIC</th>
-                <th className="pb-2.5 font-medium">Phone</th>
-                <th className="pb-2.5 font-medium">City</th>
-                <th className="pb-2.5 font-medium">Total Paid</th>
-                <th className="pb-2.5 font-medium">Balance</th>
-                <th className="pb-2.5 font-medium">Since</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.name")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.cnic")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.phone")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.city")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.totalPaid")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.balance")}</th>
+                <th className="pb-2.5 font-medium">{t("customers.col.since")}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,8 +97,8 @@ function DemoCustomersPage() {
                           <span className="font-medium">{c.name}</span>
                         </div>
                       </td>
-                      <td className="py-2.5 font-mono text-xs text-muted-foreground">{c.cnic}</td>
-                      <td className="py-2.5 text-muted-foreground">{c.phone}</td>
+                      <td className="py-2.5 font-mono text-xs text-muted-foreground"><Ltr>{c.cnic}</Ltr></td>
+                      <td className="py-2.5 text-muted-foreground"><Ltr>{c.phone}</Ltr></td>
                       <td className="py-2.5 text-muted-foreground">{c.city}</td>
                       <td className="py-2.5 tabular-nums font-medium">{formatPkr(c.totalPaid)}</td>
                       <td

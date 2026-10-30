@@ -20,16 +20,18 @@ import { useAccounts, useTransactions } from "@/lib/hooks/use-data";
 import { formatPkr, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoAccountsPage() {
+  const t = useT();
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const { data: transactions, isLoading: txLoading } = useTransactions();
   const [transferOpen, setTransferOpen] = React.useState(false);
   const [accountFilter, setAccountFilter] = React.useState<string | null>(null);
 
-  const unconfirmedCount = transactions?.filter((t) => !t.confirmed).length ?? 0;
+  const unconfirmedCount = transactions?.filter((tx) => !tx.confirmed).length ?? 0;
   const filteredTransactions = accountFilter
-    ? transactions?.filter((t) => t.accountId === accountFilter)
+    ? transactions?.filter((tx) => tx.accountId === accountFilter)
     : transactions;
   const filterAccount = accounts?.find((a) => a.id === accountFilter);
 
@@ -37,21 +39,21 @@ function DemoAccountsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Finance"
-        title="Accounts"
-        description="Cash, bank and petty cash books"
+        eyebrow={t("nav.section.finance")}
+        title={t("perm.module.accounts")}
+        description={t("dm.cash_bank_and_petty_cash")}
         actions={<>
         <Button variant="outline" className="gap-1.5" onClick={() => setTransferOpen(true)}>
           <ArrowLeftRight className="size-4" />
-          Transfer Payment
+          {t("dm.transfer_payment")}
         </Button>
         </>}
       />
 
       <Tabs defaultValue="cashbank">
         <TabsList>
-          <TabsTrigger value="cashbank">Cash & Bank</TabsTrigger>
-          <TabsTrigger value="coa">Chart of Accounts</TabsTrigger>
+          <TabsTrigger value="cashbank">{t("dm.cash_bank")}</TabsTrigger>
+          <TabsTrigger value="coa">{t("dm.chart_of_accounts")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cashbank" className="mt-5 space-y-5">
@@ -95,7 +97,7 @@ function DemoAccountsPage() {
                           className="relative mt-0.5 block font-heading text-2xl font-semibold tabular-nums"
                         />
                         <p className="relative mt-1.5 text-[10px] uppercase tracking-[0.18em] text-white/45">
-                          {active ? "Filtering transactions" : "Click to filter"}
+                          {active ? t("dm.acc.filtering") : t("dm.acc.click_filter")}
                         </p>
                       </div>
                     </motion.button>
@@ -106,20 +108,20 @@ function DemoAccountsPage() {
           <Card className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="font-heading text-base font-semibold">Transactions</h3>
+                <h3 className="font-heading text-base font-semibold">{t("acc.transactions")}</h3>
                 <p className="text-xs text-muted-foreground">
                   {filterAccount
-                    ? `Showing ${filterAccount.title} only`
+                    ? t("dm.acc.showing_only", { title: filterAccount.title })
                     : unconfirmedCount > 0
-                      ? `${unconfirmedCount} transactions awaiting confirmation`
-                      : "All transactions confirmed"}
+                      ? t("dm.acc.awaiting", { count: unconfirmedCount })
+                      : t("dm.acc.all_confirmed")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 {filterAccount && (
                   <Button size="sm" variant="ghost" className="gap-1.5" onClick={() => setAccountFilter(null)}>
                     <X className="size-3.5" />
-                    Clear filter
+                    {t("dm.clear_filter")}
                   </Button>
                 )}
                 {unconfirmedCount > 0 && (
@@ -127,10 +129,10 @@ function DemoAccountsPage() {
                     size="sm"
                     variant="outline"
                     className="gap-1.5"
-                    onClick={() => toast.success(`${unconfirmedCount} transactions confirmed`)}
+                    onClick={() => toast.success(t("dm.acc.confirmed", { count: unconfirmedCount }))}
                   >
                     <CheckCircle2 className="size-3.5" />
-                    Confirm all
+                    {t("dm.confirm_all")}
                   </Button>
                 )}
               </div>
@@ -139,12 +141,12 @@ function DemoAccountsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Title</th>
-                    <th className="pb-2.5 font-medium">Category</th>
-                    <th className="pb-2.5 font-medium">Type</th>
-                    <th className="pb-2.5 font-medium">Amount</th>
-                    <th className="pb-2.5 font-medium">Date</th>
-                    <th className="pb-2.5 font-medium">Status</th>
+                    <th className="pb-2.5 font-medium">{t("properties.new.name")}</th>
+                    <th className="pb-2.5 font-medium">{t("bud.line.categoryAria")}</th>
+                    <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.date")}</th>
+                    <th className="pb-2.5 font-medium">{t("common.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -154,37 +156,37 @@ function DemoAccountsPage() {
                           <td colSpan={6} className="py-2.5"><Skeleton className="h-8 w-full" /></td>
                         </tr>
                       ))
-                    : filteredTransactions?.slice(0, 20).map((t, i) => (
+                    : filteredTransactions?.slice(0, 20).map((tx, i) => (
                         <motion.tr
-                          key={t.id}
+                          key={tx.id}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: Math.min(i, 10) * 0.03 }}
                           className="border-b border-border/40 transition-colors last:border-0 hover:bg-secondary/40"
                         >
-                          <td className="py-2.5 font-medium">{t.title}</td>
-                          <td className="py-2.5 text-muted-foreground">{t.category}</td>
+                          <td className="py-2.5 font-medium">{tx.title}</td>
+                          <td className="py-2.5 text-muted-foreground">{tx.category}</td>
                           <td className="py-2.5">
                             <Badge
                               variant="outline"
                               className={cn(
                                 "capitalize",
-                                t.kind === "credit"
+                                tx.kind === "credit"
                                   ? "bg-success/15 text-success border-success/30"
                                   : "bg-destructive/10 text-destructive border-destructive/30",
                               )}
                             >
-                              {t.kind}
+                              {tx.kind}
                             </Badge>
                           </td>
-                          <td className="py-2.5 tabular-nums font-medium">{formatPkr(t.amount)}</td>
-                          <td className="py-2.5 text-muted-foreground">{formatDate(t.date)}</td>
+                          <td className="py-2.5 tabular-nums font-medium">{formatPkr(tx.amount)}</td>
+                          <td className="py-2.5 text-muted-foreground">{formatDate(tx.date)}</td>
                           <td className="py-2.5">
-                            {t.confirmed ? (
-                              <span className="text-xs text-muted-foreground">Confirmed</span>
+                            {tx.confirmed ? (
+                              <span className="text-xs text-muted-foreground">{t("status.confirmed")}</span>
                             ) : (
                               <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30">
-                                Pending
+                                {t("status.pending")}
                               </Badge>
                             )}
                           </td>
@@ -193,7 +195,7 @@ function DemoAccountsPage() {
                   {!txLoading && filteredTransactions?.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                        No transactions for this account yet.
+                        {t("dm.no_transactions_for_this_account")}
                       </td>
                     </tr>
                   )}

@@ -27,12 +27,14 @@ import { chartLeafAccounts } from "@/lib/chart-of-accounts";
 import { emptyLine, isBalanced, VOUCHER_TYPES, voucherTypeMeta } from "@/lib/vouchers";
 import type { Voucher, VoucherLine, VoucherType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function isVoucherType(v: string | null): v is VoucherType {
   return !!v && VOUCHER_TYPES.some((t) => t.type === v);
 }
 
 export function NewVoucherForm() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -72,6 +74,7 @@ export function NewVoucherForm() {
 
   function persist(status: "draft" | "pending") {
     setSaving(status === "draft" ? "draft" : "submit");
+    // eslint-disable-next-line react-hooks/purity -- runs in an event handler
     const id = `voucher-${Date.now()}`;
     const now = new Date().toISOString().slice(0, 10);
     const newVoucher: Voucher = {
@@ -92,7 +95,7 @@ export function NewVoucherForm() {
     window.setTimeout(() => {
       queryClient.setQueryData<Voucher[]>(["vouchers"], (old = []) => [newVoucher, ...old]);
       toast.success(
-        status === "draft" ? `${nextNumber} saved as draft` : `${nextNumber} submitted for approval`,
+        t(status === "draft" ? "vch.f.savedDraft" : "vch.f.submitted", { number: nextNumber }),
         { description: meta.label },
       );
       router.push(`/dashboard/vouchers/${id}`);
@@ -103,8 +106,8 @@ export function NewVoucherForm() {
     <div className="mx-auto max-w-[1200px] space-y-5">
       <PageHeader
         icon={meta.icon}
-        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
-        title={`New ${meta.label}`}
+        back={{ href: "/dashboard/vouchers", label: t("vch.title") }}
+        title={t("vch.f.newTitle", { label: meta.label })}
         badge={<VoucherTypeBadge type={type} />}
         description={meta.description}
       />
@@ -114,7 +117,7 @@ export function NewVoucherForm() {
           <Card className="space-y-5 p-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Voucher type</Label>
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.type")}</Label>
                 <Select value={type} onValueChange={(v) => setType(v as VoucherType)}>
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -125,17 +128,17 @@ export function NewVoucherForm() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Voucher no.</Label>
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.number")}</Label>
                 <Input value={nextNumber} disabled className="font-mono" />
               </div>
 
               <div>
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Voucher date</Label>
+                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.voucherDate")}</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               {meta.showChequeDate && (
                 <div>
-                  <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Cheque date</Label>
+                  <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("chq.csv.date")}</Label>
                   <Input type="date" value={chequeDate} onChange={(e) => setChequeDate(e.target.value)} />
                 </div>
               )}
@@ -146,18 +149,18 @@ export function NewVoucherForm() {
                   <Input
                     value={partyName}
                     onChange={(e) => setPartyName(e.target.value)}
-                    placeholder={meta.partyLabel === "Pay to" ? "Vendor or payee name" : "Payer or customer name"}
+                    placeholder={meta.partyLabel === "Pay to" ? t("dm.v.payee_name") : t("dm.v.payer_name")}
                   />
                 </div>
               )}
             </div>
 
             <div>
-              <Label className="mb-1.5 text-xs font-medium text-muted-foreground">Description</Label>
+              <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("rec.st.colDescription")}</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What is this voucher for..."
+                placeholder={t("dm.what_is_this_voucher_for")}
                 rows={2}
               />
             </div>
@@ -165,12 +168,12 @@ export function NewVoucherForm() {
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <Checkbox checked={recurring} onCheckedChange={(c) => setRecurring(c === true)} />
               <Repeat className="size-3.5" />
-              Make this a recurring voucher
+              {t("dm.make_this_a_recurring_voucher")}
             </label>
           </Card>
 
           <Card className="p-5">
-            <h3 className="mb-3 font-heading text-base font-semibold">Line items</h3>
+            <h3 className="mb-3 font-heading text-base font-semibold">{t("dm.line_items")}</h3>
             <VoucherLineEditor lines={lines} onChange={setLines} accounts={leafAccounts} projects={projects} />
           </Card>
         </div>
@@ -184,7 +187,7 @@ export function NewVoucherForm() {
               disabled={!canSubmit || saving !== null}
               onClick={() => persist("pending")}
             >
-              {saving === "submit" ? "Submitting..." : "Submit for Approval"}
+              {saving === "submit" ? t("vch.f.submitting") : t("vch.d.submit")}
             </Button>
             <Button
               variant="outline"
@@ -192,10 +195,10 @@ export function NewVoucherForm() {
               disabled={saving !== null}
               onClick={() => persist("draft")}
             >
-              {saving === "draft" ? "Saving..." : "Save as Draft"}
+              {saving === "draft" ? t("common.saving") : t("vch.f.saveDraft")}
             </Button>
             <Button variant="ghost" className="w-full" asChild disabled={saving !== null}>
-              <Link href="/dashboard/vouchers">Cancel</Link>
+              <Link href="/dashboard/vouchers">{t("common.cancel")}</Link>
             </Button>
           </Card>
         </div>

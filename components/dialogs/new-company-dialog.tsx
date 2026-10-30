@@ -14,6 +14,7 @@ import {
 import { useCompany } from "@/lib/providers/company-provider";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const CITIES = ["Lahore", "Islamabad", "Rawalpindi", "Karachi", "Faisalabad", "Multan", "Gujranwala"] as const;
 const TYPES = ["Real estate agency", "Housing scheme developer", "Dealer network", "Construction company"] as const;
@@ -25,6 +26,7 @@ export function NewCompanyDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const { addCompany, setCompanyId } = useCompany();
   const [name, setName] = React.useState("");
   const [city, setCity] = React.useState("");
@@ -48,8 +50,8 @@ export function NewCompanyDialog({
     setCompanyId(created.id);
     toast.success(`${name} created`, {
       description: sample
-        ? "Filled with sample projects, properties and people so you can explore — its data stays separate from your other companies."
-        : "A fresh, empty workspace — its data stays separate from your other companies.",
+        ? t("dm.co.sample_desc")
+        : t("dm.co.empty_desc"),
     });
   }
 
@@ -58,19 +60,19 @@ export function NewCompanyDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Building}
-      title="Add a company"
-      description="Create a separate workspace with its own projects, properties, people and books."
-      submitLabel="Create company"
+      title={t("shell.company.add")}
+      description={t("dm.create_a_separate_workspace_with")}
+      submitLabel={t("dm.create_company")}
       submitDisabled={!name.trim() || !city}
       onSubmit={handleSubmit}
     >
-      <Field label="Company name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Skyline Developers (Pvt) Ltd" />
+      <Field label={t("adm.profile.name")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dm.skyline_developers_pvt_ltd")} />
       </Field>
       <FieldRow>
-        <Field label="City">
+        <Field label={t("adm.profile.city")}>
           <Select value={city} onValueChange={setCity}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select city" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("customers.new.selectCity")} /></SelectTrigger>
             <SelectContent>
               {CITIES.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -78,11 +80,11 @@ export function NewCompanyDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="NTN (optional)">
+        <Field label={t("customers.party.ntnOptional")}>
           <Input value={ntn} onChange={(e) => setNtn(e.target.value)} placeholder="1234567-8" />
         </Field>
       </FieldRow>
-      <Field label="Business type">
+      <Field label={t("dm.business_type")}>
         <Select value={industry} onValueChange={setIndustry}>
           <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -92,8 +94,8 @@ export function NewCompanyDialog({
           </SelectContent>
         </Select>
       </Field>
-      <Field label="Start with">
-        <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Starting data">
+      <Field label={t("dm.start_with")}>
+        <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label={t("dm.starting_data")}>
           {[
             { value: true, icon: DatabaseZap, title: "Sample data", text: "Explore with example projects, properties and people. Easy to tell apart from real records." },
             { value: false, icon: FileX2, title: "Empty workspace", text: "Start clean and add your own projects, properties and customers." },

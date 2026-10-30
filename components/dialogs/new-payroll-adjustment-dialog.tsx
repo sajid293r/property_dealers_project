@@ -17,6 +17,8 @@ import { ADJUSTMENT_TYPES, ALLOWANCE_CATEGORIES, DEDUCTION_REASONS } from "@/lib
 import { dateOffsetFromToday, formatPkr } from "@/lib/format";
 import type { PayrollAdjustment, PayrollAdjustmentType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 // Loans/advances move cash immediately via "Record Advance" — kept out of this
 // generic dialog so there's exactly one path for giving staff a loan.
@@ -29,6 +31,7 @@ export function NewPayrollAdjustmentDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: staff } = useStaff();
 
@@ -82,8 +85,8 @@ export function NewPayrollAdjustmentDialog({
     };
 
     queryClient.setQueryData<PayrollAdjustment[]>(["payrollAdjustments"], (old = []) => [newAdjustment, ...old]);
-    toast.success(`${ADJUSTMENT_TYPES.find((t) => t.type === type)?.label} recorded for ${member.name}`, {
-      description: "Awaiting approval",
+    toast.success(t("dm.pay.adj_recorded", { type: ADJUSTMENT_TYPES.find((a) => a.type === type)?.label ?? "", name: member.name }), {
+      description: t("dm.pay.awaiting"),
     });
   }
 
@@ -92,16 +95,16 @@ export function NewPayrollAdjustmentDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Gift}
-      title="New Payroll Adjustment"
-      description="Raise an increment, allowance or deduction for approval."
-      submitLabel="Submit for Approval"
+      title={t("dm.new_payroll_adjustment")}
+      description={t("dm.raise_an_increment_allowance_or")}
+      submitLabel={t("dm.submit_for_approval")}
       submitDisabled={!staffId || !amount}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Staff member">
+        <Field label={t("dm.staff_member")}>
           <Select value={staffId} onValueChange={setStaffId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select staff" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("projects.new.selectStaff")} /></SelectTrigger>
             <SelectContent>
               {staff?.map((s) => (
                 <SelectItem key={s.id} value={s.id}>{s.name} · {s.department}</SelectItem>
@@ -109,7 +112,7 @@ export function NewPayrollAdjustmentDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Type">
+        <Field label={t("leave.col.type")}>
           <Select value={type} onValueChange={(v) => handleTypeChange(v as PayrollAdjustmentType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -122,28 +125,28 @@ export function NewPayrollAdjustmentDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label={type === "increment" ? "Increase (PKR)" : "Amount (PKR)"}>
+        <Field label={type === "increment" ? t("dm.pay.increase_pkr") : t("dm.pay.amount_pkr")}>
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Effective date">
+        <Field label={t("dm.effective_date")}>
           <Input type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
         </Field>
       </FieldRow>
 
       {presetReasons ? (
-        <Field label="Reason">
+        <Field label={t("common.reason")}>
           <Select value={reason} onValueChange={setReason}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               {presetReasons.map((r) => (
-                <SelectItem key={r} value={r}>{r}</SelectItem>
+                <SelectItem key={r} value={r}>{tx(r)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
       ) : (
-        <Field label="Reason">
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Annual performance review" />
+        <Field label={t("common.reason")}>
+          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("dm.annual_performance_review")} />
         </Field>
       )}
 

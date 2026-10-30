@@ -15,6 +15,7 @@ import {
 import { CONTRACTOR_TRADES } from "@/lib/projects";
 import type { Contractor, ContractorTrade } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function NewContractorDialog({
   open,
@@ -23,6 +24,7 @@ export function NewContractorDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
 
   const [name, setName] = React.useState("");
@@ -63,7 +65,7 @@ export function NewContractorDialog({
     };
 
     queryClient.setQueryData<Contractor[]>(["contractors"], (old = []) => [newContractor, ...old]);
-    toast.success(`${newContractor.companyName} added to your contractor roster`);
+    toast.success(t("dm.contractor.added", { name: newContractor.companyName }));
   }
 
   return (
@@ -71,22 +73,22 @@ export function NewContractorDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={HardHat}
-      title="Add Contractor"
-      description="Bring a construction vendor into your roster so they can be assigned to projects."
-      submitLabel="Add Contractor"
+      title={t("dm.add_contractor")}
+      description={t("dm.bring_a_construction_vendor_into")}
+      submitLabel={t("dm.add_contractor")}
       submitDisabled={!name || !phone || !cnicOrNtn}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Contact name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Imran Sheikh" />
+        <Field label={t("dm.contact_name")}>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dm.imran_sheikh")} />
         </Field>
-        <Field label="Company name">
-          <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Sheikh Builders" />
+        <Field label={t("adm.profile.name")}>
+          <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t("dm.sheikh_builders")} />
         </Field>
       </FieldRow>
 
-      <Field label="Trade">
+      <Field label={t("dm.trade")}>
         <Select value={trade} onValueChange={(v) => setTrade(v as ContractorTrade)}>
           <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -98,20 +100,20 @@ export function NewContractorDialog({
       </Field>
 
       <FieldRow>
-        <Field label="Phone">
+        <Field label={t("common.phone")}>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03001234567" />
         </Field>
-        <Field label="Email">
+        <Field label={t("auth.field.email")}>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contact@company.pk" />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="CNIC / NTN">
+        <Field label={t("dm.cnic_ntn")}>
           <Input value={cnicOrNtn} onChange={(e) => setCnicOrNtn(e.target.value)} placeholder="35201-1234567-1" />
         </Field>
-        <Field label="City / Address">
-          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Lahore" />
+        <Field label={t("dm.city_address")}>
+          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("dm.lahore")} />
         </Field>
       </FieldRow>
     </FormDialog>

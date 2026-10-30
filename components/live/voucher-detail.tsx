@@ -14,12 +14,13 @@ import { ReasonDialog } from "@/components/live/reason-dialog";
 import { useCompany } from "@/lib/providers/company-provider";
 import { useInvalidateFinance, usePermissions } from "@/lib/hooks/use-live";
 import { discardVoucher, getVoucher, num, voucherAction } from "@/lib/api/finance";
-import { liveVoucherMeta } from "@/lib/live-vouchers";
+import { instrumentLabel, localMeta } from "@/lib/live-vouchers";
 import { amountInWords } from "@/lib/amount-words";
 import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { PrintLink } from "@/components/live/print-button";
 import { AttachmentsButton } from "@/components/live/attachments";
+import { useT } from "@/lib/i18n/provider";
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === "") return null;
@@ -31,16 +32,8 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const INSTRUMENT_LABEL: Record<string, string> = {
-  cheque: "Cheque",
-  online_transfer: "Online transfer",
-  pay_order: "Pay order",
-  demand_draft: "Demand draft",
-  cash_deposit: "Cash deposit",
-  other: "Other",
-};
-
 export function LiveVoucherDetail() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { company } = useCompany();
@@ -58,7 +51,7 @@ export function LiveVoucherDetail() {
       await invalidate();
       toast.success(message);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "That did not work.");
+      toast.error(e instanceof Error ? e.message : t("common.thatDidNotWork"));
     } finally {
       setBusy(false);
     }
@@ -69,10 +62,10 @@ export function LiveVoucherDetail() {
     try {
       await discardVoucher(company.id, id);
       await invalidate();
-      toast.success("Voucher discarded");
+      toast.success(t("vch.d.discardedDone"));
       router.push("/dashboard/vouchers");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not discard it.");
+      toast.error(e instanceof Error ? e.message : t("vch.couldNotDiscard"));
       setBusy(false);
     }
   }
@@ -89,15 +82,15 @@ export function LiveVoucherDetail() {
   if (!v) {
     return (
       <div className="mx-auto max-w-[1200px] space-y-4">
-        <Link href="/dashboard/vouchers" className="text-sm text-muted-foreground hover:text-foreground">← Back to vouchers</Link>
+        <Link href="/dashboard/vouchers" className="text-sm text-muted-foreground hover:text-foreground">{t("vch.d.backToList")}</Link>
         <Card className="p-10 text-center">
-          <p className="text-sm text-muted-foreground">{q.error instanceof Error ? q.error.message : "This voucher doesn't exist."}</p>
+          <p className="text-sm text-muted-foreground">{q.error instanceof Error ? q.error.message : t("vch.d.notFound")}</p>
         </Card>
       </div>
     );
   }
 
-  const meta = liveVoucherMeta(v.type);
+  const meta = localMeta(v.type);
   const total = num(v.total);
   const editable = v.status === "draft" || v.status === "rejected";
 
@@ -107,36 +100,36 @@ export function LiveVoucherDetail() {
       {editable && can("accounts.edit") && (
         <>
           <Button variant="outline" className="gap-1.5" asChild>
-            <Link href={`/dashboard/vouchers/new?edit=${v.id}`}><FileEdit className="size-4" /> Edit</Link>
+            <Link href={`/dashboard/vouchers/new?edit=${v.id}`}><FileEdit className="size-4" /> {t("common.edit")}</Link>
           </Button>
           <Button variant="outline" className="gap-1.5 text-destructive" disabled={busy} onClick={() => void discard()}>
-            <Trash2 className="size-4" /> Discard
+            <Trash2 className="size-4" /> {t("vch.discard")}
           </Button>
         </>
       )}
       {editable && can("accounts.create") && (
-        <Button className="gap-1.5" disabled={busy} onClick={() => void run("submit", `${v.number} sent for approval`)}>
-          <Send className="size-4" /> Submit for approval
+        <Button className="gap-1.5" disabled={busy} onClick={() => void run("submit", t("vch.d.sent", { number: v.number }))}>
+          <Send className="size-4" /> {t("vch.d.submit")}
         </Button>
       )}
       {v.status === "pending" && can("accounts.create") && (
-        <Button variant="outline" className="gap-1.5" disabled={busy} onClick={() => void run("recall", `${v.number} recalled to draft`)}>
-          <Undo2 className="size-4" /> Recall
+        <Button variant="outline" className="gap-1.5" disabled={busy} onClick={() => void run("recall", t("vch.d.recalled", { number: v.number }))}>
+          <Undo2 className="size-4" /> {t("vch.d.recall")}
         </Button>
       )}
       {v.status === "pending" && can("accounts.approve") && (
         <>
           <Button variant="outline" className="gap-1.5 text-destructive" disabled={busy} onClick={() => setDialog("reject")}>
-            <XCircle className="size-4" /> Reject
+            <XCircle className="size-4" /> {t("vch.d.reject")}
           </Button>
-          <Button className="gap-1.5" disabled={busy} onClick={() => void run("approve", `${v.number} approved and posted`)}>
-            <CheckCircle2 className="size-4" /> Approve &amp; post
+          <Button className="gap-1.5" disabled={busy} onClick={() => void run("approve", t("vch.d.approved", { number: v.number }))}>
+            <CheckCircle2 className="size-4" /> {t("vch.d.approve")}
           </Button>
         </>
       )}
       {v.status === "approved" && can("accounts.approve") && (
         <Button variant="outline" className="gap-1.5 text-destructive" disabled={busy} onClick={() => setDialog("void")}>
-          <Ban className="size-4" /> Void
+          <Ban className="size-4" /> {t("common.void")}
         </Button>
       )}
     </div>
@@ -146,7 +139,7 @@ export function LiveVoucherDetail() {
     <div className="mx-auto max-w-[1200px] space-y-5">
       <PageHeader
         icon={meta.icon}
-        back={{ href: "/dashboard/vouchers", label: "Vouchers" }}
+        back={{ href: "/dashboard/vouchers", label: t("vch.title") }}
         title={v.number}
         badge={<><LiveVoucherTypeBadge type={v.type} /><LiveVoucherStatusBadge status={v.status} /></>}
         description={`${meta.label} · ${formatDate(v.date)}`}
@@ -157,19 +150,19 @@ export function LiveVoucherDetail() {
         <div className="space-y-5">
           <Card className="p-5">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-              <Fact label={meta.partyLabel ?? "Party"} value={v.partyName} />
-              <Fact label="Bank account" value={v.bankName ? `${v.bankName} ${v.bankAccountNo ?? ""}` : null} />
-              <Fact label={v.controlAccountId ? meta.fixedSideLabel ?? "Control account" : ""} value={v.controlAccountCode ? `${v.controlAccountCode} · ${v.controlAccountName}` : null} />
-              <Fact label="Paid by" value={v.instrumentType ? INSTRUMENT_LABEL[v.instrumentType] : null} />
-              <Fact label="Instrument no." value={v.instrumentNo} />
-              <Fact label="Instrument bank" value={v.instrumentBank} />
-              <Fact label="Cheque date" value={v.chequeDate ? formatDate(v.chequeDate) : null} />
-              <Fact label="Reference" value={v.reference} />
-              <Fact label="Invoice no." value={v.invoiceNo} />
-              <Fact label="Due date" value={v.dueDate ? formatDate(v.dueDate) : null} />
+              <Fact label={meta.partyLabel ?? t("vch.d.party")} value={v.partyName} />
+              <Fact label={t("vch.d.bankAccount")} value={v.bankName ? `${v.bankName} ${v.bankAccountNo ?? ""}` : null} />
+              <Fact label={v.controlAccountId ? meta.fixedSideLabel ?? t("vch.d.controlAccount") : ""} value={v.controlAccountCode ? `${v.controlAccountCode} · ${v.controlAccountName}` : null} />
+              <Fact label={t("vch.d.paidBy")} value={v.instrumentType ? instrumentLabel(v.instrumentType) : null} />
+              <Fact label={t("vch.d.instrumentNo")} value={v.instrumentNo} />
+              <Fact label={t("vch.d.instrumentBank")} value={v.instrumentBank} />
+              <Fact label={t("vch.d.chequeDate")} value={v.chequeDate ? formatDate(v.chequeDate) : null} />
+              <Fact label={t("vch.d.reference")} value={v.reference} />
+              <Fact label={t("vch.d.invoiceNo")} value={v.invoiceNo} />
+              <Fact label={t("vch.d.dueDate")} value={v.dueDate ? formatDate(v.dueDate) : null} />
             </div>
             {v.description && <p className="mt-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">{v.description}</p>}
-            {v.approvalNote && <p className="mt-2 text-sm text-muted-foreground">Note: {v.approvalNote}</p>}
+            {v.approvalNote && <p className="mt-2 text-sm text-muted-foreground">{t("vch.d.note", { note: v.approvalNote })}</p>}
           </Card>
 
           <Card className="p-5">
@@ -179,10 +172,10 @@ export function LiveVoucherDetail() {
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
                     <th className="pb-2 font-medium">#</th>
-                    <th className="pb-2 font-medium">Account</th>
-                    <th className="pb-2 font-medium">Party / Remarks</th>
-                    <th className="pb-2 pe-3 text-end font-medium">Debit</th>
-                    <th className="pb-2 pe-3 text-end font-medium">Credit</th>
+                    <th className="pb-2 font-medium">{t("vch.d.colAccount")}</th>
+                    <th className="pb-2 font-medium">{t("vch.d.colRemarks")}</th>
+                    <th className="pb-2 pe-3 text-end font-medium">{t("vch.d.colDebit")}</th>
+                    <th className="pb-2 pe-3 text-end font-medium">{t("vch.d.colCredit")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -202,8 +195,8 @@ export function LiveVoucherDetail() {
 
           {v.journal.length > 0 && (
             <Card className="p-5">
-              <h3 className="mb-1 font-heading text-base font-semibold">Posted to the books</h3>
-              <p className="mb-3 text-xs text-muted-foreground">The entries this voucher created in the general ledger.</p>
+              <h3 className="mb-1 font-heading text-base font-semibold">{t("vch.d.posted")}</h3>
+              <p className="mb-3 text-xs text-muted-foreground">{t("vch.d.postedHint")}</p>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-sm">
                   <tbody>
@@ -223,12 +216,12 @@ export function LiveVoucherDetail() {
         </div>
 
         <Card className="h-fit p-5">
-          <p className="text-xs text-muted-foreground">Total amount</p>
+          <p className="text-xs text-muted-foreground">{t("vch.d.total")}</p>
           <p className="mt-1 break-words font-heading text-2xl font-semibold tabular-nums">{formatMoney(total)}</p>
           <p className="mt-2 text-xs italic text-muted-foreground">{amountInWords(String(v.total))}</p>
           <div className="mt-4 space-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
-            {v.createdBy && <p>Prepared by {v.createdBy}</p>}
-            {v.approvedBy && <p>{v.status === "rejected" ? "Rejected" : "Approved"} by {v.approvedBy}{v.approvedAt ? ` on ${formatDate(v.approvedAt)}` : ""}</p>}
+            {v.createdBy && <p>{t("vch.d.preparedBy", { name: v.createdBy })}</p>}
+            {v.approvedBy && <p>{t(`${v.status === "rejected" ? "vch.d.rejectedBy" : "vch.d.approvedBy"}${v.approvedAt ? "On" : ""}`, { name: v.approvedBy, date: v.approvedAt ? formatDate(v.approvedAt) : "" })}</p>}
           </div>
         </Card>
       </div>
@@ -237,27 +230,27 @@ export function LiveVoucherDetail() {
         open={dialog === "reject"}
         onOpenChange={(o) => !o && setDialog(null)}
         icon={XCircle}
-        title={`Reject ${v.number}`}
-        description="The preparer will see your reason and can fix and resubmit it."
-        submitLabel="Reject voucher"
+        title={t("vch.d.rejectTitle", { number: v.number })}
+        description={t("vch.d.rejectDescription")}
+        submitLabel={t("vch.d.rejectSubmit")}
         onSubmit={async (reason) => {
           await voucherAction(company.id, id, "reject", { reason });
           await invalidate();
-          toast.success(`${v.number} rejected`);
+          toast.success(t("vch.d.rejected", { number: v.number }));
         }}
       />
       <ReasonDialog
         open={dialog === "void"}
         onOpenChange={(o) => !o && setDialog(null)}
         icon={Ban}
-        title={`Void ${v.number}`}
-        description="Posted entries are never deleted. A reversing entry is posted instead, dated as below."
-        submitLabel="Void voucher"
-        dateLabel="Reverse on"
+        title={t("vch.d.voidTitle", { number: v.number })}
+        description={t("vch.d.voidDescription")}
+        submitLabel={t("vch.d.voidSubmit")}
+        dateLabel={t("vch.d.reverseOn")}
         onSubmit={async (reason, date) => {
           await voucherAction(company.id, id, "void", { reason, date });
           await invalidate();
-          toast.success(`${v.number} voided`);
+          toast.success(t("vch.d.voided", { number: v.number }));
         }}
       />
     </div>

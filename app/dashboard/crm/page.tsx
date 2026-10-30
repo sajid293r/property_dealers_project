@@ -43,13 +43,15 @@ import { formatDate } from "@/lib/format";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { translate } from "@/lib/i18n/runtime";
+import { useT } from "@/lib/i18n/provider";
 
 const STAGES: { id: LeadStatus; label: string }[] = [
-  { id: "new", label: "New" },
-  { id: "contacted", label: "Contacted" },
-  { id: "negotiation", label: "Negotiation" },
-  { id: "won", label: "Won" },
-  { id: "lost", label: "Lost" },
+  { id: "new", label: "leads.stage.new" },
+  { id: "contacted", label: "leads.stage.contacted" },
+  { id: "negotiation", label: "leads.stage.negotiation" },
+  { id: "won", label: "leads.stage.won" },
+  { id: "lost", label: "leads.stage.lost" },
 ];
 
 const STAGE_DOT: Record<LeadStatus, string> = {
@@ -81,15 +83,16 @@ function followUpMeta(dateStr?: string) {
   if (!dateStr) return null;
   const days = differenceInCalendarDays(new Date(dateStr), new Date());
   if (days < 0) {
-    return { label: `Overdue ${Math.abs(days)}d`, tone: "bg-destructive/10 text-destructive border-destructive/30" };
+    return { label: translate("dm.crm.overdue_days", { days: Math.abs(days) }), tone: "bg-destructive/10 text-destructive border-destructive/30" };
   }
-  if (days === 0) return { label: "Due today", tone: "bg-warning/15 text-warning border-warning/30" };
-  if (days === 1) return { label: "Tomorrow", tone: "bg-warning/15 text-warning border-warning/30" };
-  if (days <= 3) return { label: `In ${days}d`, tone: "bg-gold/15 text-gold border-gold/30" };
+  if (days === 0) return { label: translate("dm.crm.due_today"), tone: "bg-warning/15 text-warning border-warning/30" };
+  if (days === 1) return { label: translate("common.tomorrow"), tone: "bg-warning/15 text-warning border-warning/30" };
+  if (days <= 3) return { label: translate("dm.crm.in_days", { days }), tone: "bg-gold/15 text-gold border-gold/30" };
   return { label: formatDate(dateStr), tone: "bg-secondary text-secondary-foreground border-border" };
 }
 
 function DemoCrmPage() {
+  const t = useT();
   const { data: leads, isLoading } = useLeads();
   const [search, setSearch] = React.useState("");
   const [source, setSource] = React.useState("all");
@@ -120,7 +123,7 @@ function DemoCrmPage() {
 
   function moveLead(lead: Lead, next: LeadStatus) {
     setOverrides((prev) => ({ ...prev, [lead.id]: next }));
-    toast.success(`${lead.name} moved to ${STAGES.find((s) => s.id === next)?.label}`);
+    toast.success(t("dm.crm.moved", { name: lead.name, stage: t(STAGES.find((s) => s.id === next)!.label) }));
   }
 
   const [dragId, setDragId] = React.useState<string | null>(null);
@@ -142,26 +145,26 @@ function DemoCrmPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Leads (CRM)"
-        description={<>{leads?.length ?? 0} leads across all sources — track from first contact to a closed deal.</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("plan.feature.leads")}
+        description={t("dm.crm.description", { count: leads?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5">
           <PlusCircle className="size-4" />
-          Add Lead
+          {t("dashboard.hero.addLead")}
         </Button>
         </>}
       />
 
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search name, phone..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_name_phone")} />
           <Select value={source} onValueChange={setSource}>
             <SelectTrigger size="sm" className="w-40">
-              <SelectValue placeholder="Source" />
+              <SelectValue placeholder={t("leads.csv.source")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All sources</SelectItem>
+              <SelectItem value="all">{t("dm.all_sources")}</SelectItem>
               {sources.map((s) => (
                 <SelectItem key={s} value={s}>
                   {s}
@@ -171,10 +174,10 @@ function DemoCrmPage() {
           </Select>
           <Select value={agent} onValueChange={setAgent}>
             <SelectTrigger size="sm" className="w-44">
-              <SelectValue placeholder="Assigned to" />
+              <SelectValue placeholder={t("dm.assigned_to")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All agents</SelectItem>
+              <SelectItem value="all">{t("dm.all_agents")}</SelectItem>
               {agents.map((a) => (
                 <SelectItem key={a} value={a}>
                   {a}
@@ -214,7 +217,7 @@ function DemoCrmPage() {
               >
                 <div className="mb-3 flex items-center gap-2 px-1">
                   <span className={cn("size-2 rounded-full", STAGE_DOT[col.id])} />
-                  <h3 className="font-heading text-sm font-semibold">{col.label}</h3>
+                  <h3 className="font-heading text-sm font-semibold">{t(col.label)}</h3>
                   <Badge variant="secondary" className="ms-auto text-[10px] tabular-nums">
                     {col.leads.length}
                   </Badge>
@@ -222,7 +225,7 @@ function DemoCrmPage() {
                 <div className="space-y-3">
                   {col.leads.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                      {dragId ? "Drop here" : "No leads here"}
+                      {dragId ? t("dm.crm.drop_here") : t("leads.nobody")}
                     </div>
                   )}
                   {col.leads.map((lead, i) => (
@@ -265,6 +268,7 @@ function LeadCard({
   onDragEnd: () => void;
   onMove: (next: LeadStatus) => void;
 }) {
+  const t = useT();
   const followUp = followUpMeta(lead.nextFollowUp);
 
   return (
@@ -299,19 +303,19 @@ function LeadCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel className="text-[11px]">Move to</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[11px]">{t("dm.move_to")}</DropdownMenuLabel>
               {STAGES.filter((s) => s.id !== status).map((s) => (
                 <DropdownMenuItem key={s.id} onClick={() => onMove(s.id)}>
                   <ArrowRight className="size-3.5 rtl:-scale-x-100" />
-                  {s.label}
+                  {t(s.label)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => toast.success(`WhatsApp reminder queued for ${lead.name}`)}
+                onClick={() => toast.success(t("dm.crm.whatsapp_queued", { name: lead.name }))}
               >
                 <MessageCircle className="size-3.5" />
-                Message on WhatsApp
+                {t("dm.message_on_whatsapp")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

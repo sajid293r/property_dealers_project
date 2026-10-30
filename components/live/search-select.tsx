@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useT } from "@/lib/i18n/provider";
 import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -23,9 +24,9 @@ export function SearchSelect({
   options,
   value,
   onChange,
-  placeholder = "Select…",
-  searchPlaceholder = "Type to search…",
-  emptyText = "Nothing found",
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   onCreate,
   createLabel,
   disabled,
@@ -46,6 +47,7 @@ export function SearchSelect({
   clearable?: boolean;
   id?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [active, setActive] = React.useState(0);
@@ -99,7 +101,7 @@ export function SearchSelect({
                 <span className="truncate">{selected.label}</span>
               </>
             ) : (
-              placeholder
+              (placeholder ?? t("common.select"))
             )}
           </span>
           <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -128,7 +130,7 @@ export function SearchSelect({
                 if (o) choose(o);
               }
             }}
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t("common.typeToSearch")}
             className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -138,7 +140,7 @@ export function SearchSelect({
               Clear selection
             </button>
           )}
-          {results.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyText}</p>}
+          {results.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyText ?? t("common.nothingFound")}</p>}
           {results.map((o, i) => {
             const heading = o.group && o.group !== results[i - 1]?.group ? o.group : null;
             return (
@@ -175,7 +177,7 @@ export function SearchSelect({
             className="flex w-full items-center gap-2 border-t border-border/70 px-3 py-2.5 text-start text-sm font-medium text-primary hover:bg-secondary"
           >
             <Plus className="size-3.5" />
-            {createLabel ?? "Add new"}
+            {createLabel ?? t("common.addNew")}
           </button>
         )}
       </PopoverContent>

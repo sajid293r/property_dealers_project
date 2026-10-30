@@ -42,6 +42,7 @@ import { useAccounts, useContracts, useCustomers, useExpenses, useStaff, useTran
 import { formatDate } from "@/lib/format";
 import type { AccountClass, LedgerAccountBalance } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 const CLASS_STYLES: Record<AccountClass, string> = {
   asset: "bg-primary/10 text-primary border-primary/30",
@@ -52,6 +53,7 @@ const CLASS_STYLES: Record<AccountClass, string> = {
 };
 
 export function ChartOfAccountsView() {
+  const t = useT();
   const { data: units, isLoading: l1 } = useUnits();
   const { data: customers, isLoading: l2 } = useCustomers();
   const { data: staff, isLoading: l3 } = useStaff();
@@ -138,9 +140,9 @@ export function ChartOfAccountsView() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total Assets" value={totalAssets} format={(n) => formatLedgerBalance(n)} icon={Landmark} index={0} />
-        <KpiCard label="Total Liabilities" value={totalLiabilities} format={(n) => formatLedgerBalance(n)} icon={TrendingDown} index={1} />
-        <KpiCard label="Total Equity" value={totalEquity} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={2} accent="gold" />
+        <KpiCard label={t("dm.total_assets")} value={totalAssets} format={(n) => formatLedgerBalance(n)} icon={Landmark} index={0} />
+        <KpiCard label={t("dm.total_liabilities")} value={totalLiabilities} format={(n) => formatLedgerBalance(n)} icon={TrendingDown} index={1} />
+        <KpiCard label={t("dm.total_equity")} value={totalEquity} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={2} accent="gold" />
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,9 +156,9 @@ export function ChartOfAccountsView() {
             {balanced ? <CheckCircle2 className="size-4.5" /> : <AlertTriangle className="size-4.5" />}
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Balance check</p>
+            <p className="text-xs font-medium text-muted-foreground">{t("dm.balance_check")}</p>
             <p className="mt-0.5 text-sm font-semibold">
-              {balanced ? "Assets = Liabilities + Equity" : "Out of balance"}
+              {t(balanced ? "rep.balances" : "rep.notBalance")}
             </p>
           </div>
         </motion.div>
@@ -164,16 +166,16 @@ export function ChartOfAccountsView() {
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search code or account name..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_code_or_account_name")} />
           <Select value={classFilter} onValueChange={(v) => setClassFilter(v as typeof classFilter)}>
-            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder="Class" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-40"><SelectValue placeholder={t("dm.class")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All classes</SelectItem>
-              <SelectItem value="asset">Assets</SelectItem>
-              <SelectItem value="liability">Liabilities</SelectItem>
-              <SelectItem value="equity">Equity</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expenses</SelectItem>
+              <SelectItem value="all">{t("dm.all_classes")}</SelectItem>
+              <SelectItem value="asset">{t("rep.assets")}</SelectItem>
+              <SelectItem value="liability">{t("rep.liabilities")}</SelectItem>
+              <SelectItem value="equity">{t("rep.equity")}</SelectItem>
+              <SelectItem value="income">{t("rep.income")}</SelectItem>
+              <SelectItem value="expense">{t("perm.module.expenses")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -182,10 +184,10 @@ export function ChartOfAccountsView() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 bg-secondary/40 text-start text-xs text-muted-foreground">
-                <th className="py-2.5 ps-3 font-medium">Code</th>
-                <th className="py-2.5 font-medium">Account</th>
-                <th className="py-2.5 font-medium">Class</th>
-                <th className="py-2.5 pe-3 text-end font-medium">Balance</th>
+                <th className="py-2.5 ps-3 font-medium">{t("acc.col.code")}</th>
+                <th className="py-2.5 font-medium">{t("account.eyebrow")}</th>
+                <th className="py-2.5 font-medium">{t("dm.class")}</th>
+                <th className="py-2.5 pe-3 text-end font-medium">{t("customers.col.balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -289,6 +291,7 @@ function AccountDetailDialog({
   account: LedgerAccountBalance | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   return (
     <Dialog open={!!account} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -321,7 +324,7 @@ function AccountDetailDialog({
             ))
           ) : (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No underlying records — this is a fixed opening balance.
+              {t("dm.no_underlying_records_this_is")}
             </p>
           )}
         </div>

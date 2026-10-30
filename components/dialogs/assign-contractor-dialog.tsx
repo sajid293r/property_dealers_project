@@ -17,6 +17,7 @@ import { useContractors, useConstructionContracts } from "@/lib/hooks/use-data";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { ConstructionContract } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export function AssignContractorDialog({
   open,
@@ -27,6 +28,7 @@ export function AssignContractorDialog({
   onOpenChange: (open: boolean) => void;
   projectId: string;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: contractors } = useContractors();
   const { data: contracts } = useConstructionContracts();
@@ -86,15 +88,15 @@ export function AssignContractorDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={HardHat}
-      title="Assign Contractor"
-      description="Bring a contractor onto this project with a scoped contract."
-      submitLabel="Assign Contractor"
+      title={t("projects.detail.assign")}
+      description={t("dm.bring_a_contractor_onto_this")}
+      submitLabel={t("projects.detail.assign")}
       submitDisabled={!contractorId || !scopeOfWork || !contractValue}
       onSubmit={handleSubmit}
     >
-      <Field label="Contractor">
+      <Field label={t("customers.role.contractor")}>
         <Select value={contractorId} onValueChange={setContractorId}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="Select contractor" /></SelectTrigger>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_contractor")} /></SelectTrigger>
           <SelectContent>
             {contractors?.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.companyName} — {c.trade}</SelectItem>
@@ -103,24 +105,24 @@ export function AssignContractorDialog({
         </Select>
       </Field>
 
-      <Field label="Scope of work">
-        <Textarea value={scopeOfWork} onChange={(e) => setScopeOfWork(e.target.value)} placeholder="Civil works — Block D" rows={2} />
+      <Field label={t("dm.scope_of_work")}>
+        <Textarea value={scopeOfWork} onChange={(e) => setScopeOfWork(e.target.value)} placeholder={t("dm.civil_works_block_d")} rows={2} />
       </Field>
 
       <FieldRow>
-        <Field label="Contract value (PKR)">
+        <Field label={t("dm.contract_value_pkr")}>
           <Input type="number" value={contractValue} onChange={(e) => setContractValue(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Retention %">
+        <Field label={t("dm.retention")}>
           <Input type="number" value={retentionPercent} onChange={(e) => setRetentionPercent(e.target.value)} placeholder="10" />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="Start date">
+        <Field label={t("dm.start_date")}>
           <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </Field>
-        <Field label="End date">
+        <Field label={t("dm.end_date")}>
           <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </Field>
       </FieldRow>

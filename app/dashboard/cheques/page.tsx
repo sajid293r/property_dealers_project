@@ -26,8 +26,10 @@ import { useCustomers, usePostDatedCheques } from "@/lib/hooks/use-data";
 import { formatDate, formatPkr } from "@/lib/format";
 import type { ChequeStatus, PostDatedCheque } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoChequesPage() {
+  const t = useT();
   const { data: cheques, isLoading } = usePostDatedCheques();
   const { data: customers } = useCustomers();
   const queryClient = useQueryClient();
@@ -55,10 +57,10 @@ function DemoChequesPage() {
       old.map((item) => (item.id === cheque.id ? { ...item, status } : item)),
     );
     const messages: Record<ChequeStatus, string> = {
-      in_hand: `Cheque #${cheque.chequeNo} marked in hand`,
-      deposited: `Cheque #${cheque.chequeNo} deposited`,
-      cleared: `Cheque #${cheque.chequeNo} cleared`,
-      bounced: `Cheque #${cheque.chequeNo} marked bounced`,
+      in_hand: t("dm.chq.in_hand", { no: cheque.chequeNo }),
+      deposited: t("dm.chq.deposited", { no: cheque.chequeNo }),
+      cleared: t("dm.chq.cleared", { no: cheque.chequeNo }),
+      bounced: t("dm.chq.bounced", { no: cheque.chequeNo }),
     };
     toast.success(messages[status]);
   }
@@ -67,39 +69,39 @@ function DemoChequesPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Post-Dated Cheques"
-        description={<>{cheques?.length ?? 0} cheques collected against installments</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("nav.item.cheques")}
+        description={t("dm.chq.description", { count: cheques?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          Record Cheque
+          {t("dm.record_cheque")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={CalendarClock} label="In hand" value={formatPkr(stats.inHand, { compact: true })} />
-        <StatTile icon={Landmark} label="Deposited" value={formatPkr(stats.deposited, { compact: true })} accent="primary" />
-        <StatTile icon={CheckCircle2} label="Cleared" value={formatPkr(stats.cleared, { compact: true })} accent="success" />
-        <StatTile icon={Ban} label="Bounced" value={stats.bounced} accent="destructive" />
+        <StatTile icon={CalendarClock} label={t("chq.status.in_hand")} value={formatPkr(stats.inHand, { compact: true })} />
+        <StatTile icon={Landmark} label={t("chq.status.deposited")} value={formatPkr(stats.deposited, { compact: true })} accent="primary" />
+        <StatTile icon={CheckCircle2} label={t("chq.status.cleared")} value={formatPkr(stats.cleared, { compact: true })} accent="success" />
+        <StatTile icon={Ban} label={t("chq.tile.bounced")} value={stats.bounced} accent="destructive" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search cheque no, bank, customer..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_cheque_no_bank_customer")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Cheque</th>
-                <th className="pb-2.5 font-medium">Bank</th>
-                <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Amount</th>
-                <th className="pb-2.5 font-medium">Cheque date</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.cheques")}</th>
+                <th className="pb-2.5 font-medium">{t("chq.csv.bank")}</th>
+                <th className="pb-2.5 font-medium">{t("common.customer")}</th>
+                <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                <th className="pb-2.5 font-medium">{t("chq.csv.date")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -134,19 +136,19 @@ function DemoChequesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {c.status === "in_hand" && (
-                                <DropdownMenuItem onSelect={() => setStatus(c, "deposited")}>Deposit</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setStatus(c, "deposited")}>{t("chq.deposit")}</DropdownMenuItem>
                               )}
                               {c.status === "deposited" && (
                                 <>
-                                  <DropdownMenuItem onSelect={() => setStatus(c, "cleared")}>Mark cleared</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setStatus(c, "cleared")}>{t("dm.mark_cleared")}</DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem variant="destructive" onSelect={() => setStatus(c, "bounced")}>
-                                    Mark bounced
+                                    {t("dm.mark_bounced")}
                                   </DropdownMenuItem>
                                 </>
                               )}
                               {(c.status === "cleared" || c.status === "bounced") && (
-                                <DropdownMenuItem disabled>No further actions</DropdownMenuItem>
+                                <DropdownMenuItem disabled>{t("projects.detail.noActions")}</DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -157,7 +159,7 @@ function DemoChequesPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No cheques match your search.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_cheques_match_your_search")}</p>
           )}
         </div>
       </Card>

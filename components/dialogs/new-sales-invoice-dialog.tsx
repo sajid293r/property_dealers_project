@@ -17,6 +17,8 @@ import { PAYMENT_MODES, nextDocNumber } from "@/lib/sales";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { SalesInvoice } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 export function NewSalesInvoiceDialog({
   open,
@@ -25,6 +27,7 @@ export function NewSalesInvoiceDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: customers } = useCustomers();
   const { data: deals } = useDeals();
@@ -79,14 +82,14 @@ export function NewSalesInvoiceDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={ReceiptText}
-      title="New Sales Invoice"
-      description="Bill a customer for a booking amount or installment."
-      submitLabel="Create Invoice"
+      title={t("dm.new_sales_invoice")}
+      description={t("dm.bill_a_customer_for_a")}
+      submitLabel={t("dm.create_invoice")}
       submitDisabled={!customerId || !description || !amount}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Customer">
+        <Field label={t("common.customer")}>
           <Select
             value={customerId}
             onValueChange={(v) => {
@@ -94,7 +97,7 @@ export function NewSalesInvoiceDialog({
               setDealId("");
             }}
           >
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_customer")} /></SelectTrigger>
             <SelectContent>
               {customers?.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -102,9 +105,9 @@ export function NewSalesInvoiceDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Related deal (optional)">
+        <Field label={t("dm.related_deal_optional")}>
           <Select value={dealId} onValueChange={setDealId} disabled={!customerId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="None" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("common.none")} /></SelectTrigger>
             <SelectContent>
               {customerDeals.map((d) => (
                 <SelectItem key={d.id} value={d.id}>{d.voucherNo}</SelectItem>
@@ -114,25 +117,25 @@ export function NewSalesInvoiceDialog({
         </Field>
       </FieldRow>
 
-      <Field label="Description">
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Installment #4 — Plot PRP-1042" />
+      <Field label={t("rec.st.colDescription")}>
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dm.installment_4_plot_prp_1042")} />
       </Field>
 
       <FieldRow>
-        <Field label="Amount (PKR)">
+        <Field label={t("dm.amount_pkr")}>
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Due date">
+        <Field label={t("print.invoice.dueDate")}>
           <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </Field>
       </FieldRow>
 
-      <Field label="Payment mode">
+      <Field label={t("dm.payment_mode")}>
         <Select value={paymentMode} onValueChange={setPaymentMode}>
           <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
             {PAYMENT_MODES.map((m) => (
-              <SelectItem key={m} value={m}>{m}</SelectItem>
+              <SelectItem key={m} value={m}>{tx(m)}</SelectItem>
             ))}
           </SelectContent>
         </Select>

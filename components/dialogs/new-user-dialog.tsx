@@ -16,6 +16,7 @@ import { RoleBadge } from "@/components/administration/role-badge";
 import { useRoles } from "@/lib/hooks/use-data";
 import type { SystemUser } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 const DEPARTMENTS = ["Management", "Finance", "Sales", "Operations", "Projects"] as const;
 
@@ -26,6 +27,7 @@ export function NewUserDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: roles } = useRoles();
 
@@ -67,7 +69,7 @@ export function NewUserDialog({
 
     queryClient.setQueryData<SystemUser[]>(["systemUsers"], (old = []) => [newUser, ...old]);
     const role = roles?.find((r) => r.id === roleId);
-    toast.success(`Invitation sent to ${name}`, {
+    toast.success(t("dm.user.invited", { name }), {
       description: role ? `${role.name} · ${department}` : department,
     });
   }
@@ -77,18 +79,18 @@ export function NewUserDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={UserPlus}
-      title="Invite User"
-      description="Give a team member their own login and a role that scopes what they can see."
-      submitLabel="Send Invite"
+      title={t("dm.invite_user")}
+      description={t("dm.give_a_team_member_their")}
+      submitLabel={t("dm.send_invite")}
       submitDisabled={!name || !email || !roleId || !department}
       onSubmit={handleSubmit}
     >
-      <Field label="Full name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Sana Malik" />
+      <Field label={t("customers.new.fullName")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dm.sana_malik")} />
       </Field>
 
       <FieldRow>
-        <Field label="Email">
+        <Field label={t("auth.field.email")}>
           <Input
             type="email"
             value={email}
@@ -96,15 +98,15 @@ export function NewUserDialog({
             placeholder="sana.malik@company.pk"
           />
         </Field>
-        <Field label="Phone">
+        <Field label={t("common.phone")}>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03001234567" />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="Role">
+        <Field label={t("adm.users.col.role")}>
           <Select value={roleId} onValueChange={setRoleId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select role" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_role")} /></SelectTrigger>
             <SelectContent>
               {roles?.map((r) => (
                 <SelectItem key={r.id} value={r.id}>
@@ -114,9 +116,9 @@ export function NewUserDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Department">
+        <Field label={t("staff.csv.department")}>
           <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select department" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_department")} /></SelectTrigger>
             <SelectContent>
               {DEPARTMENTS.map((d) => (
                 <SelectItem key={d} value={d}>{d}</SelectItem>
@@ -128,7 +130,7 @@ export function NewUserDialog({
 
       {roleId && roles && (
         <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
-          <span className="me-1.5">Will be added as</span>
+          <span className="me-1.5">{t("dm.will_be_added_as")}</span>
           <RoleBadge role={roles.find((r) => r.id === roleId)!} />
         </div>
       )}

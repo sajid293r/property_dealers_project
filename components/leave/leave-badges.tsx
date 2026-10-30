@@ -2,6 +2,7 @@ import { Ban, CheckCircle2, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { LeaveStatus, LeaveType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { tx } from "@/lib/i18n/runtime";
 
 const TYPE_CLASSES: Record<LeaveType, string> = {
   Casual: "bg-chart-3/15 text-chart-3",
@@ -11,13 +12,13 @@ const TYPE_CLASSES: Record<LeaveType, string> = {
 };
 
 export function LeaveTypeBadge({ type, className }: { type: LeaveType; className?: string }) {
-  return <Badge variant="outline" className={cn("border-transparent font-medium", TYPE_CLASSES[type], className)}>{type}</Badge>;
+  return <Badge variant="outline" className={cn("border-transparent font-medium", TYPE_CLASSES[type], className)}>{tx(type)}</Badge>;
 }
 
 const STATUS_CONFIG: Record<LeaveStatus, { label: string; icon: typeof Clock; classes: string }> = {
-  pending: { label: "Pending", icon: Clock, classes: "bg-warning/12 text-warning" },
-  approved: { label: "Approved", icon: CheckCircle2, classes: "bg-success/12 text-success" },
-  rejected: { label: "Rejected", icon: Ban, classes: "bg-destructive/10 text-destructive" },
+  pending: { get label() { return tx("Pending"); }, icon: Clock, classes: "bg-warning/12 text-warning" },
+  approved: { get label() { return tx("Approved"); }, icon: CheckCircle2, classes: "bg-success/12 text-success" },
+  rejected: { get label() { return tx("Rejected"); }, icon: Ban, classes: "bg-destructive/10 text-destructive" },
 };
 
 export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {

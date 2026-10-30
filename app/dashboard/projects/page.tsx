@@ -15,8 +15,11 @@ import { NewProjectDialog } from "@/components/dialogs/new-project-dialog";
 import { useProjects, useUnits, useStaff, useExpenses } from "@/lib/hooks/use-data";
 import { formatLandArea, projectActualSpend, projectUnitStats } from "@/lib/projects";
 import { formatDate, formatPkr } from "@/lib/format";
+import { useT } from "@/lib/i18n/provider";
+import { Ltr } from "@/components/ltr";
 
 export default function ProjectsPage() {
+  const t = useT();
   const { data: projects, isLoading } = useProjects();
   const { data: units } = useUnits();
   const { data: staff } = useStaff();
@@ -37,22 +40,22 @@ export default function ProjectsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Projects"
-        title="Projects"
-        description={<>{projects?.length ?? 0} development schemes</>}
+        eyebrow={t("projects.eyebrow")}
+        title={t("projects.title")}
+        description={t("projects.description", { count: projects?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Project
+          {t("projects.new")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={FolderKanban} label="Total projects" value={stats.total} />
-        <StatTile icon={Layers} label="Active" value={stats.active} accent="success" />
-        <StatTile icon={Banknote} label="Total budget" value={formatPkr(stats.totalBudget, { compact: true })} accent="gold" />
-        <StatTile icon={Wallet} label="Properties across schemes" value={stats.totalUnits} />
+        <StatTile icon={FolderKanban} label={t("projects.stat.total")} value={stats.total} />
+        <StatTile icon={Layers} label={t("projects.stat.active")} value={stats.active} accent="success" />
+        <StatTile icon={Banknote} label={t("projects.stat.budget")} value={formatPkr(stats.totalBudget, { compact: true })} accent="gold" />
+        <StatTile icon={Wallet} label={t("projects.stat.properties")} value={stats.totalUnits} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -82,7 +85,7 @@ export default function ProjectsPage() {
                         />
                         <div className="relative flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="font-mono text-[11px] tracking-wider text-white/55">{p.code}</p>
+                            <p className="font-mono text-[11px] tracking-wider text-white/55"><Ltr>{p.code}</Ltr></p>
                             <h3 className="mt-0.5 truncate font-heading text-xl font-semibold text-white">{p.name}</h3>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <ProjectTypeBadge type={p.type} className="bg-white/15 text-white" />
@@ -104,29 +107,29 @@ export default function ProjectsPage() {
                       <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-3 text-center">
                         <div>
                           <p className="font-heading text-base font-semibold text-success">{unitStats.available}</p>
-                          <p className="text-[10px] text-muted-foreground">Available</p>
+                          <p className="text-[10px] text-muted-foreground">{t("status.available")}</p>
                         </div>
                         <div>
                           <p className="font-heading text-base font-semibold text-warning">{unitStats.reserved}</p>
-                          <p className="text-[10px] text-muted-foreground">Reserved</p>
+                          <p className="text-[10px] text-muted-foreground">{t("status.reserved")}</p>
                         </div>
                         <div>
                           <p className="font-heading text-base font-semibold text-muted-foreground">{unitStats.sold}</p>
-                          <p className="text-[10px] text-muted-foreground">Sold</p>
+                          <p className="text-[10px] text-muted-foreground">{t("status.sold")}</p>
                         </div>
                       </div>
 
                       <div className="mt-4 space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Budget utilized</span>
-                          <span className="font-medium">{formatPkr(actual, { compact: true })} / {formatPkr(p.budget, { compact: true })}</span>
+                          <span className="text-muted-foreground">{t("projects.card.budgetUtilized")}</span>
+                          <span className="font-medium"><Ltr>{formatPkr(actual, { compact: true })} / {formatPkr(p.budget, { compact: true })}</Ltr></span>
                         </div>
                         <Progress value={utilization} />
                       </div>
 
                       <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
-                        <span>{manager?.name ?? "Unassigned"} · {formatLandArea(p.landAreaMarla)}</span>
-                        <span>{soldPercent}% sold · Due {formatDate(p.plannedEndDate)}</span>
+                        <span>{manager?.name ?? t("projects.card.unassigned")} · {formatLandArea(p.landAreaMarla)}</span>
+                        <span>{t("projects.card.soldDue", { pct: soldPercent, date: formatDate(p.plannedEndDate) })}</span>
                       </div>
                       </div>
                     </Card>

@@ -17,6 +17,8 @@ import { SERVICE_TYPES, nextDocNumber } from "@/lib/sales";
 import { dateOffsetFromToday } from "@/lib/format";
 import type { ServiceInvoice, ServiceType } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { tx } from "@/lib/i18n/runtime";
 
 export function NewServiceInvoiceDialog({
   open,
@@ -25,6 +27,7 @@ export function NewServiceInvoiceDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -77,16 +80,16 @@ export function NewServiceInvoiceDialog({
       open={open}
       onOpenChange={handleOpenChange}
       icon={Wrench}
-      title="New Service Invoice"
-      description="Bill a property owner for maintenance, security or development charges."
-      submitLabel="Create Invoice"
+      title={t("dm.new_service_invoice")}
+      description={t("dm.bill_a_property_owner_for")}
+      submitLabel={t("dm.create_invoice")}
       submitDisabled={!customerId || !period || !amount}
       onSubmit={handleSubmit}
     >
       <FieldRow>
-        <Field label="Customer">
+        <Field label={t("common.customer")}>
           <Select value={customerId} onValueChange={setCustomerId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Select customer" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("dm.select_customer")} /></SelectTrigger>
             <SelectContent>
               {customers?.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -94,9 +97,9 @@ export function NewServiceInvoiceDialog({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Property (optional)">
+        <Field label={t("dm.property_optional")}>
           <Select value={unitId} onValueChange={setUnitId}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="None" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder={t("common.none")} /></SelectTrigger>
             <SelectContent>
               {units?.map((u) => (
                 <SelectItem key={u.id} value={u.id}>{u.code} — {u.project}</SelectItem>
@@ -107,26 +110,26 @@ export function NewServiceInvoiceDialog({
       </FieldRow>
 
       <FieldRow>
-        <Field label="Service type">
+        <Field label={t("dm.service_type")}>
           <Select value={serviceType} onValueChange={(v) => setServiceType(v as ServiceType)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               {SERVICE_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
+                <SelectItem key={t} value={t}>{tx(t)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Billing period">
-          <Input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="October 2026" />
+        <Field label={t("dm.billing_period")}>
+          <Input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder={t("sinv.new.periodPlaceholder")} />
         </Field>
       </FieldRow>
 
       <FieldRow>
-        <Field label="Amount (PKR)">
+        <Field label={t("dm.amount_pkr")}>
           <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </Field>
-        <Field label="Due date">
+        <Field label={t("print.invoice.dueDate")}>
           <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </Field>
       </FieldRow>

@@ -1,5 +1,6 @@
 import { Landmark, ScrollText, Wallet, WalletCards, type LucideIcon } from "lucide-react";
 import type { VoucherLine, VoucherStatus, VoucherType } from "@/lib/types";
+import { tOr, translate } from "@/lib/i18n/runtime";
 
 export interface VoucherTypeMeta {
   type: VoucherType;
@@ -65,6 +66,18 @@ export const VOUCHER_TYPES: VoucherTypeMeta[] = [
     description: "Adjusting or non-cash entries between any two ledger accounts.",
   },
 ];
+
+// Names and descriptions follow the language on screen (same keys as the live voucher screens).
+const ENGLISH = VOUCHER_TYPES.map((m) => ({ label: m.label, shortLabel: m.shortLabel, description: m.description, partyLabel: m.partyLabel }));
+VOUCHER_TYPES.forEach((m, i) => {
+  const en = ENGLISH[i]!;
+  Object.defineProperties(m, {
+    label: { enumerable: true, get: () => tOr(translate, `vch.type.${m.type}.label`, en.label) },
+    shortLabel: { enumerable: true, get: () => tOr(translate, `vch.type.${m.type}.short`, en.shortLabel) },
+    description: { enumerable: true, get: () => tOr(translate, `vch.type.${m.type}.description`, en.description) },
+    partyLabel: { enumerable: true, get: () => (en.partyLabel ? tOr(translate, `vch.type.${m.type}.party`, en.partyLabel) : null) },
+  });
+});
 
 export function voucherTypeMeta(type: VoucherType): VoucherTypeMeta {
   return VOUCHER_TYPES.find((t) => t.type === type)!;

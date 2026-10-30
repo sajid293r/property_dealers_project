@@ -5,40 +5,41 @@ import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, CreditCard, UserCog, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { PLAN_LABEL } from "@/lib/plan";
+import { useT } from "@/lib/i18n/provider";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 
 export default function SettingsPage() {
+  const t = useT();
   const { tier } = usePlanTier();
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Configuration"
-        title="Settings"
-        description="Account, billing and administration shortcuts"
+        eyebrow={t("nav.section.configuration")}
+        title={t("settings.title")}
+        description={t("settings.description")}
       />
 
       <SettingsLink
         href="/dashboard/administration/company-profile"
         icon={ClipboardList}
-        title="Company profile"
-        description="Legal details, branding and regional preferences"
+        title={t("adm.profile.title")}
+        description={t("settings.profileDescription")}
       />
 
       <SettingsLink
         href="/dashboard/administration/users"
         icon={UserCog}
-        title="User management"
-        description="Invite teammates, manage logins and assign roles"
+        title={t("settings.users")}
+        description={t("settings.usersDescription")}
       />
 
       <SettingsLink
         href="/dashboard/administration/roles"
         icon={UserCog}
-        title="Roles & permissions"
-        description="Configure per-module view/create/edit/delete/approve access"
+        title={t("adm.roles.title")}
+        description={t("settings.rolesDescription")}
       />
 
       <Link href="/dashboard/settings/billing" className="group block">
@@ -48,9 +49,9 @@ export default function SettingsPage() {
               <CreditCard className="size-4.5" />
             </div>
             <div>
-              <p className="font-medium">Billing &amp; subscription</p>
+              <p className="font-medium">{t("billing.title")}</p>
               <p className="text-xs text-muted-foreground">
-                Currently on the <span className="font-medium text-foreground">{PLAN_LABEL[tier]}</span> plan
+                {t("settings.currentPlan", { plan: t(`plan.${tier}`) })}
               </p>
             </div>
           </div>

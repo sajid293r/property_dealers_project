@@ -29,6 +29,8 @@ import { formatPkr } from "@/lib/format";
 import type { Unit, UnitStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { Ltr } from "@/components/ltr";
 
 const STATUS_STYLES: Record<UnitStatus, string> = {
   available: "bg-success/15 text-success border-success/30",
@@ -37,6 +39,7 @@ const STATUS_STYLES: Record<UnitStatus, string> = {
 };
 
 export default function PropertiesPage() {
+  const t = useT();
   const { data: units, isLoading } = useUnits();
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"all" | UnitStatus>("all");
@@ -81,40 +84,40 @@ export default function PropertiesPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Portfolio"
-        title="Properties"
-        description={<>{units?.length ?? 0} properties across all active projects</>}
+        eyebrow={t("properties.eyebrow")}
+        title={t("properties.title")}
+        description={t("properties.description", { count: units?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setAddOpen(true)}>
           <PlusCircle className="size-4" />
-          Add Property
+          {t("properties.add")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total properties" value={units?.length ?? 0} format={(n) => n.toString()} icon={KpiBuilding2} index={0} />
-        <KpiCard label="Available" value={availableCount} format={(n) => n.toString()} icon={KpiCircleCheck} index={1} />
-        <KpiCard label="Reserved" value={reservedCount} format={(n) => n.toString()} icon={KpiHourglass} accent="gold" index={2} />
-        <KpiCard label="Available stock value" value={availableValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={3} />
+        <KpiCard label={t("properties.kpi.total")} value={units?.length ?? 0} format={(n) => n.toString()} icon={KpiBuilding2} index={0} />
+        <KpiCard label={t("properties.kpi.available")} value={availableCount} format={(n) => n.toString()} icon={KpiCircleCheck} index={1} />
+        <KpiCard label={t("properties.kpi.reserved")} value={reservedCount} format={(n) => n.toString()} icon={KpiHourglass} accent="gold" index={2} />
+        <KpiCard label={t("properties.kpi.stockValue")} value={availableValue} format={(n) => formatPkr(n, { compact: true })} icon={KpiBanknote} accent="gold" index={3} />
       </div>
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search code, title, project..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("properties.search")} />
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-            <SelectTrigger size="sm" className="w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-36"><SelectValue placeholder={t("common.status")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="reserved">Reserved</SelectItem>
-              <SelectItem value="sold">Sold</SelectItem>
+              <SelectItem value="all">{t("properties.allStatuses")}</SelectItem>
+              <SelectItem value="available">{t("status.available")}</SelectItem>
+              <SelectItem value="reserved">{t("status.reserved")}</SelectItem>
+              <SelectItem value="sold">{t("status.sold")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger size="sm" className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
+            <SelectTrigger size="sm" className="w-44"><SelectValue placeholder={t("properties.category")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
+              <SelectItem value="all">{t("properties.allCategories")}</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -123,27 +126,27 @@ export default function PropertiesPage() {
 
           {selected.size > 0 && (
             <div className="ms-auto flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+              <span className="text-xs text-muted-foreground">{t("common.selected", { count: selected.size })}</span>
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5"
-                onClick={() => toast.success(`Bulk price update queued for ${selected.size} properties`)}
+                onClick={() => toast.success(t("properties.bulkPrice", { count: selected.size }))}
               >
                 <Tag className="size-3.5" />
-                Update Price
+                {t("properties.updatePrice")}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-destructive hover:text-destructive"
                 onClick={() => {
-                  toast.success(`${selected.size} properties archived`);
+                  toast.success(t("properties.bulkArchived", { count: selected.size }));
                   setSelected(new Set());
                 }}
               >
                 <Trash2 className="size-3.5" />
-                Archive
+                {t("properties.archive")}
               </Button>
             </div>
           )}
@@ -156,12 +159,12 @@ export default function PropertiesPage() {
                 <th className="w-9 pb-2.5">
                   <Checkbox checked={allChecked} onCheckedChange={(c) => toggleAll(!!c)} />
                 </th>
-                <th className="pb-2.5 font-medium">Property</th>
-                <th className="pb-2.5 font-medium">Category</th>
-                <th className="pb-2.5 font-medium">Size</th>
-                <th className="pb-2.5 font-medium">Price</th>
-                <th className="pb-2.5 font-medium">Payment</th>
-                <th className="pb-2.5 font-medium">Status</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.property")}</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.category")}</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.size")}</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.price")}</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.payment")}</th>
+                <th className="pb-2.5 font-medium">{t("properties.col.status")}</th>
               </tr>
             </thead>
             <tbody>
@@ -183,7 +186,7 @@ export default function PropertiesPage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    No properties match these filters.
+                    {t("properties.noMatch")}
                   </td>
                 </tr>
               )}
@@ -208,6 +211,7 @@ function UnitRow({
   checked: boolean;
   onToggle: (c: boolean) => void;
 }) {
+  const t = useT();
   return (
     <motion.tr
       initial={{ opacity: 0 }}
@@ -233,22 +237,22 @@ function UnitRow({
           <div>
             {isLiveCompanyId(unit.id) ? <Link href={`/dashboard/properties/${unit.id}`} className="font-medium leading-tight hover:text-primary hover:underline">{unit.title}</Link> : <p className="font-medium leading-tight">{unit.title}</p>}
             <p className="font-mono text-[11px] text-muted-foreground">
-              {unit.code} · {unit.project} · {unit.block ? `Block ${unit.block}` : "No block"}
+              <Ltr>{unit.code}</Ltr> · {unit.project} · {unit.block ? t("properties.block", { block: unit.block }) : t("properties.noBlock")}
             </p>
           </div>
         </div>
       </td>
       <td className="py-2.5 text-muted-foreground">{unit.category}</td>
       <td className="py-2.5 tabular-nums text-muted-foreground">
-        {unit.sizeMarla} Marla <span className="text-xs">({unit.sqft.toLocaleString()} sqft)</span>
+        {t("properties.sizeLine", { marla: unit.sizeMarla })} <span className="text-xs">{t("properties.sqft", { sqft: unit.sqft.toLocaleString() })}</span>
       </td>
-      <td className="py-2.5 tabular-nums font-medium">{formatPkr(unit.price)}</td>
+      <td className="py-2.5 tabular-nums font-medium"><Ltr>{formatPkr(unit.price)}</Ltr></td>
       <td className="py-2.5">
-        <Badge variant="outline" className="capitalize">{unit.paymentType}</Badge>
+        <Badge variant="outline">{t(`status.${unit.paymentType}`)}</Badge>
       </td>
       <td className="py-2.5">
-        <Badge variant="outline" className={cn("capitalize", STATUS_STYLES[unit.status])}>
-          {unit.status}
+        <Badge variant="outline" className={cn(STATUS_STYLES[unit.status])}>
+          {t(`status.${unit.status}`)}
         </Badge>
       </td>
     </motion.tr>

@@ -26,8 +26,10 @@ import { useCustomers, useQuotations, useUnits } from "@/lib/hooks/use-data";
 import { formatDate, formatPkr } from "@/lib/format";
 import type { Quotation, QuotationStatus } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoQuotationsPage() {
+  const t = useT();
   const { data: quotations, isLoading } = useQuotations();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -58,11 +60,11 @@ function DemoQuotationsPage() {
       old.map((item) => (item.id === q.id ? { ...item, status } : item)),
     );
     const messages: Record<QuotationStatus, string> = {
-      draft: `${q.number} reverted to draft`,
-      sent: `${q.number} sent to customer`,
-      accepted: `${q.number} marked accepted`,
-      expired: `${q.number} marked expired`,
-      converted: `${q.number} converted — create the booking from Deals & Bookings`,
+      draft: t("dm.quotes.reverted", { number: q.number }),
+      sent: t("dm.quotes.sent", { number: q.number }),
+      accepted: t("dm.quotes.accepted", { number: q.number }),
+      expired: t("dm.quotes.expired", { number: q.number }),
+      converted: t("dm.quotes.converted_msg", { number: q.number }),
     };
     toast.success(messages[status]);
   }
@@ -71,39 +73,39 @@ function DemoQuotationsPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Quotations"
-        description={<>{quotations?.length ?? 0} quotes issued to prospects</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("plan.feature.quotations")}
+        description={t("dm.quotes.description", { count: quotations?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Quotation
+          {t("dm.new_quotation")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={FileStack} label="Total quotations" value={stats.total} />
-        <StatTile icon={Send} label="Awaiting response" value={stats.sent} accent="primary" />
-        <StatTile icon={CheckCircle2} label="Accepted" value={stats.accepted} accent="success" />
-        <StatTile icon={TrendingUp} label="Conversion rate" value={`${stats.conversionRate}%`} accent="gold" />
+        <StatTile icon={FileStack} label={t("dm.total_quotations")} value={stats.total} />
+        <StatTile icon={Send} label={t("dm.awaiting_response")} value={stats.sent} accent="primary" />
+        <StatTile icon={CheckCircle2} label={t("quotes.tile.accepted")} value={stats.accepted} accent="success" />
+        <StatTile icon={TrendingUp} label={t("dm.conversion_rate")} value={`${stats.conversionRate}%`} accent="gold" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, customer, property..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_number_customer_property")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Quotation</th>
-                <th className="pb-2.5 font-medium">Customer</th>
-                <th className="pb-2.5 font-medium">Property</th>
-                <th className="pb-2.5 font-medium">Price</th>
-                <th className="pb-2.5 font-medium">Valid until</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.quotations")}</th>
+                <th className="pb-2.5 font-medium">{t("common.customer")}</th>
+                <th className="pb-2.5 font-medium">{t("audit.entity.properties")}</th>
+                <th className="pb-2.5 font-medium">{t("deals.col.price")}</th>
+                <th className="pb-2.5 font-medium">{t("print.quote.validUntil")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -145,19 +147,19 @@ function DemoQuotationsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {q.status === "draft" && (
-                                <DropdownMenuItem onSelect={() => setStatus(q, "sent")}>Send to customer</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setStatus(q, "sent")}>{t("dm.send_to_customer")}</DropdownMenuItem>
                               )}
                               {q.status === "sent" && (
                                 <>
-                                  <DropdownMenuItem onSelect={() => setStatus(q, "accepted")}>Mark accepted</DropdownMenuItem>
-                                  <DropdownMenuItem onSelect={() => setStatus(q, "expired")}>Mark expired</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setStatus(q, "accepted")}>{t("dm.mark_accepted")}</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setStatus(q, "expired")}>{t("dm.mark_expired")}</DropdownMenuItem>
                                 </>
                               )}
                               {q.status === "accepted" && (
-                                <DropdownMenuItem onSelect={() => setStatus(q, "converted")}>Convert to booking</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setStatus(q, "converted")}>{t("dm.convert_to_booking")}</DropdownMenuItem>
                               )}
                               {(q.status === "expired" || q.status === "converted") && (
-                                <DropdownMenuItem disabled>No further actions</DropdownMenuItem>
+                                <DropdownMenuItem disabled>{t("projects.detail.noActions")}</DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -168,7 +170,7 @@ function DemoQuotationsPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No quotations match your search.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_quotations_match_your_search")}</p>
           )}
         </div>
       </Card>

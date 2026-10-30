@@ -33,12 +33,14 @@ import { UserDetailSheet } from "@/components/administration/user-detail-sheet";
 import { useSystemUsers, useRoles } from "@/lib/hooks/use-data";
 import { formatDate } from "@/lib/format";
 import type { SystemUser } from "@/lib/types";
+import { useT } from "@/lib/i18n/provider";
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
 function DemoUsersPage() {
+  const t = useT();
   const { data: users, isLoading } = useSystemUsers();
   const { data: roles } = useRoles();
 
@@ -69,31 +71,31 @@ function DemoUsersPage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Administration"
-        title="Users"
-        description="Everyone with a login to this workspace"
+        eyebrow={t("perm.module.administration")}
+        title={t("adm.users.title")}
+        description={t("dm.everyone_with_a_login_to")}
         actions={<>
         <Button className="gap-1.5" onClick={() => setInviteOpen(true)}>
           <UserPlus className="size-4" />
-          Invite User
+          {t("dm.invite_user")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={UsersIcon} label="Total users" value={stats.total} />
-        <StatTile icon={UserCheck} label="Active" value={stats.active} accent="success" />
-        <StatTile icon={ShieldCheck} label="Invited" value={stats.invited} accent="warning" />
-        <StatTile icon={UserX} label="Suspended" value={stats.suspended} accent="destructive" />
+        <StatTile icon={UsersIcon} label={t("dm.total_users")} value={stats.total} />
+        <StatTile icon={UserCheck} label={t("adm.users.status.active")} value={stats.active} accent="success" />
+        <StatTile icon={ShieldCheck} label={t("adm.users.status.invited")} value={stats.invited} accent="warning" />
+        <StatTile icon={UserX} label={t("adm.users.status.suspended")} value={stats.suspended} accent="destructive" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search name, email, username..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_name_email_username")} />
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-[168px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">{t("dm.all_roles")}</SelectItem>
               {roles?.map((r) => (
                 <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
               ))}
@@ -102,10 +104,10 @@ function DemoUsersPage() {
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="invited">Invited</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
+              <SelectItem value="all">{t("deals.allStatuses")}</SelectItem>
+              <SelectItem value="active">{t("adm.users.status.active")}</SelectItem>
+              <SelectItem value="invited">{t("adm.users.status.invited")}</SelectItem>
+              <SelectItem value="suspended">{t("adm.users.status.suspended")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -114,12 +116,12 @@ function DemoUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">User</th>
-                <th className="pb-2.5 font-medium">Role</th>
-                <th className="pb-2.5 font-medium">Department</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium">Last active</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("dm.user")}</th>
+                <th className="pb-2.5 font-medium">{t("adm.users.col.role")}</th>
+                <th className="pb-2.5 font-medium">{t("staff.csv.department")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.last_active")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -164,7 +166,7 @@ function DemoUsersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => setActiveUser(u)}>View detail</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => setActiveUser(u)}>{t("vch.viewDetail")}</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -174,7 +176,7 @@ function DemoUsersPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No users match your filters.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_users_match_your_filters")}</p>
           )}
         </div>
       </Card>

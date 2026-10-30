@@ -2,12 +2,14 @@ import { Badge } from "@/components/ui/badge";
 import { contractStatusMeta, projectStatusMeta } from "@/lib/projects";
 import type { ConstructionContractStatus, ProjectStatus, ProjectType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function ProjectStatusBadge({ status, className }: { status: ProjectStatus; className?: string }) {
+  const t = useT();
   const meta = projectStatusMeta(status);
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", meta.classes, className)}>
-      {meta.label}
+      {t(`status.${status}`)}
     </span>
   );
 }
@@ -19,18 +21,20 @@ const TYPE_CLASSES: Record<ProjectType, string> = {
 };
 
 export function ProjectTypeBadge({ type, className }: { type: ProjectType; className?: string }) {
+  const t = useT();
   return (
     <Badge variant="outline" className={cn("border-transparent font-medium", TYPE_CLASSES[type], className)}>
-      {type}
+      {t(`projects.type.${type}`)}
     </Badge>
   );
 }
 
 export function ContractStatusBadge({ status, className }: { status: ConstructionContractStatus; className?: string }) {
+  const t = useT();
   const meta = contractStatusMeta(status);
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", meta.classes, className)}>
-      {meta.label}
+      {t(`status.${status}`)}
     </span>
   );
 }

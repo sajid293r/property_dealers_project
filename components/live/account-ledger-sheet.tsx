@@ -10,9 +10,11 @@ import { useCompany } from "@/lib/providers/company-provider";
 import { accountLedger, num } from "@/lib/api/finance";
 import { fiscalYearOf, todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
+import { useT } from "@/lib/i18n/provider";
 
 /** The running statement of one ledger account: every posted line, with a running balance. */
 export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: string | null; title: string; onClose: () => void }) {
+  const t = useT();
   const { company } = useCompany();
   const fy = fiscalYearOf(todayIso());
   const [from, setFrom] = React.useState(fy.from);
@@ -27,13 +29,13 @@ export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: s
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
-          <SheetDescription>Every posted entry on this account, with a running balance.</SheetDescription>
+          <SheetDescription>{t("acc.ledger.description")}</SheetDescription>
         </SheetHeader>
         <div className="space-y-3 px-4 pb-6">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" />
-            <span className="text-muted-foreground">to</span>
-            <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
+            <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t("acc.ledger.from")} />
+            <span className="text-muted-foreground">{t("acc.ledger.toWord")}</span>
+            <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t("acc.ledger.to")} />
           </div>
           {q.isLoading ? (
             <Skeleton className="h-64 w-full" />
@@ -42,16 +44,16 @@ export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: s
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
                   <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                    <th className="pb-2 font-medium">Date</th>
-                    <th className="pb-2 font-medium">Entry</th>
-                    <th className="pb-2 pe-2 text-end font-medium">Debit</th>
-                    <th className="pb-2 pe-2 text-end font-medium">Credit</th>
-                    <th className="pb-2 pe-2 text-end font-medium">Balance</th>
+                    <th className="pb-2 font-medium">{t("common.date")}</th>
+                    <th className="pb-2 font-medium">{t("acc.ledger.colEntry")}</th>
+                    <th className="pb-2 pe-2 text-end font-medium">{t("vch.d.colDebit")}</th>
+                    <th className="pb-2 pe-2 text-end font-medium">{t("vch.d.colCredit")}</th>
+                    <th className="pb-2 pe-2 text-end font-medium">{t("acc.col.balance")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-border/40 bg-secondary/40 text-xs">
-                    <td className="py-1.5 ps-1" colSpan={4}>Opening balance</td>
+                    <td className="py-1.5 ps-1" colSpan={4}>{t("acc.ledger.opening")}</td>
                     <td className="whitespace-nowrap py-1.5 pe-2 text-end font-mono tabular-nums">{formatMoney(num(q.data.openingBalance))}</td>
                   </tr>
                   {q.data.lines.map((l, i) => (
@@ -72,7 +74,7 @@ export function AccountLedgerSheet({ accountId, title, onClose }: { accountId: s
                   ))}
                 </tbody>
               </table>
-              {q.data.lines.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nothing posted in this period.</p>}
+              {q.data.lines.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">{t("acc.ledger.empty")}</p>}
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">{q.error instanceof Error ? q.error.message : ""}</p>

@@ -17,8 +17,10 @@ import {
   useUnits,
 } from "@/lib/hooks/use-data";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function BalanceSheetTab() {
+  const t = useT();
   const { data: units, isLoading: l1 } = useUnits();
   const { data: customers, isLoading: l2 } = useCustomers();
   const { data: staff, isLoading: l3 } = useStaff();
@@ -53,15 +55,15 @@ export function BalanceSheetTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="Total Assets" value={totalAssets} format={(n) => formatLedgerBalance(n)} icon={Landmark} index={0} />
-        <KpiCard label="Total Liabilities" value={totalLiabilities} format={(n) => formatLedgerBalance(n)} icon={Scale} index={1} />
-        <KpiCard label="Total Equity" value={totalEquity} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={2} accent="gold" />
+        <KpiCard label={t("dm.total_assets")} value={totalAssets} format={(n) => formatLedgerBalance(n)} icon={Landmark} index={0} />
+        <KpiCard label={t("dm.total_liabilities")} value={totalLiabilities} format={(n) => formatLedgerBalance(n)} icon={Scale} index={1} />
+        <KpiCard label={t("dm.total_equity")} value={totalEquity} format={(n) => formatLedgerBalance(n)} icon={TrendingUp} index={2} accent="gold" />
       </div>
 
       <Card className="space-y-1 p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3 className="font-heading text-base font-semibold">Balance Sheet</h3>
+            <h3 className="font-heading text-base font-semibold">{t("dm.balance_sheet")}</h3>
             <p className="text-xs text-muted-foreground">As of {new Intl.DateTimeFormat("en-PK", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(today))}</p>
           </div>
           <span
@@ -71,39 +73,39 @@ export function BalanceSheetTab() {
             )}
           >
             {balanced ? <CheckCircle2 className="size-3.5" /> : <AlertTriangle className="size-3.5" />}
-            {balanced ? "Balanced" : "Out of balance"}
+            {t(balanced ? "vch.f.balanced" : "rep.notBalance")}
           </span>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-sm font-heading font-semibold">Assets</p>
+            <p className="mb-1.5 text-sm font-heading font-semibold">{t("rep.assets")}</p>
             <AccountStatementTree nodes={tree} rootId="03" />
             <div className="mt-1 flex items-center justify-between border-t-2 border-border pt-2 font-semibold">
-              <span>Total Assets</span>
+              <span>{t("dm.total_assets")}</span>
               <span className="tabular-nums">{formatLedgerBalance(totalAssets)}</span>
             </div>
           </div>
 
           <div className="space-y-5">
             <div>
-              <p className="mb-1.5 text-sm font-heading font-semibold">Liabilities</p>
+              <p className="mb-1.5 text-sm font-heading font-semibold">{t("rep.liabilities")}</p>
               <AccountStatementTree nodes={tree} rootId="02" />
               <div className="mt-1 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
-                <span>Total Liabilities</span>
+                <span>{t("dm.total_liabilities")}</span>
                 <span className="tabular-nums">{formatLedgerBalance(totalLiabilities)}</span>
               </div>
             </div>
             <div>
-              <p className="mb-1.5 text-sm font-heading font-semibold">Equity</p>
+              <p className="mb-1.5 text-sm font-heading font-semibold">{t("rep.equity")}</p>
               <AccountStatementTree nodes={tree} rootId="01" />
               <div className="mt-1 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
-                <span>Total Equity</span>
+                <span>{t("dm.total_equity")}</span>
                 <span className="tabular-nums">{formatLedgerBalance(totalEquity)}</span>
               </div>
             </div>
             <div className="flex items-center justify-between border-t-2 border-border pt-2 font-semibold">
-              <span>Total Liabilities &amp; Equity</span>
+              <span>{t("dm.rep.total_le")}</span>
               <span className="tabular-nums">{formatLedgerBalance(totalLiabilities + totalEquity)}</span>
             </div>
           </div>

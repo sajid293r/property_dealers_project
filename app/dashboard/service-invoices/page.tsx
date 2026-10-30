@@ -27,8 +27,10 @@ import { isOverdue } from "@/lib/sales";
 import { formatPkr } from "@/lib/format";
 import type { ServiceInvoice } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoServiceInvoicesPage() {
+  const t = useT();
   const { data: invoices, isLoading } = useServiceInvoices();
   const { data: customers } = useCustomers();
   const { data: units } = useUnits();
@@ -57,46 +59,46 @@ function DemoServiceInvoicesPage() {
     queryClient.setQueryData<ServiceInvoice[]>(["serviceInvoices"], (old = []) =>
       old.map((item) => (item.id === inv.id ? { ...item, status: "paid" } : item)),
     );
-    toast.success(`${inv.number} marked paid`);
+    toast.success(t("dm.sinv.marked_paid", { number: inv.number }));
   }
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Sales & CRM"
-        title="Service Invoices"
-        description={<>{invoices?.length ?? 0} maintenance &amp; society charges</>}
+        eyebrow={t("nav.section.sales")}
+        title={t("nav.item.service-invoices")}
+        description={t("dm.svc.description", { count: invoices?.length ?? 0 })}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Invoice
+          {t("dm.new_invoice")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={Wrench} label="Total invoices" value={stats.total} />
-        <StatTile icon={Clock} label="Outstanding" value={formatPkr(stats.unpaidAmount, { compact: true })} accent="warning" />
-        <StatTile icon={Clock} label="Overdue" value={stats.overdue} accent="destructive" />
-        <StatTile icon={CheckCircle2} label="Collected" value={formatPkr(stats.collected, { compact: true })} accent="success" />
+        <StatTile icon={Wrench} label={t("dm.total_invoices")} value={stats.total} />
+        <StatTile icon={Clock} label={t("deals.kpi.outstanding")} value={formatPkr(stats.unpaidAmount, { compact: true })} accent="warning" />
+        <StatTile icon={Clock} label={t("dashboard.live.overdue")} value={stats.overdue} accent="destructive" />
+        <StatTile icon={CheckCircle2} label={t("dashboard.schedule.collected")} value={formatPkr(stats.collected, { compact: true })} accent="success" />
       </div>
 
       <Card className="p-4">
         <div className="mb-4">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search number, type, customer..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_number_type_customer")} />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Invoice</th>
-                <th className="pb-2.5 font-medium">Customer / Property</th>
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium">Period</th>
-                <th className="pb-2.5 font-medium">Amount</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("print.invoice.title")}</th>
+                <th className="pb-2.5 font-medium">{t("dm.customer_property")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                <th className="pb-2.5 font-medium">{t("contracts.col.period")}</th>
+                <th className="pb-2.5 font-medium">{t("common.amount")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -135,9 +137,9 @@ function DemoServiceInvoicesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {inv.status === "unpaid" ? (
-                                <DropdownMenuItem onSelect={() => markPaid(inv)}>Mark as paid</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => markPaid(inv)}>{t("dm.mark_as_paid")}</DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem disabled>Already paid</DropdownMenuItem>
+                                <DropdownMenuItem disabled>{t("dm.already_paid")}</DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -148,7 +150,7 @@ function DemoServiceInvoicesPage() {
             </tbody>
           </table>
           {!isLoading && filtered.length === 0 && (
-            <p className="py-10 text-center text-sm text-muted-foreground">No invoices match your search.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("dm.no_invoices_match_your_search")}</p>
           )}
         </div>
       </Card>

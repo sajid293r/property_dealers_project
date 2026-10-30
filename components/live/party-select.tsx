@@ -5,13 +5,14 @@ import { SearchSelect, type SearchOption } from "@/components/live/search-select
 import { NewPartyDialog } from "@/components/live/party-dialog";
 import { useParties } from "@/lib/hooks/use-live";
 import type { PartyRole, PartyRow } from "@/lib/api/finance";
+import { useT } from "@/lib/i18n/provider";
 
 /** Choose a customer or supplier, or add a new one on the spot. */
 export function PartySelect({
   value,
   onChange,
   role,
-  placeholder = "Choose…",
+  placeholder,
   disabled,
   id,
   createLabel,
@@ -25,6 +26,7 @@ export function PartySelect({
   id?: string;
   createLabel?: string;
 }) {
+  const t = useT();
   const { data: parties } = useParties(role);
   const [adding, setAdding] = React.useState(false);
   const options = React.useMemo<SearchOption[]>(
@@ -38,12 +40,12 @@ export function PartySelect({
         disabled={disabled}
         options={options}
         value={value}
-        placeholder={placeholder}
-        searchPlaceholder="Search by name, phone or last 4 digits of CNIC"
-        emptyText={role === "vendor" ? "No suppliers yet" : "Nobody matches"}
+        placeholder={placeholder ?? t("customers.select.choose")}
+        searchPlaceholder={t("customers.select.search")}
+        emptyText={role === "vendor" ? t("customers.select.noSuppliers") : t("customers.select.nobody")}
         onChange={(v) => onChange(v, parties?.find((p) => p.id === v))}
         onCreate={() => setAdding(true)}
-        createLabel={createLabel ?? (role === "vendor" ? "Add a new supplier" : role === "customer" ? "Add a new customer" : "Add someone new")}
+        createLabel={createLabel ?? (role === "vendor" ? t("customers.select.addSupplier") : role === "customer" ? t("customers.select.addCustomer") : t("customers.select.addSomeone"))}
       />
       <NewPartyDialog
         open={adding}

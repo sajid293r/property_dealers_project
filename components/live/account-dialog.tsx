@@ -10,9 +10,11 @@ import { useCompany } from "@/lib/providers/company-provider";
 import { useChartAccounts, useInvalidateFinance } from "@/lib/hooks/use-live";
 import { createAccount } from "@/lib/api/finance";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 /** Add a ledger account under a heading. The code is worked out by the system. */
 export function AccountDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const t = useT();
   const { company } = useCompany();
   const { data: accounts } = useChartAccounts();
   const invalidate = useInvalidateFinance();
@@ -28,27 +30,27 @@ export function AccountDialog({ open, onOpenChange }: { open: boolean; onOpenCha
       open={open}
       onOpenChange={onOpenChange}
       icon={BookOpen}
-      title="New ledger account"
-      description="Pick the heading it belongs to and give it a name. The account code is assigned automatically."
-      submitLabel="Add account"
+      title={t("acc.new.title")}
+      description={t("acc.new.description")}
+      submitLabel={t("acc.new.submit")}
       submitDisabled={!parentId || name.trim().length < 2}
       onSubmit={async () => {
         await createAccount(company.id, { parentId: parentId!, name: name.trim(), requiresParty });
         await invalidate();
-        toast.success(`${name.trim()} added`);
+        toast.success(t("acc.new.added", { name: name.trim() }));
         setName("");
         setRequiresParty(false);
       }}
     >
-      <Field label="Under heading">
-        <SearchSelect options={options} value={parentId} onChange={setParentId} placeholder="Choose a heading" searchPlaceholder="Search headings" emptyText="No heading matches" />
+      <Field label={t("acc.new.heading")}>
+        <SearchSelect options={options} value={parentId} onChange={setParentId} placeholder={t("acc.new.chooseHeading")} searchPlaceholder={t("acc.new.searchHeadings")} emptyText={t("acc.new.noHeading")} />
       </Field>
-      <Field label="Account name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} placeholder="e.g. Site Security Charges" />
+      <Field label={t("acc.new.name")}>
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} placeholder={t("acc.new.namePlaceholder")} />
       </Field>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={requiresParty} onCheckedChange={(c) => setRequiresParty(c === true)} />
-        Every entry must name a customer or supplier
+        {t("acc.new.requiresParty")}
       </label>
     </FormDialog>
   );

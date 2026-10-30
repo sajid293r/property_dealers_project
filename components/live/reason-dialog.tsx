@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { FormDialog, Field } from "@/components/dialogs/form-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/lib/i18n/provider";
 
 /** Asks for a reason (and optionally a date) before something that cannot be undone, like voiding or rejecting. */
 export function ReasonDialog({
@@ -14,7 +15,7 @@ export function ReasonDialog({
   title,
   description,
   submitLabel,
-  reasonLabel = "Reason",
+  reasonLabel,
   dateLabel,
   minLength = 3,
   onSubmit,
@@ -31,6 +32,7 @@ export function ReasonDialog({
   minLength?: number;
   onSubmit: (reason: string, date: string) => Promise<void>;
 }) {
+  const t = useT();
   const [reason, setReason] = React.useState("");
   const [date, setDate] = React.useState(() => new Date().toISOString().slice(0, 10));
   return (
@@ -50,8 +52,8 @@ export function ReasonDialog({
         setReason("");
       }}
     >
-      <Field label={reasonLabel}>
-        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} placeholder="Say why, in a few words" />
+      <Field label={reasonLabel ?? t("common.reason")}>
+        <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} placeholder={t("common.reasonPlaceholder")} />
       </Field>
       {dateLabel && (
         <Field label={dateLabel}>

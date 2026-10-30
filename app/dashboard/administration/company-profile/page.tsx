@@ -22,26 +22,28 @@ import { toast } from "sonner";
 import { useCompany } from "@/lib/providers/company-provider";
 import { CompanyAvatar } from "@/components/company-avatar";
 import { CompanyLanguageCard } from "@/components/live/company-language-card";
+import { useT } from "@/lib/i18n/provider";
 
 const PROVINCES = ["Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan", "Islamabad Capital Territory"] as const;
 const BUSINESS_TYPES = ["Independent dealer", "Agency", "Developer / housing scheme", "Dealer network"] as const;
 
 function DemoCompanyProfilePage() {
+  const t = useT();
   const { company } = useCompany();
   const [bilingual, setBilingual] = React.useState(false);
   const [whatsappFirst, setWhatsappFirst] = React.useState(true);
 
   function handleSave() {
-    toast.success("Company profile saved");
+    toast.success(t("adm.profile.saved"));
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Administration"
-        title="Company Profile"
-        description="How your business appears across vouchers, contracts and exported reports"
+        eyebrow={t("perm.module.administration")}
+        title={t("nav.item.administration.company-profile")}
+        description={t("dm.how_your_business_appears_across")}
       />
 
       <Card className="p-6">
@@ -49,27 +51,27 @@ function DemoCompanyProfilePage() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <ImageUp className="size-4" />
           </div>
-          <h3 className="font-heading text-base font-semibold">Branding</h3>
+          <h3 className="font-heading text-base font-semibold">{t("dm.branding")}</h3>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <CompanyAvatar company={company} className="size-16 rounded-2xl text-xl" />
           <div className="flex-1">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Logo upload is mocked in this prototype")}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info(t("dm.logo_upload_is_mocked_in"))}>
               <ImageUp className="size-3.5" />
-              Upload logo
+              {t("dm.upload_logo")}
             </Button>
-            <p className="mt-1.5 text-xs text-muted-foreground">PNG or SVG, at least 256×256px. Used on PDFs and vouchers.</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">{t("dm.png_or_svg_at_least")}</p>
           </div>
         </div>
       </Card>
 
       <Card className="space-y-5 p-6">
-        <h3 className="font-heading text-base font-semibold">Business details</h3>
+        <h3 className="font-heading text-base font-semibold">{t("dm.business_details")}</h3>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Legal company name" defaultValue={company.name} />
-          <Field label="Display name" defaultValue={company.shortName} />
+          <Field label={t("dm.legal_company_name")} defaultValue={company.name} />
+          <Field label={t("dm.display_name")} defaultValue={company.shortName} />
           <div>
-            <Label className="mb-2 text-xs font-medium text-muted-foreground">Business type</Label>
+            <Label className="mb-2 text-xs font-medium text-muted-foreground">{t("dm.business_type")}</Label>
             <Select defaultValue={BUSINESS_TYPES[1]}>
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -79,10 +81,10 @@ function DemoCompanyProfilePage() {
               </SelectContent>
             </Select>
           </div>
-          <Field label="NTN" defaultValue={company.ntn} />
-          <Field label="Phone" defaultValue={company.phone} />
-          <Field label="Email" defaultValue={company.email} type="email" />
-          <Field label="Website" defaultValue={company.email.split("@")[1] ?? ""} className="sm:col-span-2" />
+          <Field label={t("adm.profile.ntn")} defaultValue={company.ntn} />
+          <Field label={t("common.phone")} defaultValue={company.phone} />
+          <Field label={t("auth.field.email")} defaultValue={company.email} type="email" />
+          <Field label={t("leads.source.website")} defaultValue={company.email.split("@")[1] ?? ""} className="sm:col-span-2" />
         </div>
       </Card>
 
@@ -91,13 +93,13 @@ function DemoCompanyProfilePage() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MapPin className="size-4" />
           </div>
-          <h3 className="font-heading text-base font-semibold">Registered address</h3>
+          <h3 className="font-heading text-base font-semibold">{t("dm.registered_address")}</h3>
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Address" defaultValue="Plot 12, MM Alam Road" className="sm:col-span-2" />
-          <Field label="City" defaultValue={company.city} />
+          <Field label={t("adm.profile.address")} defaultValue="Plot 12, MM Alam Road" className="sm:col-span-2" />
+          <Field label={t("adm.profile.city")} defaultValue={company.city} />
           <div>
-            <Label className="mb-2 text-xs font-medium text-muted-foreground">Province</Label>
+            <Label className="mb-2 text-xs font-medium text-muted-foreground">{t("dm.province")}</Label>
             <Select defaultValue={PROVINCES[0]}>
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -115,26 +117,26 @@ function DemoCompanyProfilePage() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Languages className="size-4" />
           </div>
-          <h3 className="font-heading text-base font-semibold">Regional &amp; localization</h3>
+          <h3 className="font-heading text-base font-semibold">{t("dm.cp.regional")}</h3>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3.5">
           <div>
-            <p className="text-sm font-medium">Currency</p>
-            <p className="text-xs text-muted-foreground">Pakistani Rupee (PKR) — fixed for this market</p>
+            <p className="text-sm font-medium">{t("dm.currency")}</p>
+            <p className="text-xs text-muted-foreground">{t("dm.pakistani_rupee_pkr_fixed_for")}</p>
           </div>
-          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">Rs</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">{t("dm.rs")}</span>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3.5">
           <div>
-            <p className="text-sm font-medium">Bilingual data entry</p>
-            <p className="text-xs text-muted-foreground">Show Urdu fields alongside English across forms</p>
+            <p className="text-sm font-medium">{t("dm.bilingual_data_entry")}</p>
+            <p className="text-xs text-muted-foreground">{t("dm.show_urdu_fields_alongside_english")}</p>
           </div>
           <Switch checked={bilingual} onCheckedChange={setBilingual} />
         </div>
         <div className="flex items-center justify-between rounded-lg bg-muted/40 p-3.5">
           <div>
-            <p className="text-sm font-medium">WhatsApp-first reminders</p>
-            <p className="text-xs text-muted-foreground">Prefer WhatsApp over SMS for installment &amp; follow-up alerts</p>
+            <p className="text-sm font-medium">{t("dm.whatsapp_first_reminders")}</p>
+            <p className="text-xs text-muted-foreground">{t("dm.cp.whatsapp_hint")}</p>
           </div>
           <Switch checked={whatsappFirst} onCheckedChange={setWhatsappFirst} />
         </div>
@@ -143,7 +145,7 @@ function DemoCompanyProfilePage() {
       <CompanyLanguageCard />
 
       <div className="flex justify-end">
-        <Button onClick={handleSave}>Save changes</Button>
+        <Button onClick={handleSave}>{t("adm.profile.saveChanges")}</Button>
       </div>
     </div>
   );

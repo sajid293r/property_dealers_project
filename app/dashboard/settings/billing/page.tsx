@@ -14,17 +14,19 @@ import { formatPkr } from "@/lib/format";
 import { usePlanTier } from "@/lib/providers/plan-provider";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 export default function BillingPage() {
+  const t = useT();
   const { tier, setTier } = usePlanTier();
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="Configuration"
-        title="Billing &amp; subscription"
-        description="Switch plans below to preview what each tier unlocks across the app."
+        eyebrow={t("nav.section.configuration")}
+        title={t("billing.title")}
+        description={t("billing.description")}
       />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -49,23 +51,23 @@ export default function BillingPage() {
               {current && <PlotGridMotif className="rounded-xl opacity-60" />}
               {current && (
                 <span className="absolute -top-px left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-b-lg bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-foreground shadow-md">
-                  <Crown className="size-3" /> Your plan
+                  <Crown className="size-3" /> {t("billing.yourPlan")}
                 </span>
               )}
               <div className="relative mt-2 flex items-center justify-between">
-                <h3 className="font-heading text-xl font-semibold">{p.name}</h3>
-                {p.highlight && !current && <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold">Most popular</Badge>}
+                <h3 className="font-heading text-xl font-semibold">{t(`plan.${p.id}`)}</h3>
+                {p.highlight && !current && <Badge variant="outline" className="border-gold/40 bg-gold/10 text-gold">{t("landing.pricing.mostPopular")}</Badge>}
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{p.tagline}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t(`pricing.${p.id}.tagline`)}</p>
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="font-heading text-3xl font-semibold"><AnimatedNumber value={p.priceMonthlyPkr} format={(n) => formatPkr(n)} /></span>
-                <span className="text-sm text-muted-foreground">/month</span>
+                <span className="text-sm text-muted-foreground">{t("landing.pricing.perMonth")}</span>
               </div>
               <ul className="mt-5 flex-1 space-y-2">
-                {p.features.map((f) => (
+                {p.features.map((f, fi) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <span className="text-foreground/85">{f}</span>
+                    <span className="text-foreground/85">{t(`pricing.${p.id}.f${fi + 1}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -75,10 +77,10 @@ export default function BillingPage() {
                 disabled={current}
                 onClick={() => {
                   setTier(p.id);
-                  toast.success(`Switched to the ${p.name} plan`);
+                  toast.success(t("billing.switched", { name: t(`plan.${p.id}`) }));
                 }}
               >
-                {current ? "Currently active" : `Switch to ${p.name}`}
+                {current ? t("billing.current") : t("billing.switchTo", { name: t(`plan.${p.id}`) })}
               </Button>
             </Card>
             </motion.div>

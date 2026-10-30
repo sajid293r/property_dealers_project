@@ -33,8 +33,10 @@ import { MOCK_TODAY_ISO } from "@/lib/mock-data/seed";
 import { formatDate } from "@/lib/format";
 import type { LeaveRequest, LeaveStatus } from "@/lib/types";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
 
 function DemoLeavePage() {
+  const t = useT();
   const { data: requests, isLoading } = useLeaveRequests();
   const { data: staff } = useStaff();
   const queryClient = useQueryClient();
@@ -73,7 +75,7 @@ function DemoLeavePage() {
     );
     const member = staff?.find((s) => s.id === request.staffId);
     toast.success(
-      status === "approved" ? `Leave approved for ${member?.name}` : `Leave rejected for ${member?.name}`,
+      t(status === "approved" ? "dm.leave.approved_for" : "dm.leave.rejected_for", { name: member?.name ?? "" }),
     );
   }
 
@@ -81,34 +83,34 @@ function DemoLeavePage() {
     <div className="mx-auto max-w-[1400px] space-y-5">
       <PageHeader
         icon={HeaderIcon}
-        eyebrow="People"
-        title="Leave"
+        eyebrow={t("dashboard.people.title")}
+        title={t("perm.module.leave")}
         description={<>{requests?.length ?? 0} requests across the team</>}
         actions={<>
         <Button className="gap-1.5" onClick={() => setOpen(true)}>
           <PlusCircle className="size-4" />
-          New Leave Request
+          {t("dm.new_leave_request")}
         </Button>
         </>}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={Clock} label="Pending requests" value={stats.pending} accent="warning" />
-        <StatTile icon={Palmtree} label="On leave today" value={stats.onLeaveToday} accent="primary" />
-        <StatTile icon={CalendarCheck2} label="Approved this month" value={stats.approvedThisMonth} accent="success" />
-        <StatTile icon={CalendarDays} label="Days taken this year" value={stats.totalDaysThisYear} />
+        <StatTile icon={Clock} label={t("dm.pending_requests")} value={stats.pending} accent="warning" />
+        <StatTile icon={Palmtree} label={t("dashboard.people.onLeave")} value={stats.onLeaveToday} accent="primary" />
+        <StatTile icon={CalendarCheck2} label={t("dm.approved_this_month")} value={stats.approvedThisMonth} accent="success" />
+        <StatTile icon={CalendarDays} label={t("dm.days_taken_this_year")} value={stats.totalDaysThisYear} />
       </div>
 
       <Card className="p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <DataTableSearch value={search} onChange={setSearch} placeholder="Search staff, type, reason..." />
+          <DataTableSearch value={search} onChange={setSearch} placeholder={t("dm.search_staff_type_reason")} />
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as LeaveStatus | "all")}>
             <SelectTrigger size="sm" className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="all">{t("deals.allStatuses")}</SelectItem>
+              <SelectItem value="pending">{t("status.pending")}</SelectItem>
+              <SelectItem value="approved">{t("bud.status.approved")}</SelectItem>
+              <SelectItem value="rejected">{t("bud.rev.rejected")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -117,13 +119,13 @@ function DemoLeavePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
-                <th className="pb-2.5 font-medium">Staff</th>
-                <th className="pb-2.5 font-medium">Type</th>
-                <th className="pb-2.5 font-medium">Dates</th>
-                <th className="pb-2.5 font-medium">Days</th>
-                <th className="pb-2.5 font-medium">Reason</th>
-                <th className="pb-2.5 font-medium">Status</th>
-                <th className="pb-2.5 font-medium"><span className="sr-only">Actions</span></th>
+                <th className="pb-2.5 font-medium">{t("perm.module.staff")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.type")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.dates")}</th>
+                <th className="pb-2.5 font-medium">{t("leave.col.days")}</th>
+                <th className="pb-2.5 font-medium">{t("common.reason")}</th>
+                <th className="pb-2.5 font-medium">{t("common.status")}</th>
+                <th className="pb-2.5 font-medium"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -160,9 +162,9 @@ function DemoLeavePage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => decide(r, "approved")}>Approve</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => decide(r, "approved")}>{t("perm.action.approve")}</DropdownMenuItem>
                                 <DropdownMenuItem variant="destructive" onSelect={() => decide(r, "rejected")}>
-                                  Reject
+                                  {t("bud.rev.reject")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -176,7 +178,7 @@ function DemoLeavePage() {
               {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    No leave requests match your filters.
+                    {t("dm.no_leave_requests_match_your")}
                   </td>
                 </tr>
               )}
