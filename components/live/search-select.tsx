@@ -61,7 +61,7 @@ export function SearchSelect({
   const [openKeys, setOpenKeys] = React.useState<Set<string>>(new Set());
   const results = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    const found = q ? options.filter((o) => `${o.label} ${o.hint ?? ""} ${o.group ?? ""} ${(o.path ?? []).map((p) => p.label).join(" ")}`.toLowerCase().includes(q)) : options;
+    const found = q ? options.filter((o) => `${o.label} ${o.hint ?? ""} ${o.group ?? ""}`.toLowerCase().includes(q)) : options;
     // folded headings hide their options (not while searching)
     return searching ? found : found.filter((o) => (o.path ?? []).every((p) => openKeys.has(p.key)));
   }, [options, query, searching, openKeys]);

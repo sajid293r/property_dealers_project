@@ -11,6 +11,7 @@ import { bookingRoutes } from "./routes/bookings.js";
 import { receiptRoutes } from "./routes/receipts.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
 import { expenseRoutes } from "./routes/expenses.js";
+import { reportRoutes } from "./routes/reports.js";
 import { crmRoutes } from "./routes/crm.js";
 import { billingRoutes } from "./routes/billing.js";
 import { hrRoutes } from "./routes/hr.js";
@@ -80,6 +81,7 @@ export function buildApp({ config, db, verifier, cnic = null }: AppDeps): Fastif
   receiptRoutes(app, db, guards);
   dashboardRoutes(app, db, guards);
   expenseRoutes(app, db, guards);
+  reportRoutes(app, db, guards);
   crmRoutes(app, db, guards);
   billingRoutes(app, db, guards);
   hrRoutes(app, db, guards);

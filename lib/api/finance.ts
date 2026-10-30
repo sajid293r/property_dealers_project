@@ -393,6 +393,62 @@ export const trialBalance = (companyId: string, from: string, to: string) => api
 export const incomeStatement = (companyId: string, from: string, to: string) => api<IncomeStatement>(`/v1/reports/income-statement?from=${from}&to=${to}`, { companyId });
 export const balanceSheet = (companyId: string, asOf: string) => api<BalanceSheet>(`/v1/reports/balance-sheet?asOf=${asOf}`, { companyId });
 
+// management reports
+export interface CashFlowReport {
+  from: string;
+  to: string;
+  opening: string;
+  months: { month: string; inflow: string; outflow: string }[];
+  sources: { source: string; inflow: string; outflow: string }[];
+}
+export interface AgingRow {
+  partyId: string;
+  customerName: string;
+  phone: string | null;
+  bookings: number;
+  notDue: string;
+  d30: string;
+  d60: string;
+  d90: string;
+  d90plus: string;
+  total: string;
+  maxDaysLate: number | null;
+}
+export interface SalesSummaryRow {
+  projectId: string;
+  code: string;
+  name: string;
+  properties: number;
+  available: number;
+  booked: number;
+  availableValue: string;
+  bookedValue: string;
+  received: string;
+  outstanding: string;
+}
+export interface CollectionsReport {
+  from: string;
+  to: string;
+  months: { month: string; count: number; amount: string }[];
+  methods: { method: string; count: number; amount: string }[];
+  topCustomers: { partyId: string; customerName: string; count: number; amount: string }[];
+}
+export interface PayableRow {
+  partyId: string;
+  name: string;
+  phone: string | null;
+  roles: string | null;
+  billed: string;
+  paid: string;
+  balance: string;
+  lastActivity: string | null;
+}
+export const cashFlowReport = (companyId: string, from: string, to: string) => api<CashFlowReport>(`/v1/reports/cash-flow?from=${from}&to=${to}`, { companyId });
+export const agingReport = (companyId: string) => api<{ rows: AgingRow[] }>("/v1/reports/receivables-aging", { companyId });
+export const salesSummaryReport = (companyId: string) => api<{ rows: SalesSummaryRow[] }>("/v1/reports/sales-summary", { companyId });
+export const collectionsReport = (companyId: string, from: string, to: string) => api<CollectionsReport>(`/v1/reports/collections?from=${from}&to=${to}`, { companyId });
+export const payablesReport = (companyId: string, asOf: string) => api<{ asOf: string; rows: PayableRow[] }>(`/v1/reports/payables?asOf=${asOf}`, { companyId });
+
 // ───────────────────────────────────────────── expenses (postings on expense accounts)
 export interface ExpenseRow {
   id: string;

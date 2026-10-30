@@ -282,6 +282,21 @@ describe("accounts and reports", () => {
     expect((await h.call("GET", `/v1/parties/${cust.id}`, owner)).body.balance).toBe("1110000.00");
   });
 
+  it("the management reports answer, are tied to the ledger and need the reports permission", async () => {
+    const q = "from=2026-10-01&to=2026-10-31";
+    const cash = await h.call("GET", `/v1/reports/cash-flow?${q}`, owner);
+    expect(cash.status).toBe(200);
+    const inflow = cash.body.months.reduce((t: number, m: { inflow: string }) => t + Number(m.inflow), 0);
+    expect(inflow).toBeGreaterThan(0);
+    expect(cash.body.sources.length).toBeGreaterThan(0);
+    for (const path of ["receivables-aging", "sales-summary", `collections?${q}`, "payables?asOf=2026-10-31"]) {
+      const r = await h.call("GET", `/v1/reports/${path}`, owner);
+      expect(r.status, path).toBe(200);
+      expect(Array.isArray(r.body.rows ?? r.body.months), path).toBe(true);
+      expect((await h.call("GET", `/v1/reports/${path}`, { as: ID.dave, company: A })).status, path).toBe(403);
+    }
+  });
+
   it("only people with the reports and accounts permissions can see them", async () => {
     expect((await h.call("GET", "/v1/reports/trial-balance?from=2026-10-01&to=2026-10-31", { as: ID.dave, company: A })).status).toBe(403);
     expect((await h.call("GET", "/v1/reports/trial-balance?from=2026-10-01&to=2026-10-31", { as: ID.carol, company: B })).body.totals.debit).toBe(0);

@@ -49,7 +49,11 @@ function ActiveRail() {
 }
 
 export function AppSidebar() {
-  const pathname = usePathname();
+  const currentPath = usePathname();
+  // a clicked item lights up at once; it stays in charge only until the route actually changes
+  const [clicked, setClicked] = React.useState<{ from: string; to: string } | null>(null);
+  const pathname = clicked && clicked.from === currentPath ? clicked.to : currentPath;
+  const goTo = (href: string) => () => setClicked({ from: currentPath, to: href });
   const { tier } = usePlanTier();
   const { live } = useCompany();
   const { t } = useLanguage();
@@ -129,7 +133,7 @@ export function AppSidebar() {
                               return (
                                 <SidebarMenuSubItem key={child.href}>
                                   <SidebarMenuSubButton asChild isActive={childOneActive}>
-                                    <Link href={child.href}>
+                                    <Link href={child.href} onClick={goTo(child.href)}>
                                       <span>{t(navChildKey(child))}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
@@ -152,7 +156,7 @@ export function AppSidebar() {
                           "isolate hover:translate-x-0.5 rtl:hover:-translate-x-0.5",
                         )}
                       >
-                        <Link href={item.href}>
+                        <Link href={item.href} onClick={goTo(item.href)}>
                           {active && <ActiveRail />}
                           <item.icon />
                           <span>{t(navItemKey(item))}</span>

@@ -266,6 +266,12 @@
     color: transparent;
     animation: var(--animate-shimmer);
   }
+  .skeleton-shimmer {
+    background-image: linear-gradient(100deg, var(--muted) 30%, color-mix(in oklch, var(--muted), var(--card) 65%) 50%, var(--muted) 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } }
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }

@@ -18,6 +18,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { ExportButton } from "@/components/live/export-button";
 import { PrintLink } from "@/components/live/print-button";
 import { useT } from "@/lib/i18n/provider";
+import { AgingTab, CashFlowTab, CollectionsTab, ExpenseTab, PayablesTab, SalesTab } from "@/components/live/reports-more";
 
 function Range({ from, to, onFrom, onTo }: { from: string; to: string; onFrom: (v: string) => void; onTo: (v: string) => void }) {
   const t = useT();
@@ -199,16 +200,28 @@ export function LiveReports() {
       />
       <Range from={from} to={to} onFrom={setFrom} onTo={setTo} />
       <Tabs defaultValue="tb">
-        <TabsList className="flex-wrap">
+        <TabsList className="h-auto! w-full flex-wrap justify-start gap-1 p-1 [&>button]:flex-none">
           <TabsTrigger value="tb">{t("rep.tab.tb")}</TabsTrigger>
           <TabsTrigger value="is">{t("rep.tab.is")}</TabsTrigger>
           <TabsTrigger value="bs">{t("rep.tab.bs")}</TabsTrigger>
           <TabsTrigger value="party">{t("rep.tab.party")}</TabsTrigger>
+          <TabsTrigger value="expense">{t("rep.tab.expense")}</TabsTrigger>
+          <TabsTrigger value="cash">{t("rep.tab.cash")}</TabsTrigger>
+          <TabsTrigger value="aging">{t("rep.tab.aging")}</TabsTrigger>
+          <TabsTrigger value="sales">{t("rep.tab.sales")}</TabsTrigger>
+          <TabsTrigger value="collections">{t("rep.tab.collections")}</TabsTrigger>
+          <TabsTrigger value="payables">{t("rep.tab.payables")}</TabsTrigger>
         </TabsList>
         <TabsContent value="tb" className="mt-4"><TrialBalanceTab from={from} to={to} /></TabsContent>
         <TabsContent value="is" className="mt-4"><IncomeTab from={from} to={to} /></TabsContent>
         <TabsContent value="bs" className="mt-4"><BalanceSheetTab asOf={to} /></TabsContent>
         <TabsContent value="party" className="mt-4"><PartyTab from={from} to={to} /></TabsContent>
+        <TabsContent value="expense" className="mt-4"><ExpenseTab from={from} to={to} /></TabsContent>
+        <TabsContent value="cash" className="mt-4"><CashFlowTab from={from} to={to} /></TabsContent>
+        <TabsContent value="aging" className="mt-4"><AgingTab /></TabsContent>
+        <TabsContent value="sales" className="mt-4"><SalesTab /></TabsContent>
+        <TabsContent value="collections" className="mt-4"><CollectionsTab from={from} to={to} /></TabsContent>
+        <TabsContent value="payables" className="mt-4"><PayablesTab asOf={to} /></TabsContent>
       </Tabs>
     </div>
   );
