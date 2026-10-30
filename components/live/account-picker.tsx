@@ -29,16 +29,21 @@ export function AccountPicker({
 }) {
   const t = useT();
   const { data: accounts } = useChartAccounts();
-  const options = React.useMemo<SearchOption[]>(
-    () =>
-      (accounts ?? [])
-        .filter((a) => !a.isGroup && a.active && (!only || only(a)))
-        .sort((a, b) => CLASS_ORDER.indexOf(a.class) - CLASS_ORDER.indexOf(b.class) || a.code.localeCompare(b.code))
-        .map((a) => ({ value: a.id, label: a.name, hint: a.code, group: t(`acc.class.${a.class}`) })),
+  const options = React.useMemo<SearchOption[]>(() => {
+    const byId = new Map((accounts ?? []).map((a) => [a.id, a]));
+    // headings above an account, outermost first; a chart with no headings falls back to its class
+    const pathOf = (a: ChartAccount) => {
+      const chain: { key: string; label: string }[] = [];
+      for (let p = a.parentId ? byId.get(a.parentId) : undefined, n = 0; p && n < 8; p = p.parentId ? byId.get(p.parentId) : undefined, n++) chain.unshift({ key: p.id, label: p.name });
+      return chain.length ? chain : [{ key: "class-" + a.class, label: t(`acc.class.${a.class}`) }];
+    };
+    return (accounts ?? [])
+      .filter((a) => !a.isGroup && a.active && (!only || only(a)))
+      .sort((a, b) => CLASS_ORDER.indexOf(a.class) - CLASS_ORDER.indexOf(b.class) || a.code.localeCompare(b.code))
+      .map((a) => ({ value: a.id, label: a.name, hint: a.code, group: t(`acc.class.${a.class}`), path: pathOf(a) }));
     // `only` is usually an inline function; the list only changes when the accounts do
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [accounts, t],
-  );
+  }, [accounts, t]);
   return (
     <SearchSelect
       id={id}

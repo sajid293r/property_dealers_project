@@ -1,0 +1,28 @@
+// Voucher form: layout and the folded account picker (sandbox, signed in).  BASE=http://localhost:3222 node voucher-shot.mjs
+import puppeteer from "puppeteer-core";
+import fs from "node:fs";
+const BASE = process.env.BASE ?? "http://localhost:3000";
+const OUT = new URL("./shots/i18n", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+fs.mkdirSync(OUT, { recursive: true });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const browser = await puppeteer.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: "new", args: ["--no-sandbox"] });
+const page = await browser.newPage();
+await page.setViewport({ width: 1440, height: 900 });
+await page.goto(`${BASE}/login`, { waitUntil: "networkidle2" });
+await page.type("#email", "owner@bytecraft.local");
+await page.type("#password", "sandbox-pass");
+await page.click("button[type=submit]");
+await page.waitForFunction(() => location.pathname.startsWith("/dashboard"), { timeout: 20000 }).catch(() => {});
+await sleep(2000);
+await page.goto(`${BASE}/dashboard/vouchers/new?type=CPV`, { waitUntil: "networkidle2" });
+await sleep(1500);
+await page.screenshot({ path: `${OUT}/voucher-form.png` });
+const labels = await page.evaluate(() => [...document.querySelectorAll("label")].map((l) => l.textContent.trim()));
+console.log("labels:", labels.join(" | "));
+await page.evaluate(() => [...document.querySelectorAll("button[role=combobox]")].find((b) => /choose an account|account/i.test(b.textContent))?.click());
+await sleep(800);
+await page.screenshot({ path: `${OUT}/voucher-picker-folded.png` });
+await page.evaluate(() => [...document.querySelectorAll("[role=listbox] button")].find((b) => !b.getAttribute("role"))?.click());
+await sleep(500);
+await page.screenshot({ path: `${OUT}/voucher-picker-open.png` });
+await browser.close();

@@ -1,0 +1,14 @@
+import puppeteer from "puppeteer-core";
+const B="http://localhost:3222"; const sleep=(m)=>new Promise(r=>setTimeout(r,m));
+const br=await puppeteer.launch({executablePath:"C:/Program Files/Google/Chrome/Application/chrome.exe",headless:"new",args:["--no-sandbox"]});
+const p=await br.newPage(); await p.setViewport({width:1440,height:900});
+await p.goto(B+"/login",{waitUntil:"networkidle2"});
+await p.type("#email","owner@bytecraft.local"); await p.type("#password","sandbox-pass"); await p.click("button[type=submit]");
+await p.waitForFunction(()=>location.pathname.startsWith("/dashboard"),{timeout:30000}); await sleep(2000);
+await p.goto(B+"/dashboard/vouchers/new?type=CPV",{waitUntil:"networkidle2"}); await sleep(2500);
+await p.screenshot({path:"e2e/shots/vform-1.png"});
+await p.evaluate(()=>[...document.querySelectorAll("table [role=combobox]")][0].click()); await sleep(800);
+await p.screenshot({path:"e2e/shots/vform-2.png"});
+await p.evaluate(()=>{const h=[...document.querySelectorAll("[role=listbox] button")].find(b=>!b.getAttribute("role")); h.click();}); await sleep(500);
+await p.screenshot({path:"e2e/shots/vform-3.png"});
+await br.close();

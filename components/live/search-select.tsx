@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useT } from "@/lib/i18n/provider";
-import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronsUpDown, Plus, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,8 @@ export interface SearchOption {
   hint?: string;
   /** Options with the same group are listed under one heading. */
   group?: string;
+  /** Nested headings, outermost first. Headings start folded and open with an arrow; typing a search shows everything. */
+  path?: { key: string; label: string }[];
   disabled?: boolean;
 }
 
@@ -55,10 +57,45 @@ export function SearchSelect({
   const listId = React.useId();
 
   const selected = options.find((o) => o.value === value);
+  const searching = query.trim() !== "";
+  const [openKeys, setOpenKeys] = React.useState<Set<string>>(new Set());
   const results = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? options.filter((o) => `${o.label} ${o.hint ?? ""} ${o.group ?? ""}`.toLowerCase().includes(q)) : options;
-  }, [options, query]);
+    const found = q ? options.filter((o) => `${o.label} ${o.hint ?? ""} ${o.group ?? ""} ${(o.path ?? []).map((p) => p.label).join(" ")}`.toLowerCase().includes(q)) : options;
+    // folded headings hide their options (not while searching)
+    return searching ? found : found.filter((o) => (o.path ?? []).every((p) => openKeys.has(p.key)));
+  }, [options, query, searching, openKeys]);
+  const toggleKey = (key: string) => setOpenKeys((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+
+  // the rows to draw: headings (with their depth) between the options that are visible
+  const rows = React.useMemo(() => {
+    type Row = { kind: "head"; key: string; label: string; depth: number; count: number } | { kind: "opt"; o: SearchOption; i: number };
+    const out: Row[] = [];
+    const seen = new Set<string>();
+    if (!options.some((o) => o.path?.length)) return null;
+    const all = searching ? results : options;
+    const counts = new Map<string, number>();
+    for (const o of all) for (const p of o.path ?? []) counts.set(p.key, (counts.get(p.key) ?? 0) + 1);
+    let i = 0;
+    for (const o of all) {
+      const path = o.path ?? [];
+      let shown = true;
+      path.forEach((p, d) => {
+        if (!shown) return;
+        if (!seen.has(p.key)) { seen.add(p.key); out.push({ kind: "head", key: p.key, label: p.label, depth: d, count: counts.get(p.key) ?? 0 }); }
+        if (!searching && !openKeys.has(p.key)) shown = false;
+      });
+      if (shown) out.push({ kind: "opt", o, i: i++ });
+    }
+    return out;
+  }, [options, results, searching, openKeys]);
+
+  function onOpenChange(o: boolean) {
+    setOpen(o);
+    if (!o) setQuery("");
+    setActive(0);
+    if (o && selected?.path) setOpenKeys((s) => new Set([...s, ...selected.path!.map((p) => p.key)]));
+  }
 
   React.useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
@@ -74,11 +111,7 @@ export function SearchSelect({
   return (
     <Popover
       open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) setQuery("");
-        setActive(0);
-      }}
+      onOpenChange={onOpenChange}
     >
       <PopoverTrigger asChild>
         <button
@@ -140,8 +173,44 @@ export function SearchSelect({
               Clear selection
             </button>
           )}
-          {results.length === 0 && <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyText ?? t("common.nothingFound")}</p>}
-          {results.map((o, i) => {
+          {results.length === 0 && (searching || !rows || options.length === 0) && <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyText ?? t("common.nothingFound")}</p>}
+          {rows && rows.map((r) => {
+            if (r.kind === "head") {
+              const isOpen = searching || openKeys.has(r.key);
+              return (
+                <button
+                  key={"h" + r.key}
+                  type="button"
+                  onClick={() => !searching && toggleKey(r.key)}
+                  style={{ paddingInlineStart: 8 + r.depth * 14 }}
+                  className="flex w-full items-center gap-1.5 rounded-md py-1.5 pe-2 text-start text-sm font-semibold hover:bg-secondary"
+                >
+                  {isOpen ? <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="size-3.5 shrink-0 text-muted-foreground rtl:-scale-x-100" />}
+                  <span className="min-w-0 flex-1 truncate">{r.label}</span>
+                  <span className="text-[10px] font-normal text-muted-foreground">{r.count}</span>
+                </button>
+              );
+            }
+            const o = r.o, i = r.i;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                role="option"
+                data-index={i}
+                aria-selected={o.value === value}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => choose(o)}
+                style={{ paddingInlineStart: 8 + (o.path?.length ?? 0) * 14 }}
+                className={cn("flex w-full items-center gap-2 rounded-md py-1.5 pe-2 text-start text-sm", i === active && "bg-secondary")}
+              >
+                <Check className={cn("size-3.5 shrink-0 text-primary", o.value === value ? "opacity-100" : "opacity-0")} />
+                {o.hint && <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{o.hint}</span>}
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+              </button>
+            );
+          })}
+          {!rows && results.map((o, i) => {
             const heading = o.group && o.group !== results[i - 1]?.group ? o.group : null;
             return (
               <React.Fragment key={o.value}>

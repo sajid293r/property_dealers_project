@@ -56,6 +56,7 @@ function VoucherLineTable({
   accounts: ChartAccount[]; headerPartyId: string; projectOptions: { value: string; label: string; hint?: string }[]; remountKey: string;
 }) {
   const t = useT();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
   const updateLine = (key: string, patch: Partial<FormLine>) => set((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const removeLine = (key: string) => set((ls) => (ls.length > 1 ? ls.filter((l) => l.key !== key) : ls));
   const sum = list.reduce((t, l) => t + cents(l.amount), 0);
@@ -65,10 +66,10 @@ function VoucherLineTable({
         <h3 className="font-heading text-base font-semibold">{title}</h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border/70">
-        <table className="w-full min-w-[820px] text-sm">
-          <thead>
-            <tr className="border-b border-border/70 bg-muted/50 text-start text-xs text-muted-foreground">
+      <div ref={scrollRef} className="max-h-[min(52vh,460px)] overflow-auto rounded-lg border border-border/70">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="sticky top-0 z-10 bg-muted">
+            <tr className="border-b border-border/70 text-start text-xs text-muted-foreground">
               <th className="w-[32%] py-2 ps-3 font-medium">{t("vch.f.colAccount")}</th>
               <th className="w-[22%] py-2 pe-2 text-end font-medium">{side === "debit" ? t("vch.f.colDebitAmount") : t("vch.f.colCreditAmount")}</th>
               <th className="py-2 ps-2 pe-2 font-medium">{t("vch.f.colNarration")}</th>
@@ -122,7 +123,7 @@ function VoucherLineTable({
         </table>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => set((ls) => [...ls, newLine()])}>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => { set((ls) => [...ls, newLine()]); setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 50); }}>
           <Plus className="size-3.5" /> {t("vch.f.addLine")}
         </Button>
         <p className="text-sm text-muted-foreground">
@@ -352,7 +353,7 @@ export function LiveVoucherForm() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="space-y-5">
           <Card className="space-y-5 p-5">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.type")}</Label>
                 <Select value={type} onValueChange={(v) => changeType(v as VoucherType)} disabled={!!savedId}>
@@ -385,12 +386,11 @@ export function LiveVoucherForm() {
                 </div>
               )}
 
-              {meta.partyLabel && (
+              {meta.partyLabel && meta.partyRequired && (
                 <div className={meta.layout === "invoice" ? "" : "sm:col-span-2"}>
                   <Label className="mb-1.5 text-xs font-medium text-muted-foreground">
                     {meta.partyLabel}
-                    {!meta.partyRequired && <span className="ms-1 font-normal">{t("vch.f.optional")}</span>}
-                  </Label>
+                                      </Label>
                   <PartySelect key={type} value={partyId} role={meta.partyRole} onChange={(id) => setPartyId(id)} placeholder={t("common.select")} />
                 </div>
               )}
@@ -400,6 +400,12 @@ export function LiveVoucherForm() {
                   <Input id="v-inv" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="INV-5521" maxLength={60} />
                 </div>
               )}
+              {meta.layout === "cash" && (
+                <div className="sm:col-span-2">
+                  <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.cashAccount")}</Label>
+                  <AccountPicker value={effectiveControl} only={(a) => a.category === "asset_cash"} onChange={(id) => setControlAccountId(id)} placeholder={t("vch.f.chooseCash")} />
+                </div>
+              )}
               {meta.layout === "invoice" && type !== "PIV" && (
                 <div>
                   <Label htmlFor="v-ref" className="mb-1.5 text-xs font-medium text-muted-foreground">{type === "SV" ? t("vch.f.refSales") : t("vch.f.againstInvoice")}</Label>
@@ -407,14 +413,6 @@ export function LiveVoucherForm() {
                 </div>
               )}
             </div>
-
-            {/* cash vouchers: which cash account */}
-            {meta.layout === "cash" && (
-              <div className="sm:max-w-sm">
-                <Label className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.cashAccount")}</Label>
-                <AccountPicker value={effectiveControl} only={(a) => a.category === "asset_cash"} onChange={(id) => setControlAccountId(id)} placeholder={t("vch.f.chooseCash")} />
-              </div>
-            )}
 
             {/* contra: where the money comes from */}
             {meta.layout === "contra" && (
@@ -481,7 +479,7 @@ export function LiveVoucherForm() {
 
             <div>
               <Label htmlFor="v-desc" className="mb-1.5 text-xs font-medium text-muted-foreground">{t("vch.f.narration")}</Label>
-              <Textarea id="v-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("vch.f.narrationPlaceholder")} rows={2} maxLength={500} />
+              <Textarea id="v-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("vch.f.narrationPlaceholder")} rows={1} maxLength={500} />
             </div>
           </Card>
 
