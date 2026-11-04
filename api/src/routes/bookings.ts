@@ -5,6 +5,7 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { requireBooking } from "../scope.js";
 
 const BOOKING_COLUMNS = `b.id, b.booking_no as "bookingNo", b.property_id as "propertyId", b.customer_id as "customerId",
   b.booking_date as "bookingDate", b.list_price as "listPrice", b.discount, b.net_price as "netPrice",
@@ -101,6 +102,7 @@ export function bookingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     return db.inTenant(ctxOf(req), async (c) => {
+      await requireBooking(c, id);
       await c.query(`select app.build_schedule($1, $2, $3, $4::date, $5, $6, $7::date)`, [
         id, body.downPayment, body.installments, body.firstDue ?? null, body.intervalMonths, body.balloon, body.balloonDue ?? null,
       ]);

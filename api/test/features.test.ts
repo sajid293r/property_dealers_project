@@ -5,7 +5,8 @@ import { MODULE_KEYS } from "../src/roles.js";
 let h: Harness;
 const A = ID.coA;
 const owner = { as: ID.alice, company: A };
-const bytes = (n: number) => Buffer.alloc(n, 7).toString("base64");
+/** A file of n bytes that starts like a real PDF (uploads are checked by their first bytes). */
+const bytes = (n: number) => { const b = Buffer.alloc(n, 7); Buffer.from("%PDF-1.4 ").copy(b); return b.toString("base64"); };
 
 beforeAll(async () => {
   h = await startHarness();
@@ -79,7 +80,7 @@ describe("attachments", () => {
     expect(file.statusCode).toBe(200);
     expect(file.headers["content-type"]).toBe("application/pdf");
     expect(file.rawPayload.length).toBe(2048);
-    expect(file.rawPayload.every((b) => b === 7)).toBe(true);
+    expect(file.rawPayload.equals(Buffer.from(bytes(2048), "base64"))).toBe(true); // byte for byte what was uploaded
     expect((await h.call("DELETE", `/v1/attachments/${up.body.id}`, owner)).status).toBe(204);
     expect((await h.call("GET", `/v1/attachments?entityType=party&entityId=${ID.custA}`, owner)).body).toEqual([]);
   });

@@ -4,7 +4,14 @@ import type { Db, Queryable } from "../db.js";
 import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, parse, signedMoney, uuid } from "../http.js";
+import { createHash } from "node:crypto";
 import { AppError } from "../errors.js";
+
+/** Exact money arithmetic for the statement checks: whole paisa as BigInt, never floats. (BigInt() calls, not 0n literals: the website's compiler also reads this file.) */
+const ZERO = BigInt(0);
+const HUNDRED = BigInt(100);
+const cents = (v: string): bigint => { const neg = v.startsWith("-"); const [w = "0", f = ""] = v.replace("-", "").split("."); const n = BigInt(w) * HUNDRED + BigInt((f + "00").slice(0, 2)); return neg ? -n : n; };
+const fromCents = (n: bigint): string => { const neg = n < ZERO; const a = neg ? -n : n; return `${neg ? "-" : ""}${a / HUNDRED}.${String(a % HUNDRED).padStart(2, "0")}`; };
 
 const BANK_ACCOUNT_SELECT = `
   select ba.id, ba.bank_id as "bankId", ba.bank_name as "bankName", b.short_name as "bankShortName", ba.branch_name as "branchName", ba.branch_code as "branchCode",
@@ -136,6 +143,8 @@ export function bankingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       z.object({
         label: z.string().trim().max(80).optional(), periodFrom: isoDate, periodTo: isoDate, openingBalance: signedMoney, closingBalance: signedMoney,
         source: z.enum(["manual", "csv", "pdf"]).default("manual"),
+        /** Save even though the lines do not add up to the closing balance (the bank's own figures may differ). */
+        allowMismatch: z.boolean().default(false),
         lines: z.array(z.object({
           date: isoDate, description: z.string().trim().max(300).optional(), reference: z.string().trim().max(80).optional(),
           deposit: money.default("0"), withdrawal: money.default("0"), balance: signedMoney.optional(),
@@ -144,13 +153,26 @@ export function bankingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     if (b.periodTo < b.periodFrom) throw new AppError(400, "invalid_dates", "The statement's end date cannot be before its start date.");
+    for (const l of b.lines) {
+      if ((cents(l.deposit) > ZERO) === (cents(l.withdrawal) > ZERO)) throw new AppError(422, "validation", "Each statement line needs a deposit or a withdrawal amount, not both and not neither.");
+    }
+    // the lines must lead from the opening to the closing balance, unless the person says the bank's figures differ
+    const computed = cents(b.openingBalance) + b.lines.reduce((s, l) => s + cents(l.deposit) - cents(l.withdrawal), ZERO);
+    if (computed !== cents(b.closingBalance) && !b.allowMismatch) {
+      throw new AppError(422, "statement_mismatch", `The lines lead from ${b.openingBalance} to ${fromCents(computed)}, but the closing balance you entered is ${b.closingBalance}. Check the balances and the lines, or save it anyway if the bank's own figures differ.`);
+    }
+    // a fingerprint of the whole statement: the same one cannot be imported twice
+    const sorted = [...b.lines].sort((x, y) => x.date.localeCompare(y.date));
+    const fingerprint = createHash("sha256")
+      .update(JSON.stringify([b.periodFrom, b.periodTo, fromCents(cents(b.openingBalance)), fromCents(cents(b.closingBalance)), sorted.map((l) => [l.date, l.description ?? "", l.reference ?? "", fromCents(cents(l.deposit)), fromCents(cents(l.withdrawal))])]))
+      .digest("hex");
     const ctx = ctxOf(req);
     const out = await db.inTenant(ctx, async (c) => {
       await bankAccount(c, id);
       const s = await c.query<{ id: string }>(
-        `insert into bank_statements (company_id, bank_account_id, label, period_from, period_to, opening_balance, closing_balance, source, created_by)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
-        [ctx.companyId, id, b.label ?? null, b.periodFrom, b.periodTo, b.openingBalance, b.closingBalance, b.source, ctx.userId],
+        `insert into bank_statements (company_id, bank_account_id, label, period_from, period_to, opening_balance, closing_balance, source, created_by, content_hash)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id`,
+        [ctx.companyId, id, b.label ?? null, b.periodFrom, b.periodTo, b.openingBalance, b.closingBalance, b.source, ctx.userId, fingerprint],
       );
       let n = 0;
       for (const l of [...b.lines].sort((x, y) => x.date.localeCompare(y.date))) {

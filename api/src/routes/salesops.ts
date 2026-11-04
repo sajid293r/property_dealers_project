@@ -5,6 +5,8 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { idempotent, requestKey } from "../idempotency.js";
+import { bookingInScope, companyWideDeals, requireBookingOf, requirePenalty } from "../scope.js";
 
 /** Everything about one booking that goes beyond its installments: late charges, refunds, transfers, commission. */
 async function extras(c: Queryable, bookingId: string) {
@@ -66,10 +68,14 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const { id } = parse(idParams, req.params);
     const b = parse(z.object({ amount: money, reason: z.string().trim().max(200).optional() }), req.body);
     const ctx = ctxOf(req);
+    const key = requestKey(req);
     await db.inTenant(ctx, async (c) => {
-      const inst = await c.query(`select 1 from installments i join bookings b on b.id = i.booking_id where i.id = $1 and app.user_in_scope('deals', b.created_by)`, [id]);
-      if (!inst.rows[0]) throw new AppError(404, "not_found", "Installment not found.");
-      await c.query(`select app.assess_penalty($1, $2, $3, $4)`, [id, b.amount, b.reason ?? null, ctx.userId]);
+      await idempotent(c, key, `penalty:${id}`, b, async () => {
+        const inst = await c.query(`select 1 from installments i join bookings b on b.id = i.booking_id where i.id = $1 and app.user_in_scope('deals', b.created_by)`, [id]);
+        if (!inst.rows[0]) throw new AppError(404, "not_found", "Installment not found.");
+        await c.query(`select app.assess_penalty($1, $2, $3, $4)`, [id, b.amount, b.reason ?? null, ctx.userId]);
+        return { id, result: true };
+      }, async () => true);
     });
     return reply.code(201).send({ ok: true });
   });
@@ -78,7 +84,10 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const { id } = parse(idParams, req.params);
     const b = parse(z.object({ reason: z.string().trim().min(3).max(200) }), req.body);
     const ctx = ctxOf(req);
-    await db.inTenant(ctx, (c) => c.query(`select app.waive_penalty($1, $2, $3)`, [id, ctx.userId, b.reason]));
+    await db.inTenant(ctx, async (c) => {
+      await requirePenalty(c, id);
+      await c.query(`select app.waive_penalty($1, $2, $3)`, [id, ctx.userId, b.reason]);
+    });
     return { ok: true };
   });
 
@@ -97,7 +106,9 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     const ctx = ctxOf(req);
+    const key = requestKey(req);
     await db.inTenant(ctx, async (c) => {
+      await idempotent(c, key, `refund:${id}`, b, async () => {
       const seen = await c.query(`select 1 from bookings b where b.id = $1 and app.user_in_scope('deals', b.created_by)`, [id]);
       if (!seen.rows[0]) throw new AppError(404, "not_found", "Booking not found.");
       let from: string | null = null;
@@ -107,6 +118,8 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
         if (!from) throw new AppError(422, "validation", "Choose the account the refund is paid from.");
       }
       await c.query(`select app.refund_booking($1,$2,$3,$4,$5,$6::date,$7,$8)`, [id, b.refundAmount, b.deductionAmount, b.method, from, b.date ?? null, b.note ?? null, ctx.userId]);
+      return { id, result: true };
+      }, async () => true);
     });
     return reply.code(201).send({ ok: true });
   });
@@ -115,7 +128,10 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const { id } = parse(idParams, req.params);
     const b = parse(z.object({ reason: z.string().trim().min(3).max(200) }), req.body);
     const ctx = ctxOf(req);
-    await db.inTenant(ctx, (c) => c.query(`select app.void_refund($1, $2, $3)`, [id, ctx.userId, b.reason]));
+    await db.inTenant(ctx, async (c) => {
+      await requireBookingOf(c, "booking_refunds", id, "Refund");
+      await c.query(`select app.void_refund($1, $2, $3)`, [id, ctx.userId, b.reason]);
+    });
     return { ok: true };
   });
 
@@ -149,7 +165,10 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const { id } = parse(idParams, req.params);
     const b = parse(z.object({ reason: z.string().trim().min(3).max(200) }), req.body);
     const ctx = ctxOf(req);
-    await db.inTenant(ctx, (c) => c.query(`select app.void_commission($1, $2, $3)`, [id, ctx.userId, b.reason]));
+    await db.inTenant(ctx, async (c) => {
+      await requireBookingOf(c, "dealer_commissions", id, "Commission");
+      await c.query(`select app.void_commission($1, $2, $3)`, [id, ctx.userId, b.reason]);
+    });
     return { ok: true };
   });
 
@@ -159,10 +178,10 @@ export function salesOpsRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       const r = await c.query(
         `select m.id, m.commission_no as "commissionNo", m.booking_id as "bookingId", b.booking_no as "bookingNo", m.dealer_id as "dealerId", d.display_name as "dealerName",
                 m.rate_pct as "ratePct", m.amount, m.status, m.accrued_on as "accruedOn"
-           from dealer_commissions m join bookings b on b.id = m.booking_id join parties d on d.id = m.dealer_id order by m.created_at desc limit 200`,
+           from dealer_commissions m join bookings b on b.id = m.booking_id join parties d on d.id = m.dealer_id where ${bookingInScope()} order by m.created_at desc limit 200`,
       );
       const owed = await c.query(
-        `select l.party_id as "dealerId", sum(l.credit - l.debit) as owed from journal_lines l join gl_accounts a on a.id = l.account_id where a.code = '02.01.01.0002' and l.party_id is not null group by l.party_id`,
+        `select l.party_id as "dealerId", sum(l.credit - l.debit) as owed from journal_lines l join gl_accounts a on a.id = l.account_id where a.code = '02.01.01.0002' and l.party_id is not null and ${companyWideDeals} group by l.party_id`,
       );
       return { rows: r.rows, owed: owed.rows };
     });

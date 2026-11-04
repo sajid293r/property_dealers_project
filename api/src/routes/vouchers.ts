@@ -5,6 +5,7 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { idempotent, requestKey } from "../idempotency.js";
 import { VOUCHER_TIER, requirePlan } from "../plans.js";
 
 export const VOUCHER_TYPES = ["CPV", "CRV", "BPV", "BRV", "JV", "CV", "SV", "PIV", "CN", "DN"] as const;
@@ -144,7 +145,10 @@ export function voucherRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const ctx = ctxOf(req);
     const needed = VOUCHER_TIER[b.type];
     if (needed) requirePlan(ctx.plan, needed, `The ${b.type} voucher`);
+    const key = requestKey(req);
+    let replayed = false;
     const voucher = await db.inTenant(ctx, async (c) => {
+      const once = await idempotent(c, key, "voucher", b, async () => {
       const control = await controlAccount(c, b.type, b);
       const number = (await c.query<{ n: string }>(`select app.next_doc_no($1, $2) as n`, [ctx.companyId, b.type])).rows[0]!.n;
       const r = await c.query<{ id: string }>(
@@ -155,8 +159,12 @@ export function voucherRoutes(app: FastifyInstance, db: Db, guards: Guards) {
          b.instrumentType ?? null, b.instrumentNo ?? null, b.instrumentBank ?? null, b.chequeDate ?? null, b.reference ?? null, b.invoiceNo ?? null, b.dueDate ?? null, ctx.userId],
       );
       await insertLines(c, ctx.companyId, r.rows[0]!.id, b.lines);
-      return loadVoucher(c, r.rows[0]!.id);
+      return { id: r.rows[0]!.id, result: await loadVoucher(c, r.rows[0]!.id) };
+      }, (id) => loadVoucher(c, id));
+      replayed = once.replayed;
+      return once.result;
     });
+    if (replayed) void reply.header("idempotent-replayed", "true");
     return reply.code(201).send(voucher);
   });
 
@@ -239,10 +247,16 @@ export function voucherRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     });
   });
 
-  // Throw away a draft or rejected voucher.
+  // Throw away a draft or rejected voucher. Anything that was submitted or posted is part of the books: it can only be
+  // voided (below), which reverses its entry. The database refuses the shortcut as well (migration 0017).
   app.delete("/v1/vouchers/:id", { preHandler: guards.inCompany("accounts.edit") }, async (req, reply) => {
     const { id } = parse(idParams, req.params);
     await db.inTenant(ctxOf(req), async (c) => {
+      const cur = await c.query<{ status: string }>(`select status from vouchers where id = $1`, [id]);
+      if (!cur.rows[0]) throw new AppError(404, "not_found", "Voucher not found.");
+      if (!["draft", "rejected"].includes(cur.rows[0].status)) {
+        throw new AppError(409, "wrong_state", "Only a draft or rejected voucher can be discarded. To cancel an approved voucher, void it with a reason.");
+      }
       await c.query(`update vouchers set status = 'void' where id = $1`, [id]);
     });
     return reply.code(204).send();

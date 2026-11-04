@@ -8,13 +8,13 @@ export const idParams = z.object({ id: uuid });
 export const money = z
   .union([z.number(), z.string()])
   .transform((v) => String(v).trim())
-  .pipe(z.string().regex(/^\d+(\.\d{1,2})?$/, "must be an amount with at most 2 decimals"));
+  .pipe(z.string().regex(/^\d{1,16}(\.\d{1,2})?$/, "must be an amount of at most 16 digits and 2 decimals"));
 
 /** Like money, but may be negative (an overdrawn bank balance, a credit balance). */
 export const signedMoney = z
   .union([z.number(), z.string()])
   .transform((v) => String(v).trim())
-  .pipe(z.string().regex(/^-?\d+(\.\d{1,2})?$/, "must be an amount with at most 2 decimals"));
+  .pipe(z.string().regex(/^-?\d{1,16}(\.\d{1,2})?$/, "must be an amount of at most 16 digits and 2 decimals"));
 
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be a date like 2026-09-20");
 

@@ -5,6 +5,7 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { idempotent, requestKey } from "../idempotency.js";
 
 const EMP_COLUMNS = `id, emp_no as "empNo", full_name as "fullName", phone, email, cnic_last4 as "cnicLast4", designation, department, join_date as "joinDate",
   status, left_on as "leftOn", basic_salary as "basicSalary", house_allowance as "houseAllowance", transport_allowance as "transportAllowance",
@@ -182,10 +183,17 @@ export function hrRoutes(app: FastifyInstance, db: Db, guards: Guards) {
   app.post("/v1/payroll", { preHandler: guards.inCompany("payroll.create") }, async (req, reply) => {
     const b = parse(z.object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be a month like 2026-10") }), req.body);
     const ctx = ctxOf(req);
+    const key = requestKey(req);
+    let replayed = false;
     const out = await db.inTenant(ctx, async (c) => {
-      const r = await c.query<{ id: string }>(`select app.create_payroll_run($1, $2, $3) as id`, [ctx.companyId, b.month, ctx.userId]);
-      return runDetail(c, r.rows[0]!.id);
+      const once = await idempotent(c, key, "payroll", b, async () => {
+        const r = await c.query<{ id: string }>(`select app.create_payroll_run($1, $2, $3) as id`, [ctx.companyId, b.month, ctx.userId]);
+        return { id: r.rows[0]!.id, result: await runDetail(c, r.rows[0]!.id) };
+      }, (id) => runDetail(c, id));
+      replayed = once.replayed;
+      return once.result;
     });
+    if (replayed) void reply.header("idempotent-replayed", "true");
     return reply.code(201).send(out);
   });
 

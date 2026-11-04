@@ -5,6 +5,7 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { requireBooking } from "../scope.js";
 
 /**
  * The chase list: every unpaid installment that is late or due soon, with the customer's phone and when they were last
@@ -57,6 +58,7 @@ export function collectionRoutes(app: FastifyInstance, db: Db, guards: Guards) {
   app.get("/v1/reminders", { preHandler: guards.inCompany("deals.view") }, async (req) => {
     const q = parse(z.object({ bookingId: uuid }), req.query);
     return db.inTenant(ctxOf(req), async (c) => {
+      await requireBooking(c, q.bookingId);
       const r = await c.query(
         `select l.id, l.channel, l.message, l.sent_at as "sentAt", u.full_name as "sentBy" from reminder_log l left join users u on u.id = l.sent_by where l.booking_id = $1 order by l.sent_at desc limit 50`,
         [q.bookingId],

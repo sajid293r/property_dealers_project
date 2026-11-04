@@ -5,6 +5,8 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { idempotent, requestKey } from "../idempotency.js";
+import { RECEIPT_IN_SCOPE, bookingInScope, requireBooking } from "../scope.js";
 
 const RECEIPT_COLUMNS = `id, receipt_no as "receiptNo", received_on as "receivedOn", amount, method, instrument_ref as "instrumentRef", status,
   customer_id as "customerId", customer_name as "customerName", booking_id as "bookingId", booking_no as "bookingNo",
@@ -12,7 +14,7 @@ const RECEIPT_COLUMNS = `id, receipt_no as "receiptNo", received_on as "received
   allocated_amount as "allocatedAmount", void_reason as "voidReason", created_at as "createdAt"`;
 
 async function receiptDetail(c: Queryable, id: string) {
-  const r = await c.query(`select ${RECEIPT_COLUMNS} from v_receipts where id = $1`, [id]);
+  const r = await c.query(`select ${RECEIPT_COLUMNS} from v_receipts where id = $1 and ${RECEIPT_IN_SCOPE}`, [id]);
   const receipt = r.rows[0];
   if (!receipt) throw new AppError(404, "not_found", "Receipt not found.");
   const alloc = await c.query(
@@ -33,7 +35,7 @@ export function receiptRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     return db.inTenant(ctxOf(req), async (c) => {
       const r = await c.query(
         `select ${RECEIPT_COLUMNS} from v_receipts
-          where ($1::uuid is null or booking_id = $1) and ($2::uuid is null or customer_id = $2) and ($3::text is null or status = $3)
+          where ($1::uuid is null or booking_id = $1) and ($2::uuid is null or customer_id = $2) and ($3::text is null or status = $3) and ${RECEIPT_IN_SCOPE}
             and ($4::text is null or receipt_no ilike '%' || $4 || '%' or customer_name ilike '%' || $4 || '%' or booking_no ilike '%' || $4 || '%' or instrument_ref ilike '%' || $4 || '%')
           order by received_on desc, created_at desc limit $5 offset $6`,
         [q.bookingId ?? null, q.customerId ?? null, q.status ?? null, q.search ?? null, q.limit, q.offset],
@@ -65,8 +67,28 @@ export function receiptRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     if (!b.bookingId && !b.customerId) throw new AppError(400, "validation", "Choose the booking this money is for.");
+    if (Number(b.amount) <= 0) throw new AppError(422, "validation", "Enter an amount greater than zero.");
     const ctx = ctxOf(req);
+    const key = requestKey(req);
+    let replayed = false;
     const out = await db.inTenant(ctx, async (c) => {
+      const once = await idempotent(c, key, "receipt", b, async () => {
+      // money can only be received on bookings the caller may work with (a Sales Agent: their own)
+      if (b.bookingId) await requireBooking(c, b.bookingId);
+      if (b.allocations?.length) {
+        const ids = [...new Set(b.allocations.map((a) => a.installmentId))];
+        const ok = await c.query(`select count(*)::int as n from installments i join bookings b on b.id = i.booking_id where i.id = any($1::uuid[]) and ${bookingInScope()}`, [ids]);
+        if (ok.rows[0].n !== ids.length) throw new AppError(404, "not_found", "Installment not found.");
+      }
+      if (!b.bookingId && b.customerId) {
+        // without a booking the money is spread over the customer's open dues: refuse if some of those are not the caller's
+        const other = await c.query(
+          `select 1 from installments i join bookings b on b.id = i.booking_id
+            where b.customer_id = $1 and b.status <> 'cancelled' and i.status in ('due','partial') and not ${bookingInScope()} limit 1`,
+          [b.customerId],
+        );
+        if (other.rows[0]) throw new AppError(403, "not_permitted", "This customer also has bookings that belong to a colleague. Choose the booking this money is for.");
+      }
       let account = b.depositAccountId ?? null;
       if (!account && b.bankAccountId) {
         const ba = await c.query<{ gl_account_id: string }>(`select gl_account_id from bank_accounts where id = $1`, [b.bankAccountId]);
@@ -87,8 +109,12 @@ export function receiptRoutes(app: FastifyInstance, db: Db, guards: Guards) {
         b.bookingId ?? null, b.amount, b.method, account, b.receivedOn ?? null, b.instrumentRef ?? null, ctx.userId,
         b.allocations ? JSON.stringify(b.allocations) : null, b.customerId ?? null,
       ]);
-      return receiptDetail(c, r.rows[0]!.id);
+      return { id: r.rows[0]!.id, result: await receiptDetail(c, r.rows[0]!.id) };
+      }, (id) => receiptDetail(c, id));
+      replayed = once.replayed;
+      return once.result;
     });
+    if (replayed) void reply.header("idempotent-replayed", "true");
     return reply.code(201).send(out);
   });
 
@@ -98,6 +124,7 @@ export function receiptRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const b = parse(z.object({ reason: z.string().trim().min(3).max(300), date: isoDate.optional() }), req.body);
     const ctx = ctxOf(req);
     return db.inTenant(ctx, async (c) => {
+      await receiptDetail(c, id); // 404 when the receipt is not in the caller's scope
       await c.query(`select app.void_receipt($1, $2, $3, coalesce($4::date, current_date))`, [id, ctx.userId, b.reason, b.date ?? null]);
       return receiptDetail(c, id);
     });

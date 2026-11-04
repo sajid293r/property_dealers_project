@@ -40,7 +40,7 @@ export interface Feature {
 }
 
 export const FEATURES: Feature[] = [
-  { key: "leads", name: "Leads (CRM)", tier: "moderate", paths: /^\/v1\/leads(\/|$)/ },
+  { key: "leads", name: "Leads (CRM)", tier: "moderate", paths: /^\/v1\/leads(-summary)?(\/|$)/ },
   { key: "quotations", name: "Quotations", tier: "moderate", paths: /^\/v1\/quotations(\/|$)/ },
   { key: "cheques", name: "Post-dated cheques", tier: "moderate", paths: /^\/v1\/cheques(\/|$)/ },
   { key: "service_invoices", name: "Service invoices", tier: "moderate", paths: /^\/v1\/service-invoices(\/|$)/ },
@@ -52,7 +52,7 @@ export const FEATURES: Feature[] = [
     tier: "moderate",
     paths: /^\/v1\/(bank-statements|bank-statement-lines|reconciliations|ledger-lines)(\/|$)|^\/v1\/bank-accounts\/[^/]+\/(statements|reconciliations)(\/|$)/,
   },
-  { key: "budgets", name: "Budgets", tier: "premium", paths: /^\/v1\/budgets(\/|$)/ },
+  { key: "budgets", name: "Budgets", tier: "premium", paths: /^\/v1\/budget(s|-check|-revisions)(\/|$)/ },
   { key: "staff", name: "Staff", tier: "premium", paths: /^\/v1\/employees(\/|$)/ },
   { key: "leave", name: "Leave", tier: "premium", paths: /^\/v1\/leave(\/|$)/ },
   { key: "payroll", name: "Payroll", tier: "premium", paths: /^\/v1\/payroll(\/|$)/ },

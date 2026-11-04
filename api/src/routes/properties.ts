@@ -121,6 +121,9 @@ export function propertyRoutes(app: FastifyInstance, db: Db, guards: Guards) {
   app.delete("/v1/holds/:id", { preHandler: guards.inCompany("deals.edit") }, async (req, reply) => {
     const { id } = parse(idParams, req.params);
     await db.inTenant(ctxOf(req), async (c) => {
+      // a Sales Agent can release only the holds they placed themselves
+      const own = await c.query(`select 1 from property_holds h where h.id = $1 and app.user_in_scope('deals', h.held_by)`, [id]);
+      if (!own.rows[0]) throw new AppError(404, "not_found", "Hold not found.");
       await c.query(`select app.release_hold($1, 'manual')`, [id]);
     });
     return reply.code(204).send();

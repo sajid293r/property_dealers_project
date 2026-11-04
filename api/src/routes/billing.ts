@@ -5,6 +5,8 @@ import type { Guards } from "../context.js";
 import { ctxOf } from "../context.js";
 import { idParams, isoDate, money, paging, parse, uuid } from "../http.js";
 import { AppError } from "../errors.js";
+import { idempotent, requestKey } from "../idempotency.js";
+import { bookingInScope, requireBooking } from "../scope.js";
 
 const CHEQUE_COLUMNS = `c.id, c.direction, c.cheque_no as "chequeNo", c.bank_name as "bankName", c.party_id as "partyId", p.display_name as "partyName",
   c.booking_id as "bookingId", b.booking_no as "bookingNo", c.amount, c.cheque_date as "chequeDate", c.received_on as "receivedOn", c.status,
@@ -12,10 +14,13 @@ const CHEQUE_COLUMNS = `c.id, c.direction, c.cheque_no as "chequeNo", c.bank_nam
   c.cleared_on as "clearedOn", c.bounced_on as "bouncedOn", c.bounce_reason as "bounceReason", c.receipt_id as "receiptId", c.notes, c.created_at as "createdAt"`;
 const CHEQUE_FROM = `cheques c join parties p on p.id = c.party_id left join bookings b on b.id = c.booking_id left join bank_accounts ba on ba.id = c.bank_account_id`;
 
+/** A cheque follows its booking; one without a booking follows whoever entered it. */
+const CHEQUE_IN_SCOPE = `(case when c.booking_id is not null then ${bookingInScope()} else app.user_in_scope('deals', c.created_by) end)`;
+
 const CONTRACT_KINDS = ["sale_agreement", "rent", "service", "construction", "employment", "other"] as const;
 
 async function chequeRow(c: Queryable, id: string) {
-  const r = await c.query(`select ${CHEQUE_COLUMNS} from ${CHEQUE_FROM} where c.id = $1`, [id]);
+  const r = await c.query(`select ${CHEQUE_COLUMNS} from ${CHEQUE_FROM} where c.id = $1 and ${CHEQUE_IN_SCOPE}`, [id]);
   if (!r.rows[0]) throw new AppError(404, "not_found", "Cheque not found.");
   return r.rows[0];
 }
@@ -35,7 +40,7 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     return db.inTenant(ctxOf(req), async (c) => {
       const r = await c.query(
         `select ${CHEQUE_COLUMNS} from ${CHEQUE_FROM}
-          where ($1::text is null or c.direction = $1) and ($2::text is null or c.status = $2)
+          where ($1::text is null or c.direction = $1) and ($2::text is null or c.status = $2) and ${CHEQUE_IN_SCOPE}
             and ($3::text is null or c.cheque_no ilike '%' || $3 || '%' or p.display_name ilike '%' || $3 || '%' or c.bank_name ilike '%' || $3 || '%')
           order by c.cheque_date, c.created_at limit $4 offset $5`,
         [q.direction ?? null, q.status ?? null, q.search ?? null, q.limit, q.offset],
@@ -60,14 +65,22 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     const ctx = ctxOf(req);
+    const key = requestKey(req);
+    let replayed = false;
     const out = await db.inTenant(ctx, async (c) => {
+      const once = await idempotent(c, key, "cheque", b, async () => {
+      if (b.bookingId) await requireBooking(c, b.bookingId);
       const r = await c.query<{ id: string }>(
         `insert into cheques (company_id, direction, cheque_no, bank_name, party_id, booking_id, amount, cheque_date, received_on, notes, created_by)
          values ($1,$2,$3,$4,$5,$6,$7,$8,coalesce($9::date, current_date),$10,$11) returning id`,
         [ctx.companyId, b.direction, b.chequeNo, b.bankName, b.partyId, b.bookingId ?? null, b.amount, b.chequeDate, b.receivedOn ?? null, b.notes ?? null, ctx.userId],
       );
-      return chequeRow(c, r.rows[0]!.id);
+      return { id: r.rows[0]!.id, result: await chequeRow(c, r.rows[0]!.id) };
+      }, (id) => chequeRow(c, id));
+      replayed = once.replayed;
+      return once.result;
     });
+    if (replayed) void reply.header("idempotent-replayed", "true");
     return reply.code(201).send(out);
   });
 
@@ -77,6 +90,7 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     const ctx = ctxOf(req);
     const b = parse(z.object({ bankAccountId: uuid.optional(), date: isoDate.optional(), reason: z.string().trim().max(300).optional() }), req.body ?? {});
     return db.inTenant(ctx, async (c) => {
+      await chequeRow(c, id); // 404 when the cheque is not in the caller's scope
       if (action === "deposit") await c.query(`select app.deposit_cheque($1, $2, $3::date, $4)`, [id, b.bankAccountId ?? null, b.date ?? null, ctx.userId]);
       else if (action === "clear") await c.query(`select app.clear_cheque($1, $2::date, $3)`, [id, b.date ?? null, ctx.userId]);
       else if (action === "bounce") await c.query(`select app.bounce_cheque($1, $2::date, $3, $4)`, [id, b.date ?? null, b.reason ?? null, ctx.userId]);
@@ -131,7 +145,7 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
     return reply.code(201).send(out);
   });
 
-  app.post("/v1/service-invoices/:id/payments", { preHandler: guards.inCompany("accounts.create") }, async (req) => {
+  app.post("/v1/service-invoices/:id/payments", { preHandler: guards.inCompany("accounts.create") }, async (req, reply) => {
     const { id } = parse(idParams, req.params);
     const b = parse(
       z.object({
@@ -144,7 +158,10 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       req.body,
     );
     const ctx = ctxOf(req);
+    const key = requestKey(req);
     return db.inTenant(ctx, async (c) => {
+      const row = () => c.query(`select ${SI_COLUMNS} from v_service_invoices where id = $1`, [id]).then((r) => r.rows[0]);
+      const once = await idempotent(c, key, `invoice-payment:${id}`, b, async () => {
       let account: string | null = null;
       if (b.bankAccountId) {
         account = (await c.query<{ g: string }>(`select gl_account_id as g from bank_accounts where id = $1`, [b.bankAccountId])).rows[0]?.g ?? null;
@@ -154,7 +171,10 @@ export function billingRoutes(app: FastifyInstance, db: Db, guards: Guards) {
       }
       if (!account) throw new AppError(422, "validation", "Choose the bank account the money went into.");
       await c.query(`select app.pay_service_invoice($1,$2,$3,$4,$5::date,$6,$7)`, [id, b.amount, b.method, account, b.date ?? null, b.reference ?? null, ctx.userId]);
-      return (await c.query(`select ${SI_COLUMNS} from v_service_invoices where id = $1`, [id])).rows[0];
+      return { id, result: await row() };
+      }, () => row());
+      if (once.replayed) void reply.header("idempotent-replayed", "true");
+      return once.result;
     });
   });
 

@@ -38,6 +38,13 @@ export interface AppDeps {
   cnic?: CnicKeys | null;
 }
 
+declare module "fastify" {
+  interface FastifyInstance {
+    /** Every route registered, so a test can check each one against the plan lists (see test/plans-routes.test.ts). */
+    routeTable: { method: string; url: string }[];
+  }
+}
+
 /** Builds the HTTP app. Pure wiring: the rules live in the database, the routes only translate. */
 export function buildApp({ config, db, verifier, cnic = null }: AppDeps): FastifyInstance {
   const app = Fastify({
@@ -45,6 +52,9 @@ export function buildApp({ config, db, verifier, cnic = null }: AppDeps): Fastif
     genReqId: () => crypto.randomUUID(),
     bodyLimit: 1_000_000,
   });
+  const routeTable: { method: string; url: string }[] = [];
+  app.decorate("routeTable", routeTable);
+  app.addHook("onRoute", (r) => { for (const m of [r.method].flat()) routeTable.push({ method: String(m), url: r.url }); });
 
   // The browser app lives at a different address than the API, so it must be allowed to call it. Only the origins
   // listed in CORS_ORIGIN are allowed (none configured = no browser access at all).
