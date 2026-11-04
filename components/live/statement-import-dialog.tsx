@@ -9,6 +9,8 @@ import { AmountInput } from "@/components/live/amount-input";
 import { useCompany } from "@/lib/providers/company-provider";
 import { useInvalidateFinance } from "@/lib/hooks/use-live";
 import { createStatement, type NewStatementInput } from "@/lib/api/finance";
+import { ApiError } from "@/lib/api/client";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/provider";
 
@@ -90,6 +92,9 @@ export function StatementImportDialog({
   const [closing, setClosing] = React.useState("");
   const [text, setText] = React.useState("");
   const parsed = React.useMemo(() => parseStatementText(text), [text]);
+  // set when the server says the lines do not lead to the closing balance: the person can then choose to save anyway
+  const [mismatch, setMismatch] = React.useState(false);
+  const [allow, setAllow] = React.useState(false);
 
   return (
     <FormDialog
@@ -101,14 +106,23 @@ export function StatementImportDialog({
       submitLabel={t("stmt.submit")}
       submitDisabled={!from || !to || opening === "" || closing === "" || parsed.lines.length === 0}
       onSubmit={async () => {
-        const r = await createStatement(company.id, bankAccountId, {
-          periodFrom: from,
-          periodTo: to,
-          openingBalance: opening,
-          closingBalance: closing,
-          source: "manual",
-          lines: parsed.lines,
-        });
+        let r;
+        try {
+          r = await createStatement(company.id, bankAccountId, {
+            periodFrom: from,
+            periodTo: to,
+            openingBalance: opening,
+            closingBalance: closing,
+            source: "manual",
+            allowMismatch: allow,
+            lines: parsed.lines,
+          });
+        } catch (e) {
+          if (e instanceof ApiError && e.code === "statement_mismatch") setMismatch(true);
+          throw e;
+        }
+        setMismatch(false);
+        setAllow(false);
         await invalidate();
         toast.success(r.linesAddUp ? t("stmt.saved") : t("stmt.savedMismatch"));
         onCreated?.(r.id);
@@ -132,6 +146,12 @@ export function StatementImportDialog({
           placeholder={"2026-09-02, Cheque 000123 Al-Noor Traders, 000123, 0, 150000\n2026-09-05, Online transfer from Ali, TRF9981, 75000, 0"}
         />
       </Field>
+      {mismatch && (
+        <label className="flex items-start gap-2 text-sm">
+          <Checkbox checked={allow} onCheckedChange={(v) => setAllow(v === true)} className="mt-0.5" />
+          <span>{t("stmt.allowMismatch")}</span>
+        </label>
+      )}
       <p className="text-xs text-muted-foreground">
         {parsed.skipped ? t("stmt.infoSkipped", { count: parsed.lines.length, skipped: parsed.skipped }) : t("stmt.info", { count: parsed.lines.length })}
       </p>

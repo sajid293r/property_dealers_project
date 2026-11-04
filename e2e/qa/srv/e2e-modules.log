@@ -1,0 +1,29 @@
+  PASS signed in 
+  PASS an Advanced company's menu lists every connected page 
+  PASS leads: connected (no preview notice) 
+  PASS lead saved with a number 
+  PASS a logged call appears in the lead's history 
+  PASS the lead becomes a customer 
+  PASS quotations: connected 
+  PASS cheques: connected 
+  PASS service invoices: connected 
+  PASS service invoice issued 
+  PASS contract saved 
+  PASS employee added 
+  PASS leave: connected 
+  PASS payroll draft lists the employee 
+  PASS payroll approved and posted 
+  PASS salaries paid 
+  PASS contractors: connected 
+  PASS agreement created and opened 
+  PASS budget saved as a draft with a number 
+  PASS budget can be sent for approval 
+  PASS budget approved 
+  PASS users: shows the signed-in owner and the plan 
+  PASS invitation is listed as waiting 
+  PASS roles: standard roles and the permission grid 
+  PASS company profile loads with the plan and its features 
+  PASS dashboard loads 
+  PASS no JavaScript errors 
+
+27 passed, 0 failed

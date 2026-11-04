@@ -19,9 +19,12 @@ interface CompanyContextValue {
   /** False while the company list is still being fetched; screens show a skeleton until then. */
   ready: boolean;
   /** Set when the list could not be fetched, or the person belongs to no company yet. */
-  problem: string | null;
+  /** Why a signed-in person has no workspace: they belong to no company, or the account could not be loaded. */
+  problem: "noCompany" | "failed" | null;
   /** Fetch the account (names, plans, languages) again, e.g. after an administrator changes the company default. */
   reloadAccount: () => void;
+  /** Try loading the account again after a failure (shows the opening screen while it runs). */
+  retryAccount: () => void;
   /** The interface language saved on the signed-in person's account: null = none chosen, undefined = not known (yet, or demo). */
   userLanguage: LanguageCode | null | undefined;
 }
@@ -59,7 +62,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [activeId, setActiveId] = React.useState(SEED_COMPANIES[0].id);
   const [switching, setSwitching] = React.useState<Company | null>(null);
   const [liveCompanies, setLiveCompanies] = React.useState<Company[] | null>(null);
-  const [liveProblem, setLiveProblem] = React.useState<string | null>(null);
+  const [liveProblem, setLiveProblem] = React.useState<"noCompany" | "failed" | null>(null);
   const [reloadTick, setReloadTick] = React.useState(0);
   const [userLanguage, setUserLanguage] = React.useState<LanguageCode | null | undefined>(undefined);
 
@@ -111,7 +114,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           }));
         setLiveCompanies(list);
         setUserLanguage(isLanguageCode(me.user?.language) ? me.user.language : null);
-        setLiveProblem(list.length ? null : "You haven't been added to a company yet. Ask your administrator to add you.");
+        setLiveProblem(list.length ? null : "noCompany");
         let stored: string | null = null;
         try {
           stored = window.localStorage.getItem(LIVE_ACTIVE_KEY);
@@ -123,7 +126,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       .catch((e: unknown) => {
         if (!active) return;
         setLiveCompanies([]);
-        setLiveProblem(e instanceof Error ? e.message : "Could not load your companies.");
+        console.error("Could not load the account", e);
+        setLiveProblem("failed");
       });
     return () => {
       active = false;
@@ -131,6 +135,11 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   }, [live, reloadTick]);
 
   const reloadAccount = React.useCallback(() => setReloadTick((n) => n + 1), []);
+  const retryAccount = React.useCallback(() => {
+    setLiveProblem(null);
+    setLiveCompanies(null);
+    setReloadTick((n) => n + 1);
+  }, []);
 
   const companies = React.useMemo(
     () => (live ? (liveCompanies ?? []) : [...SEED_COMPANIES, ...custom]),
@@ -179,7 +188,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CompanyContext.Provider
-      value={{ companies, company, setCompanyId, addCompany, switching, live, ready, problem: live ? liveProblem : null, userLanguage, reloadAccount }}
+      value={{ companies, company, setCompanyId, addCompany, switching, live, ready, problem: live ? liveProblem : null, userLanguage, reloadAccount, retryAccount }}
     >
       {children}
     </CompanyContext.Provider>

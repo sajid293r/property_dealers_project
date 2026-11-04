@@ -1,0 +1,14 @@
+  PASS signed in 
+  PASS customers: no 'not connected' notice 
+  PASS customer saved and listed 
+  PASS deals: no 'not connected' notice 
+  PASS booking created and its page opens 
+  PASS payment plan created (down payment row) 
+  PASS receipt dialog shows the amount in words 
+  PASS receipt saved with a number 
+  PASS down payment is paid and the first installment is part paid 
+  PASS progress shows the money received 
+  PASS customer statement shows the receipt 
+  PASS receipt voided 
+
+12 passed, 0 failed

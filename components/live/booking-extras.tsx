@@ -21,6 +21,7 @@ import { todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/provider";
+import { newRequestId, useRequestId } from "@/lib/request-id";
 import { Ltr } from "@/components/ltr";
 import { tOr } from "@/lib/i18n/runtime";
 
@@ -36,6 +37,7 @@ interface Extras {
 
 export function BookingExtras({ bookingId, status, customerId }: { bookingId: string; status: string; customerId: string }) {
   const t = useT();
+  const penaltyKeys = React.useRef<Record<string, string>>({});
   const { company } = useCompany();
   const { can } = usePermissions();
   const invalidate = useInvalidateFinance();
@@ -53,7 +55,10 @@ export function BookingExtras({ bookingId, status, customerId }: { bookingId: st
   async function charge(installmentId: string, amount: string) {
     setBusy(true);
     try {
-      await api(`/v1/installments/${installmentId}/penalty`, { method: "POST", companyId: company.id, body: { amount, reason: t("deals.late.reasonDefault") } });
+      // one id per installment until it has gone through: a second click sends the same id and charges once
+      const key = (penaltyKeys.current[installmentId] ??= newRequestId());
+      await api(`/v1/installments/${installmentId}/penalty`, { method: "POST", companyId: company.id, body: { amount, reason: t("deals.late.reasonDefault") }, idempotencyKey: key });
+      delete penaltyKeys.current[installmentId];
       await invalidate();
       toast.success(t("deals.late.added"));
     } catch (e) {
@@ -168,10 +173,11 @@ function RefundDialog({ open, onOpenChange, bookingId, refundable }: { open: boo
   const [from, setFrom] = React.useState("cash");
   const [note, setNote] = React.useState("");
   const total = num(refund) + num(keep);
+  const requestId = useRequestId();
   return (
     <FormDialog open={open} onOpenChange={onOpenChange} icon={Undo2} title={t("deals.refund.button")} description={t("deals.refund.dlgDescription", { amount: formatMoney(refundable) })} submitLabel={t("deals.refund.dlgSubmit")}
       submitDisabled={total <= 0 || total > refundable || (num(refund) > 0 && method !== "cash" && from === "cash")}
-      onSubmit={async () => { await api(`/v1/bookings/${bookingId}/refund`, { method: "POST", companyId: company.id, body: { refundAmount: refund || "0", deductionAmount: keep || "0", method, bankAccountId: from === "cash" ? undefined : from, note: note.trim() || undefined } }); await invalidate(); toast.success(t("deals.refund.recorded")); setRefund(""); setKeep(""); }}>
+      onSubmit={async () => { await api(`/v1/bookings/${bookingId}/refund`, { method: "POST", companyId: company.id, body: { refundAmount: refund || "0", deductionAmount: keep || "0", method, bankAccountId: from === "cash" ? undefined : from, note: note.trim() || undefined }, idempotencyKey: requestId.current() }); requestId.renew(); await invalidate(); toast.success(t("deals.refund.recorded")); setRefund(""); setKeep(""); }}>
       <FieldRow>
         <Field label={t("deals.refund.toCustomer")}><AmountInput value={refund} onChange={setRefund} /></Field>
         <Field label={t("deals.refund.keep")}><AmountInput value={keep} onChange={setKeep} /></Field>

@@ -217,8 +217,8 @@ export function listVouchers(companyId: string, f: VoucherFilters = {}) {
   return api<VoucherRow[]>(`/v1/vouchers?${qs}`, { companyId });
 }
 export const getVoucher = (companyId: string, id: string) => api<VoucherDetail>(`/v1/vouchers/${id}`, { companyId });
-export const createVoucher = (companyId: string, type: VoucherType, input: VoucherInput) =>
-  api<VoucherDetail>("/v1/vouchers", { method: "POST", companyId, body: { type, ...input } });
+export const createVoucher = (companyId: string, type: VoucherType, input: VoucherInput, requestId?: string) =>
+  api<VoucherDetail>("/v1/vouchers", { method: "POST", companyId, body: { type, ...input }, idempotencyKey: requestId });
 export const updateVoucher = (companyId: string, id: string, input: VoucherInput) => api<VoucherDetail>(`/v1/vouchers/${id}`, { method: "PUT", companyId, body: input });
 export const voucherAction = (companyId: string, id: string, action: "submit" | "recall" | "approve" | "reject" | "void", body?: object) =>
   api<VoucherDetail>(`/v1/vouchers/${id}/${action}`, { method: "POST", companyId, body: body ?? {} });
@@ -287,6 +287,8 @@ export interface NewStatementInput {
   openingBalance: string | number;
   closingBalance: string | number;
   source?: "manual" | "csv" | "pdf";
+  /** Save even though the lines do not add up to the closing balance. */
+  allowMismatch?: boolean;
   lines: { date: string; description?: string; reference?: string; deposit?: string | number; withdrawal?: string | number; balance?: string | number }[];
 }
 export interface ReconciliationReport {

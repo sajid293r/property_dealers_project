@@ -1,0 +1,24 @@
+  PASS signed in 
+  PASS accounts: no 'not connected' notice 
+  PASS accounts: standard chart of accounts listed 
+  PASS bank picker lists Pakistani banks (Meezan) 
+    dialog inputs: ByteCraft (Pvt) Ltd — Current A/C | 0123-4567890 | PK36HABB0000000123456702 | Gulberg, Lahore | 0123
+  PASS bank account dialog has inputs 
+  PASS bank account saved and listed 
+  PASS bank account card shows Meezan Bank 
+  PASS whole amount is shown with thousands separators (1,250,000.50) 
+  PASS amount in words appears (Pakistani lakh system) 
+  PASS voucher submitted and detail opens 
+  PASS detail shows the bank and the amount 
+  PASS approved and posted to the books 
+  PASS voucher list shows the voucher 
+  PASS trial balance lists posted account 
+  PASS expenses lists the approved payment by category 
+  PASS dashboard shows real figures (cash & bank, needs attention) 
+  PASS reconciliation page opens with the bank account 
+  PASS reconciliation started: items to tick appear 
+  PASS outstanding cheque listed before clearing 
+  PASS ticking the cheque balances the reconciliation 
+  PASS reconciliation can be finished 
+
+21 passed, 0 failed

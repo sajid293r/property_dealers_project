@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "保存对账单",
   "stmt.saved": "对账单已保存",
   "stmt.savedMismatch": "对账单已保存 — 但各行合计与期末余额不符",
+  "stmt.allowMismatch": "仍然保存（银行自己的数字可能不同）",
   "stmt.from": "期间自",
   "stmt.to": "期间至",
   "stmt.opening": "期初余额",

@@ -27,6 +27,7 @@ import { ExportButton } from "@/components/live/export-button";
 import { PrintLink } from "@/components/live/print-button";
 import { methodLabel } from "@/lib/live-sales";
 import { useT } from "@/lib/i18n/provider";
+import { useRequestId } from "@/lib/request-id";
 
 const CLS: Record<string, string> = { unpaid: "bg-muted text-muted-foreground", partial: "bg-warning/12 text-warning", paid: "bg-success/12 text-success", void: "bg-muted text-muted-foreground line-through" };
 const plusDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
@@ -139,12 +140,14 @@ function PayDialog({ invoice, onClose }: { invoice: ServiceInvoiceRow | null; on
   const [method, setMethod] = React.useState("cash");
   const [into, setInto] = React.useState("cash");
   const [ref, setRef] = React.useState("");
+  const requestId = useRequestId();
   const m = RECEIPT_METHODS.find((x) => x.value === method)!;
   return (
     <FormDialog open={!!invoice} onOpenChange={(o) => { if (!o) { onClose(); setAmount(""); } }} icon={HandCoins} title={t("sinv.pay.title", { number: invoice?.number ?? "" })} description={t("sinv.pay.description", { name: invoice?.customerName ?? "", amount: formatMoney(num(invoice?.balance)) })}
       submitLabel={t("sinv.pay.submit")} submitDisabled={num(amount) <= 0 || num(amount) > num(invoice?.balance) || (m.needsRef && !ref.trim()) || (method !== "cash" && into === "cash")}
       onSubmit={async () => {
-        await payServiceInvoice(company.id, invoice!.id, { amount, method, bankAccountId: into === "cash" ? undefined : into, reference: ref.trim() || undefined });
+        await payServiceInvoice(company.id, invoice!.id, { amount, method, bankAccountId: into === "cash" ? undefined : into, reference: ref.trim() || undefined }, requestId.current());
+        requestId.renew();
         await invalidate();
         toast.success(t("sinv.pay.saved"));
         setAmount(""); setRef("");

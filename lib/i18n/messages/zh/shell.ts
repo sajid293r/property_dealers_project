@@ -49,6 +49,8 @@ const shell: Record<keyof typeof en, string> = {
 
   "shell.splash.opening": "正在打开 {app}…",
   "shell.splash.cannotOpen": "无法打开你的工作区",
+  "shell.splash.noCompany": "您尚未被添加到任何公司。请联系管理员将您添加进去。",
+  "shell.splash.failed": "暂时无法加载您的账户。这通常是临时问题，数据没有丢失。请重试。",
   "shell.notice.partial": "随着更多板块接入，仪表盘会逐步充实。房产和项目已接入真实数据。",
   "shell.notice.preview": "此板块尚未接入你的真实数据。你看到的只是预览，添加的内容不会被保存。",
   "shell.lock.title": "此功能属于{plan}套餐",

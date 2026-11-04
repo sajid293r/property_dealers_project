@@ -83,7 +83,7 @@ export default function AccountPage() {
           <Card className="space-y-4 p-5">
             <h3 className="flex items-center gap-2 font-heading text-base font-semibold"><Languages className="size-4" /> {t("account.language.title")}</h3>
             <p className="text-sm text-muted-foreground">{t("account.language.help")}</p>
-            <div role="radiogroup" aria-label={t("account.language.title")} className="grid gap-2 sm:grid-cols-2">
+            <div role="radiogroup" aria-label={t("account.language.title")} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {LANGUAGES.map((l) => {
                 const active = l.code === lang && !usingDefault;
                 return (

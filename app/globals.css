@@ -349,3 +349,7 @@ html:lang(ur) :is(h1, h2, h3, h4) { line-height: 1.6; }
 html:lang(zh) body, html:lang(ja) body { line-height: 1.7; }
 /* Money, codes, phone numbers and the like are written left to right inside right-to-left text. */
 .ltr-run { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+
+/* A scrolling table keeps its own screen-reader-only labels inside it. Without a positioned scroll container the hidden
+   (absolutely placed) label of a far-right column sits outside the clipped area and makes the whole page scroll sideways. */
+[class~="overflow-x-auto"] { position: relative; }

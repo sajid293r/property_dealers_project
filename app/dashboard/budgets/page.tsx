@@ -151,7 +151,7 @@ function DemoBudgetsPage() {
           </div>
         </div>
         {attention.length > 0 && (
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {attention.slice(0, 6).map(({ line, m }, i) => {
               const b = (budgets ?? []).find((x) => x.id === line.budgetId)!;
               return (
@@ -189,7 +189,7 @@ function DemoBudgetsPage() {
 
         <TabsContent value="projects" className="mt-5">
           {isLoading ? (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-xl" />)}
             </div>
           ) : projectBudgets.length === 0 ? (

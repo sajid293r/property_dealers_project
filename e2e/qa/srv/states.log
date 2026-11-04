@@ -1,0 +1,33 @@
+ok    {"route":"/dashboard","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/projects","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/properties","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/plot-map","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/customers","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/deals","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/crm","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/quotations","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/service-invoices","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/cheques","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/contracts","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/contractors","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/accounts","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/vouchers","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/expenses","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/budgets","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/reports","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/staff","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/payroll","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/leave","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/administration/users","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/administration/roles","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/administration/company-profile","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/administration/activity","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+ok    {"route":"/dashboard/bank-reconciliation","err":"panel","retry":"recovered","skeleton":"skeleton","tiles0":""}
+403 → We couldn't load this page
+
+Nothing has been lost. The information just couldn't be shown right now.
+
+Your role does not allow this (inventory.view).
+
+Try again
+SUMMARY 25/25 screens ok

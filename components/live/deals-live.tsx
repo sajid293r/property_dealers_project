@@ -87,7 +87,7 @@ export function LiveDeals() {
 
       <Tabs defaultValue="bookings">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <TabsList>
+          <TabsList className="h-auto max-w-full flex-wrap">
             <TabsTrigger value="bookings">{t("deals.tab.bookings")}</TabsTrigger>
             <TabsTrigger value="receipts">{t("deals.tab.receipts")}</TabsTrigger>
             <TabsTrigger value="collections">{t("deals.tab.collections")}</TabsTrigger>

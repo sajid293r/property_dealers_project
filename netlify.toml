@@ -14,3 +14,15 @@
 
 [functions]
   directory = "netlify/functions"
+
+# Browser hardening for every page and API answer (QA finding BUG-016: the site could be framed by any other page).
+# frame-ancestors / X-Frame-Options stop clickjacking; the CSP below deliberately lists only the directives that cannot
+# break a page (a full script/style CSP needs a nonce setup first, see docs/GO_LIVE.md). Netlify already sends HSTS.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"

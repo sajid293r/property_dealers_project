@@ -20,6 +20,7 @@ import { todayIso } from "@/lib/fiscal";
 import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/provider";
+import { useRequestId } from "@/lib/request-id";
 import type { TranslateFn } from "@/lib/i18n/runtime";
 
 const monthLabel = (t: TranslateFn, m: string) => t("people.monthYear", { month: t(`people.month.${Number(m.slice(5, 7))}`), year: m.slice(0, 4) });
@@ -27,6 +28,7 @@ const CLS: Record<string, string> = { draft: "bg-muted text-muted-foreground", a
 
 export function LivePayroll() {
   const t = useT();
+  const requestId = useRequestId();
   const { company } = useCompany();
   const { can } = usePermissions();
   const invalidate = useInvalidateFinance();
@@ -70,7 +72,7 @@ export function LivePayroll() {
 
       <FormDialog open={creating} onOpenChange={setCreating} icon={Banknote} title={t("pay.run")} description={t("pay.run.description")}
         submitLabel={t("pay.run.submit")} submitDisabled={!/^\d{4}-\d{2}$/.test(month)}
-        onSubmit={async () => { const r = await createPayroll(company.id, month); await invalidate(); toast.success(t("pay.run.created", { month: monthLabel(t, month) })); setOpenId(r.id); }}>
+        onSubmit={async () => { const r = await createPayroll(company.id, month, requestId.current()); requestId.renew(); await invalidate(); toast.success(t("pay.run.created", { month: monthLabel(t, month) })); setOpenId(r.id); }}>
         <Field label={t("pay.run.month")}><Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></Field>
       </FormDialog>
 

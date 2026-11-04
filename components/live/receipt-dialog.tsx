@@ -18,6 +18,7 @@ import { todayIso } from "@/lib/fiscal";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/provider";
+import { useRequestId } from "@/lib/request-id";
 
 /** Record money received from a customer. It is applied to the oldest unpaid installments automatically. */
 export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open: boolean; onOpenChange: (o: boolean) => void; bookingId?: string }) {
@@ -34,6 +35,7 @@ export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open:
 
   const all = useQuery({ queryKey: ["live", "bookings", "open"], queryFn: () => listBookings(company.id), enabled: open && !preset, staleTime: 15_000 });
   const detail = useQuery({ queryKey: ["live", "booking", bookingId], queryFn: () => getBooking(company.id, bookingId!), enabled: open && !!bookingId });
+  const requestId = useRequestId();
   const m = RECEIPT_METHODS.find((x) => x.value === method)!;
   const openBookings = (all.data ?? []).filter((b) => b.status !== "cancelled").map((b) => ({ value: b.id, label: `${b.bookingNo} — ${b.customerName}`, hint: b.propertyCode }));
   const unpaid = (detail.data?.installments ?? []).filter((i) => i.status === "due" || i.status === "partial");
@@ -49,14 +51,19 @@ export function ReceiptDialog({ open, onOpenChange, bookingId: preset }: { open:
       submitLabel={t("deals.rcpt.submit")}
       submitDisabled={!bookingId || num(amount) <= 0 || (m.needsRef && !ref.trim()) || (method !== "cash" && into === "cash")}
       onSubmit={async () => {
-        const r = await createReceipt(company.id, {
-          bookingId: bookingId!,
-          amount,
-          method,
-          ...(into === "cash" ? {} : { bankAccountId: into }),
-          receivedOn: date,
-          instrumentRef: ref.trim() || undefined,
-        });
+        const r = await createReceipt(
+          company.id,
+          {
+            bookingId: bookingId!,
+            amount,
+            method,
+            ...(into === "cash" ? {} : { bankAccountId: into }),
+            receivedOn: date,
+            instrumentRef: ref.trim() || undefined,
+          },
+          requestId.current(),
+        );
+        requestId.renew();
         await invalidate();
         toast.success(t("deals.rcpt.saved", { no: r.receiptNo }));
         setAmount("");

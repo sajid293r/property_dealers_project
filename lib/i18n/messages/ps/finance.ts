@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "بیان خوندي کړئ",
   "stmt.saved": "بیان خوندي شو",
   "stmt.savedMismatch": "بیان خوندي شو — خو کرښې له وروستۍ پاتې سره نه برابرېږي",
+  "stmt.allowMismatch": "بیا هم یې خوندي کړئ (د بانک خپل شمېرې ښايي توپیر ولري)",
   "stmt.from": "موده له",
   "stmt.to": "موده تر",
   "stmt.opening": "پیل پاتې",

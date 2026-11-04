@@ -95,7 +95,7 @@ export function LivePropertyDetail() {
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className="p-5">
           <h3 className="mb-2 font-heading text-base font-semibold">{t("properties.d.at")}</h3>
           <Row k={t("properties.d.listPrice")} v={<span className="font-mono">{formatMoney(num(u.listPrice))}</span>} />

@@ -89,7 +89,7 @@ export function LiveContractors() {
           </Card>
         </TabsContent>
         <TabsContent value="contractors" className="mt-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {people.isLoading ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />) : all.map((c) => (
               <Card key={c.id} className="space-y-2 p-4">
                 <div><p className="font-heading text-base font-semibold">{c.name}</p><p className="text-xs text-muted-foreground">{[c.phone, c.city].filter(Boolean).join(" · ") || "—"}</p></div>

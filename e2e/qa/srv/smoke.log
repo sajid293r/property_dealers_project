@@ -1,0 +1,596 @@
+Applying core.sql ...
+  migration applied: 0002_area_and_company_defaults.sql
+  migration applied: 0003_banks_chart_periods.sql
+  migration applied: 0004_voucher_engine.sql
+  migration applied: 0005_bank_reconciliation.sql
+  migration applied: 0006_ledger_reports.sql
+  migration applied: 0007_receipts.sql
+  migration applied: 0008_admin_crm_sales.sql
+  migration applied: 0009_staff_payroll_leave.sql
+  migration applied: 0010_contractors.sql
+  migration applied: 0011_budget_self_approval.sql
+  migration applied: 0012_extra_seats.sql
+  migration applied: 0013_reminders.sql
+  migration applied: 0014_attachments.sql
+  migration applied: 0015_sales_accounting.sql
+  migration applied: 0016_language_preferences.sql
+  migration applied: 0017_qa_group1.sql
+  migration applied: 0018_request_ids.sql
+  migration applied: 0019_qa_group3.sql
+  schema applied
+  PASS seed company 1 under RLS
+
+Ledger invariants
+  PASS balanced entry posts
+  PASS unbalanced entry is rejected
+  PASS posting to group header is rejected
+  PASS posting into locked period is rejected
+  PASS line with both debit and credit is rejected
+  PASS posted line cannot be updated
+  PASS posted entry cannot be deleted
+  PASS entry may be marked reversed
+  PASS account_balances rolled up by trigger
+
+Sales invariants
+  PASS first booking on property
+  PASS second live booking on same property is rejected
+  PASS net_price generated column
+  PASS property re-bookable after cancellation
+  PASS allocation marks installment paid / partial
+  PASS over-allocating a receipt is rejected
+
+Tenant isolation (RLS)
+  PASS company 1 sees its property
+  PASS company 2 sees none of company 1's rows
+  PASS no tenant context => no rows
+  PASS cannot insert a row into another company
+  PASS duplicate CNIC within a company is rejected
+  PASS same CNIC allowed in a different company
+
+Document numbering
+  PASS gapless per-period numbering (CPV-00001, CPV-00002, CPV-00001)
+
+Property model
+  PASS house with location, dimensions, rooms, amenities, utilities, legal, valuation
+  PASS joined read across detail tables
+  PASS same amenity cannot be added twice to a property
+  PASS amenity row must carry a value
+  PASS negative bedrooms rejected
+  PASS latitude out of range rejected
+  PASS one detail row per property (1:1)
+  PASS only one cover photo per property
+  PASS a property has exactly one current owner
+  PASS ownership chain: close old owner, open new owner
+  PASS only one active tenancy per property
+  PASS same property listed on several channels
+  PASS one open listing per channel
+
+Receipts: split tenders and multi-target settlement
+  PASS one receipt: 3 tenders, settles installment + invoice + service invoice
+  PASS all three targets marked paid
+  PASS tenders that do not add up to the receipt are rejected
+  PASS a single-method receipt must name its deposit account
+  PASS an allocation must have exactly one target
+
+Combined transactions
+  PASS combined receipt: items add up to the total
+  PASS combined receipt whose items do not add up is rejected
+  PASS contra: receivable and payable of one party net to zero
+  PASS contra that does not net to zero is rejected
+
+Tax management
+  PASS admin defines tax codes, effective-dated rates, slabs and a bundle
+  PASS overlapping rate periods for the same tax are rejected
+  PASS a rate must be a percent, a flat amount or slabs — exactly one
+  PASS rate in force depends on the date (16% -> 18% from 1 Jul 2026)
+  PASS rate depends on filer status (3% vs 6%)
+  PASS tax bundle: ordered, compound (600,000 then 1,696,000 on 10,600,000)
+  PASS unknown/empty bundle yields no tax
+  PASS progressive slabs (1% of first 1M + 2% of next 1.5M = 40,000)
+  PASS assignment rule + per-document tax record
+
+Inter-company & consolidation
+  PASS inter-company transaction visible to both parties, hidden from a third company
+  PASS a third company cannot post someone else's transaction
+  PASS one call posts BOTH sides atomically
+  PASS transaction marked posted with both journal entries linked
+  PASS each company sees only its own side in its own ledger
+  PASS an already posted transaction cannot be posted again
+  PASS consolidated: cash moved inside the group nets to 0; inter-company receivable/payable eliminated to 0
+  PASS elimination entry recorded for the inter-company loan
+  PASS group admins of the organization see the consolidation
+  PASS another organization sees no consolidation data
+
+Budgeting & control
+  PASS draft budget with two lines
+  PASS budget total rolls up from its lines (1,200,000)
+  PASS a second live budget for the same project is rejected
+  PASS a project budget must name its project
+  PASS monthly phasing that adds up to the line is accepted
+  PASS phasing that does not add up to the line is rejected
+  PASS a draft cannot jump straight to approved
+  PASS draft -> submitted
+  PASS the creator cannot approve their own budget
+  PASS a different user approves it
+  PASS approval stores a v1 snapshot
+  PASS approved lines cannot be edited directly
+  PASS lines cannot be added to an approved budget
+  PASS actual is read from the ledger for this project only (300,000 = 30%)
+  PASS an open purchase order is committed (available drops to 300,000)
+  PASS once invoiced it stops counting as a commitment
+  PASS within budget -> allow
+  PASS over budget with control = Warn -> warn (over by 200,000)
+  PASS over budget with control = Block -> block
+  PASS no budget covers the account -> nothing to enforce
+  PASS a date outside the budget period is not covered
+  PASS a blocked user can request an exception
+  PASS you cannot approve your own exception
+  PASS 70% used -> no alert yet
+  PASS crossing 85% fires one alert
+  PASS re-running does not duplicate it
+  PASS going over 100% fires the next alert
+  PASS requester cannot approve their own revision
+  PASS an approved reallocation moves money between lines
+  PASS lines 900k / 300k, total unchanged, version 2, second snapshot stored
+  PASS monthly phasing was rescaled to the new line amount (300,000)
+  PASS a reallocation that does not net to zero is rejected
+  PASS a supplementary revision raises the total (1,450,000)
+  PASS editing lines directly is still blocked after revisions
+  PASS another company sees no budgets, lines or status rows
+
+Voiding a receipt
+  PASS receipt allocation pays the installment
+  PASS an allocation cannot be edited
+  PASS an allocation cannot be deleted
+  PASS a posted receipt's amount cannot be changed
+  PASS flipping a receipt to void by hand is blocked while it still has allocations
+  PASS voiding needs a reason
+  PASS void_receipt runs
+  PASS voiding returns the installment to due / 0 paid
+  PASS receipt is void, with reason and timestamp
+  PASS allocations are kept: original + reversal net to zero
+  PASS receipt's journal entry is reversed with swapped sides
+  PASS a receipt cannot be voided twice
+  PASS a void receipt takes no new allocations
+  PASS a void receipt cannot be edited
+  PASS a reversal cannot itself be reversed
+  PASS an already-reversed entry cannot be reversed again
+
+Holds, status & safe booking
+  PASS placing a hold reserves the property
+  PASS status change is logged with from / to / reason
+  PASS a second hold on the same property is rejected
+  PASS another customer cannot book a held property
+  PASS create_booking numbers the booking and takes the price from the property
+  PASS the customer's hold is converted into the booking
+  PASS property stays reserved while the booking is live
+  PASS retrying with the same key returns the same booking, not a second one
+  PASS a second live booking on a reserved property is rejected
+  PASS confirmed booking: still reserved
+  PASS completed booking marks the property sold
+  PASS cancelling the booking frees the property
+  PASS every transition is in the history (available > reserved > sold > available)
+  PASS cannot mark a property sold by hand
+  PASS cannot mark a property reserved by hand
+  PASS cannot free or block a property that has a live hold
+  PASS cannot edit the status history
+  PASS a staff hold blocks other staff
+  PASS releasing a hold frees the property
+  PASS an already-expired hold does not reserve the property
+  PASS expire_holds() releases expired holds
+  PASS a new hold takes over from a stale expired one
+  PASS a blocked property cannot be held
+  PASS a blocked property cannot be booked
+  PASS another company sees no holds or status history
+  PASS another company cannot hold or book this company's property
+
+Cross-tenant references
+  PASS company 2 can build its own consistent chain (same codes as company 1 are fine)
+  PASS company 2 cannot create an installment on company 1's booking
+  PASS company 2 cannot issue a receipt to company 1's customer
+  PASS company 2 cannot put its property in company 1's project
+  PASS company 2 cannot use company 1's property type
+  PASS company 2 cannot post a journal line to company 1's account
+  PASS company 2 cannot book into company 1's accounting period
+  PASS lint view: all 17 core-chain tables are tenant-safe
+  PASS lint view: no single-column reference between tenant tables is left (migration 0017)
+
+State machines
+  PASS booking: pending cannot jump straight to completed
+  PASS booking: confirming needs deals.edit
+  PASS booking: pending > confirmed with deals.edit
+  PASS booking: cannot go back to pending
+  PASS booking: cancelling needs deals.approve, deals.edit is not enough
+  PASS installment: waiving needs accounts.approve
+  PASS installment: due > waived with accounts.approve
+  PASS installment: a waived installment cannot be marked paid directly
+  PASS installment: waiver can be undone
+  PASS installment: receipts move it due > partial with no user permission needed
+  PASS receipt: voiding needs accounts.approve
+  PASS receipt: void with accounts.approve
+  PASS property: taking it off the market needs inventory.edit
+  PASS property: available > blocked with inventory.edit
+  PASS property: blocked cannot jump to cancelled
+  PASS property: reinstating a withdrawn property needs inventory.approve
+  PASS voucher: a draft cannot be approved without being submitted
+  PASS voucher: draft > pending
+  PASS voucher: only an approver can approve
+  PASS voucher: the status cannot be flipped to approved by hand (approving means posting)
+  PASS voucher: pending > approved with accounts.approve (posts the entry)
+  PASS voucher: an approved voucher cannot be marked void by hand (its entry would stay in the books)
+  PASS voucher: an approved voucher cannot be physically deleted
+  PASS self-check: no voucher is void without a reversal or approved without an entry
+  PASS allowed_transitions('booking','confirmed') = cancelled, completed
+  PASS every status of the 5 lifecycles appears in its state machine
+
+CNIC protection
+  PASS same CNIC in any format -> same hash, but a fresh ciphertext each time
+  PASS the hash depends on the server-held key
+  PASS the owner of the data key can read it back
+  PASS a wrong key cannot decrypt it
+  PASS a CNIC that is not 13 digits is refused before it reaches the database
+  PASS the stored row holds ciphertext + hash + last 4, not the digits
+  PASS there is no plain 'cnic' column any more
+  PASS a hash that is not 64 hex characters is rejected
+  PASS a CNIC must have all three parts or none
+  PASS parties without a CNIC are unrestricted
+  PASS the same CNIC cannot be entered twice in one company, even though the ciphertexts differ
+
+Posting guards
+  PASS an entry dated outside its accounting period is rejected
+  PASS a closed fiscal year takes no postings
+  PASS a receipt posts its journal entry
+  PASS the same document cannot be posted twice
+  PASS its reversal may share the source document
+  PASS a reversed document still cannot be posted again (the reversal does not free the slot)
+
+Typed references on money tables
+  PASS a combined item cannot point at a receipt that does not exist
+  PASS a combined item must name exactly one document
+  PASS a combined item must name nothing but the document its type says
+  PASS a combined item pointing at a real receipt is accepted
+  PASS company 2 cannot settle company 1's receipt
+  PASS a tax line cannot point at a booking that does not exist
+  PASS a tax line must name exactly one document
+  PASS a tax line's document must match its type
+  PASS a tax line on a real receipt is accepted
+  PASS a purchase-order commitment must name its purchase order
+  PASS a manual commitment names no document
+
+Audit trail & conventions
+  PASS a price change is recorded with the old and the new price
+  PASS ...who made it, and under which request
+  PASS only the changed field is stored, not the whole row
+  PASS an update that changes nothing is not audited
+  PASS property status changes are audited as status_change
+  PASS archiving a party is audited as delete
+  PASS voiding a receipt is in the trail
+  PASS allocations (including reversals) are in the trail
+  PASS new bookings are in the trail
+  PASS the audit trail cannot be edited
+  PASS the audit trail cannot be deleted from
+  PASS another company cannot read this company's trail
+  PASS convention lint: every registered document and master table complies
+  PASS master data now carries a version that moves on every edit (optimistic locking)
+
+Branches, teams & data scope
+  PASS a company gets branches, teams and branch-based staff
+  PASS only one head office per company
+  PASS branch codes are unique within a company
+  PASS another company can use the same branch code and have its own head office
+  PASS a team cannot sit in another company's branch
+  PASS only members of the company can join its teams
+  PASS a staff member cannot be placed in another company's branch
+  PASS scope 'own': only my own records
+  PASS scope 'team': me and the people on my teams
+  PASS scope 'branch': me and everyone in my branch
+  PASS scope 'company': everyone
+  PASS scope 'project' fails closed until project assignment exists
+  PASS a role with no grant for the module sees nothing, not even its own
+  PASS someone who is not a member of the company sees nothing
+  PASS a module the role was never granted is closed
+
+Reconciliation
+  PASS after every scenario above, all 11 reconciliation checks are clean
+  PASS the summary lists all 11 checks, clean ones included
+  PASS each of 6 kinds of damage is reported
+  PASS after the repair every check is clean again
+
+Payment schedule
+  PASS 100,000 down + 7 installments: 8 rows adding up to exactly 1,000,000.00
+  PASS the rounding remainder (0.06) lands in the last installment
+  PASS installments fall due monthly from the first due date
+  PASS a booking cannot be given a second schedule
+  PASS down payment + quarterly installments + balloon, all adding up
+  PASS a cash booking has no payment schedule
+  PASS down payment + balloon larger than the price leave nothing to spread
+  PASS zero installments must still add up to the price
+  PASS a balloon needs a due date
+  PASS too many installments for a tiny amount is refused, not rounded to zero
+  PASS a refused schedule leaves nothing behind
+  PASS an installment booking cannot be confirmed without a schedule
+  PASS a schedule that does not add up to the price cannot be confirmed
+  PASS a schedule that adds up lets the booking be confirmed
+  PASS a cash booking is confirmed without a schedule
+  PASS after confirmation an installment cannot be changed on its own
+  PASS a reschedule that moves money between installments (same total) is allowed
+  PASS after confirmation a new installment cannot be added on its own
+  PASS after confirmation the discount cannot change on its own
+  PASS a discount is allowed when the schedule is reduced with it
+  PASS a booking cannot complete while installments are still due
+  PASS a booking completes once every installment is paid or waived
+  PASS reconciliation flags a confirmed booking whose schedule does not add up
+  PASS ...and goes quiet again once it is repaired
+
+Sign-in lookup
+  PASS before choosing a company, a person sees exactly their own membership(s)
+  PASS with no user and no company, no memberships are visible
+  PASS that visibility is read-only: nothing can be changed without the company context
+  PASS other people's memberships stay hidden
+
+Sizes, company defaults, blocks
+  PASS 5 marla = 1,361.25 sq ft with the standard 272.25
+  PASS 1 kanal = 20 marla = 5,445 sq ft
+  PASS sq ft, sq yd and acre use their fixed factors
+  PASS a company that sets its own marla (272) gets 5 marla = 1,360
+  PASS a zero size is refused
+  PASS an unknown unit is refused, not turned into NULL
+  PASS a company gets the 8 standard property types (only the 7 missing ones were added)
+  PASS running it again adds nothing
+  PASS the marla default is filled in, and a company's own value is never overwritten
+  PASS only the listed types exist
+  PASS a property in a block of its own project is accepted
+  PASS a property with no block is accepted
+  PASS a property cannot use another project's block
+  PASS a property with a block but no project is refused
+  PASS moving a property into another project's block is refused
+
+Banks, chart of accounts, fiscal periods
+  PASS the bank catalog has 43 Pakistani banks across 6 kinds
+  PASS the major banks are present (HBL, UBL, MCB, NBP, Meezan, Alfalah ...)
+  PASS a bank name cannot be listed twice
+  PASS a new company gets a standard chart of 85 accounts
+  PASS seeding the chart again adds nothing
+  PASS accounts are linked to their parents by code (account > group > class)
+  PASS customer receivables and supplier payables demand a party; headers are groups
+  PASS a bank account gets its own ledger account under Cash & Bank (03.01.01.0002)
+  PASS a bank that is not in the catalog can be typed in (next code 03.01.01.0003)
+  PASS the same bank account cannot be added twice
+  PASS an IBAN must look like a Pakistani IBAN
+  PASS a bank account needs a bank
+  PASS a bank account needs an account number
+  PASS another company cannot see these bank accounts
+  PASS a bank account cannot point at another company's ledger account
+  PASS a date in October 2026 creates FY2026-27 (July to June) with 12 monthly periods
+  PASS asking again for the same month returns the same period
+  PASS an earlier date creates the earlier financial year (FY2025-26)
+  PASS a company on a January year gets a calendar financial year (FY2028)
+  PASS a date inside an existing (even locked) period returns that period untouched
+  PASS a financial year of the same name with different dates is reported, not guessed at
+  PASS seed_company_defaults gives a new company its property types AND its chart of accounts
+
+Voucher engine
+  PASS CPV cash payment: expenses debited, cash credited once for the total (60,000)
+  PASS the ledger entry carries the voucher number (CPV-00001)
+  PASS CRV cash receipt: customer's receivable credited, cash debited
+  PASS BPV bank payment: supplier debited, the bank account credited, party carried on both lines
+  PASS the bank line records the instrument (cheque CHQ-77)
+  PASS BRV bank receipt: customer credited, the bank account debited
+  PASS JV journal: debit section and credit section post as entered, no control line
+  PASS CV contra: cash to bank, the from-account credited
+  PASS SV sales voucher: income + sales tax credited, the customer's receivable debited 1,160,000
+  PASS PIV purchase invoice: cost + input tax debited, the supplier's payable credited 928,000
+  PASS CN credit note: sales return debited, the customer's receivable credited
+  PASS DN debit note: purchase return credited, the supplier's payable debited
+  PASS the books balance after all 10 voucher types (debits = credits = 3,053,000)
+  PASS a cash payment cannot carry a credit line
+  PASS a receipt cannot carry a debit line
+  PASS an unbalanced journal is refused
+  PASS a journal needs an amount
+  PASS a voucher with no lines is refused
+  PASS a cash payment must name its cash account
+  PASS a cash voucher cannot use a bank account
+  PASS a bank payment must name its bank account
+  PASS a bank account that does not match the voucher's account is refused
+  PASS a cheque needs its number
+  PASS a line on a customer receivable needs the customer
+  PASS a heading account cannot be posted to
+  PASS a contra voucher cannot move money to the same account
+  PASS a contra voucher only moves between cash and bank
+  PASS a sales voucher needs its customer
+  PASS a purchase voucher uses a payable account
+  PASS a draft can be edited freely
+  PASS a submitted voucher's lines cannot be changed
+  PASS a submitted voucher's details cannot be changed
+  PASS a submitted voucher can be taken back to draft
+  PASS ...and edited again
+  PASS a voucher's type cannot be changed
+  PASS a draft cannot be approved without being submitted
+  PASS a submitted voucher can be rejected with a note
+  PASS a rejected voucher can be corrected
+  PASS an approved voucher cannot be edited
+  PASS an approved voucher's lines cannot be changed
+  PASS approving needs the accounts.approve permission
+  PASS a person with accounts.approve can approve
+  PASS with self-approval switched off, the preparer cannot approve their own voucher
+  PASS ...but a second person can
+  PASS a voucher dated in a locked period cannot be approved
+  PASS ...and can once the period is open
+  PASS a voucher in a year with no periods yet creates its financial year on approval (FY2031)
+  PASS voiding needs a reason
+  PASS an approved voucher can be voided with a reason
+  PASS voiding reverses the entry: cash is back by 60,000 and the voucher is void
+  PASS the reversal is a new entry; the original stays on record
+  PASS a voucher cannot be voided twice
+  PASS a draft can simply be discarded
+  PASS the voucher list shows totals, the party and the bank
+  PASS voucher numbers run in sequence per type (CPV-00001, CPV-00002, ...)
+  PASS another company sees none of these vouchers through the list view
+  PASS another company cannot approve this company's voucher
+  PASS every view runs with the caller's rights (no view can bypass row-level security)
+
+Bank reconciliation
+  PASS the bank ledger holds +500,000 +75,000 -250,000 (a voided 5,000 receipt nets to zero) = 325,000
+  PASS a statement whose lines do not add up to its closing balance is refused
+  PASS a statement line is a deposit or a withdrawal, not both or neither
+  PASS the system suggests 3 matches (deposit, cash deposit, cheque 77) and none for the bank charge
+  PASS a matching cheque / reference ranks higher than amount alone
+  PASS a statement line cannot be matched to an entry of a different amount
+  PASS matched lines show as matched; the bank charge is still unmatched
+  PASS a matched statement line cannot be matched twice
+  PASS a matched statement line cannot be edited until un-matched
+  PASS report: the statement is 1,500 short of the books (the unrecorded bank charge)
+  PASS a voided receipt and its reversal are cleared as a pair automatically
+  PASS a reconciliation that does not balance cannot be finished
+  PASS only one reconciliation can be open for a bank account
+  PASS an unmatched withdrawal becomes a draft Bank Payment Voucher on the right bank account and date
+  PASS a statement line can have only one voucher drafted for it
+  PASS approving that voucher matches the statement line automatically
+  PASS report: 323,500 statement - 40,000 outstanding cheque = 283,500 adjusted = 283,500 per books, difference 0
+  PASS the reconciliation is finished once the difference is zero (an outstanding cheque is fine)
+  PASS it records who finished it and that the difference was 0
+  PASS all 6 cleared entries are locked into the finished reconciliation
+  PASS a locked entry cannot be un-matched
+  PASS a locked entry cannot be un-cleared
+  PASS only the 40,000 cheque is still outstanding for the next reconciliation
+  PASS an entry cannot clear the bank before its own date
+  PASS an outstanding cheque can be cleared by hand on the date the bank paid it
+  PASS an entry cannot be cleared twice
+  PASS ...and un-cleared again while it is not locked
+  PASS only entries on a bank account can be cleared
+  PASS a finished reconciliation cannot be re-opened while another is open
+  PASS the most recent reconciliation can be re-opened to correct a mistake
+  PASS re-opening unlocks its entries
+  PASS ...so a match can now be undone
+  PASS ...and the reconciliation finished again
+  PASS another company sees none of the statements, clearings or bank ledger
+  PASS another company cannot match this company's statement line
+  PASS after all of this, every self-check of the books is still clean
+
+Ledger queries
+  PASS the trial balance balances: debits = credits = 3,668,500, closing balances net to zero
+  PASS it lists every posting account (headings are rolled up by code prefix, not listed)
+  PASS for any account, opening + debits - credits = closing
+  PASS the bank account's ledger ends on its true balance (283,500)
+  PASS entries come out in date order
+  PASS starting the ledger later carries the earlier balance forward
+  PASS Customer A's statement: invoiced 1,160,000, paid 1,050,000 (cash, two bank receipts), credit note... = owes 110,000
+  PASS every statement line is a receivable entry traced to its voucher
+  PASS Supplier S's statement: invoiced 928,000 less payments and a debit note = we owe 618,000 (shown as a negative balance)
+  PASS another company sees none of this company's ledger or accounts in its trial balance
+
+Customer receipts
+  PASS a receipt is numbered (RCT-…), posted and linked to its ledger entry
+  PASS it debits the cash account and credits Customer Advances, both for the customer
+  PASS 300,000 settles the down payment and half of installment 1 (oldest first)
+  PASS an installment cannot be over-paid by a chosen allocation
+  PASS a chosen allocation pays exactly the installment the person picked
+  PASS money cannot be received into an expense account
+  PASS a zero receipt is refused
+  PASS an overpayment settles what is due and the rest stays on the customer as an advance
+  PASS the receipts list shows customer, booking and how much is applied
+  PASS voiding a receipt gives its share of the installment back (only the later overpayment's 50,000 remains)
+  PASS and removes it from the customer's advance balance in the ledger
+  PASS no money can be received against a cancelled booking
+
+Administration, CRM, cheques, service invoices, contracts
+  PASS a company's plan is read from its organization
+  PASS the salary, retention and contractor payable accounts can be added to any company (and are idempotent)
+  PASS the same email cannot be invited twice at once
+  PASS an invite email must be lower-case and well formed
+  PASS signing in with an invited email (any letter case) joins the company with the invited role
+  PASS an invite is used only once
+  PASS a lead cannot be marked lost without a reason
+  PASS a budget range must run low to high
+  PASS converting a lead creates a customer in the address book and marks the lead won
+  PASS converting twice returns the same customer
+  PASS another company cannot see these leads
+  PASS a quotation needs a lead or a customer
+  PASS a quotation's down payment cannot exceed its price
+  PASS accepting a quotation turns the lead into a customer, books the property and builds the quoted plan (down + 6, adding up to the price)
+  PASS accepting twice gives the same booking
+  PASS an expired quotation cannot be accepted
+  PASS a cheque must be deposited before it can clear
+  PASS clearing a received cheque records the receipt and pays the installment
+  PASS the cleared cheque appears in the bank account's ledger, ready to reconcile
+  PASS a cleared cheque cannot bounce
+  PASS a bounce needs a reason
+  PASS a bounced cheque is recorded with its reason and pays nothing
+  PASS a cheque we issued cannot be tied to a customer booking
+  PASS an issued cheque can be marked cleared without posting again
+  PASS a service invoice debits the customer's receivable and credits service income
+  PASS a service payment cannot exceed what is unpaid
+  PASS a part payment leaves the invoice part paid with its balance
+  PASS an invoice with money received cannot be voided
+  PASS voiding the receipt returns the invoice to unpaid
+  PASS an unpaid invoice can be voided, reversing its entry
+  PASS an active contract must have a signing date
+  PASS a terminated contract needs a date and a reason
+  PASS an active contract past its end date reads as expired
+
+Staff, leave, payroll, contractors
+  PASS an employee who has left needs a leaving date
+  PASS overlapping leave is refused
+  PASS a refusal needs a reason
+  PASS approved leave is counted against the yearly balance (14 - 5 = 9)
+  PASS leave beyond the yearly allowance cannot be approved
+  PASS a payroll line per employee; 3 unpaid days cost 3/30 of 120,000 = 12,000; net = pay - unpaid deduction - tax
+  PASS one payroll per month
+  PASS approving books 168,000 salary expense, 5,000 tax withheld and 163,000 payable
+  PASS the payroll entry balances: Dr salaries; Cr income tax payable, salaries payable
+  PASS an approved payroll cannot be deleted
+  PASS paying clears salaries payable and takes 163,000 out of cash
+  PASS a draft payroll can be thrown away
+  PASS a bill takes the contract's retention rate (10% of 400,000 = 40,000)
+  PASS approving books the cost against the project, 360,000 owed to the contractor and 40,000 retention held
+  PASS billing more than the contract value is refused
+  PASS the contract shows billed, retention held and what remains
+  PASS voiding a bill reverses its entry
+  PASS another company sees none of this staff, payroll or contractor data
+
+Attachments, late charges, refunds, transfers, dealer commission
+  PASS an attachment is stored with its bytes
+  PASS a file whose bytes do not match its recorded size is refused
+  PASS a file over 7 MB is refused
+  PASS another company cannot see these files
+  PASS the suggested late charge follows the company's own rule: 5% a month, pro rata, after 5 days' grace
+  PASS a late charge cannot be zero
+  PASS a late charge debits the customer's receivable and credits late-charge income
+  PASS once assessed, the same days are not charged twice
+  PASS a receipt pays the late charge first (20,000), then the installment (100,000)
+  PASS the 20,000 that paid the late charge clears the receivable; the other 100,000 is an advance
+  PASS a late charge that has been paid cannot be waived
+  PASS voiding the receipt makes the late charge open again
+  PASS waiving an unpaid late charge reverses its entry
+  PASS an installment that is not late yet carries no late charge
+  PASS a booking must be cancelled before the customer is refunded
+  PASS the money received on a cancelled booking is what can be returned
+  PASS more than was received cannot be refunded
+  PASS a refund of 200,000 with a 50,000 cancellation charge: advances down 250,000, cash out 200,000, 50,000 kept as income
+  PASS what is left to return is tracked (50,000)
+  PASS voiding a refund puts the money back on the customer's account
+  PASS a booking cannot be transferred to its own customer
+  PASS the booking now belongs to the new customer
+  PASS the 100,000 already paid moves with it, from one customer's account to the other's
+  PASS a transfer fee is invoiced to the new customer
+  PASS a cancelled booking cannot be transferred
+  PASS a rate must be between 0 and 100 percent
+  PASS 2.5% of the 800,000 sale is a commission of 20,000
+  PASS the commission is booked as an expense and a payable to the dealer
+  PASS commission is recorded once per booking
+  PASS a booking without a dealer has no commission
+  PASS voiding a commission reverses its entry
+  PASS request id: the first request is allowed to go ahead
+  PASS request id: a repeat while the first is still unfinished is told to wait
+  PASS request id: a repeat gets the first request's record back
+  PASS request id: the same id with different details is refused
+  PASS request id: the same id for another kind of request is refused
+  PASS request id: another company cannot see it, and may use the same id for itself
+  PASS request id: an id that is too short is refused
+  PASS request id: no id means no protection, as before
+  PASS a person starts with no language chosen of their own (null)
+  PASS a supported language (Urdu) can be saved on a person
+  PASS an unsupported language code is refused
+  PASS clearing the choice puts the person back to null (the company default applies)
+
+512 passed, 0 failed

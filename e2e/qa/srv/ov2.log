@@ -1,0 +1,21 @@
+OVERFLOW 320px /dashboard/deals by 49px
+     div.group/tabs-list.inline-flex.w-fit.items-center right=369 w=353
+     button.relative.inline-flex.h-[calc(100%-1px)].flex-1 right=366 w=105
+      ^ span.inline-flex.rounded-full.px-2 w=64 disp=inline-flex minw=0px ovx=visible
+      ^ td.py-2.5 w=78 disp=table-cell minw=0px ovx=visible
+      ^ tr.cursor-pointer.border-b.border-border/40 w=860 disp=table-row minw=0px ovx=visible
+      ^ tbody. w=860 disp=table-row-group minw=0px ovx=visible
+      ^ table.w-full.min-w-[860px].text-sm w=860 disp=table minw=860px ovx=visible
+      ^ div.overflow-x-auto w=256 disp=block minw=auto ovx=auto
+      ^ div.group/card.flex.flex-col w=288 disp=flex minw=0px ovx=hidden
+      ^ div.flex-1.text-sm.outline-none w=288 disp=block minw=auto ovx=visible
+      ^ div.group/tabs.flex.gap-2 w=288 disp=flex minw=0px ovx=visible
+      ^ div.mx-auto.max-w-[1400px].space-y-5 w=288 disp=block minw=0px ovx=visible
+      ^ div. w=288 disp=block minw=0px ovx=visible
+      ^ div. w=288 disp=block minw=0px ovx=visible
+      ^ div.relative w=288 disp=block minw=0px ovx=visible
+      ^ main.min-w-0.flex-1.p-4 w=320 disp=block minw=0px ovx=visible
+      ^ main.relative.flex.w-full w=320 disp=flex minw=0px ovx=visible
+      ^ div.group/sidebar-wrapper.flex.min-h-svh w=320 disp=flex minw=auto ovx=visible
+      ^ body.min-h-full.flex.flex-col w=320 disp=flex minw=0px ovx=visible
+DONE 128 page/width combinations, 1 overflow

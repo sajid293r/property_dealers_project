@@ -221,7 +221,7 @@ export function LiveRoles() {
             : <Badge variant="outline" className="gap-1 px-2.5 py-1"><Lock className="size-3" /> {t("adm.roles.customLocked")}</Badge>
         ) : undefined}
       />
-      <div className="grid gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
         <Card className="h-fit p-2">
           {roles.isLoading ? <Skeleton className="h-32 w-full" /> : (roles.data ?? []).map((r) => (
             <button key={r.id} type="button" onClick={() => setSelectedId(r.id)}

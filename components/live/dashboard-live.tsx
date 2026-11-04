@@ -111,7 +111,7 @@ export function LiveDashboard() {
           {attention.length > 0 && (
             <Card className="p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("dashboard.live.attention")}</p>
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {attention.map((a) => (
                   <Link key={a.text} href={a.href} className="flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5 text-sm transition-colors hover:bg-secondary/50">
                     <a.icon className={cn("size-4 shrink-0", a.tone === "warning" ? "text-warning" : "text-primary")} />
@@ -122,7 +122,7 @@ export function LiveDashboard() {
             </Card>
           )}
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             {s && (
               <Section title={t("dashboard.live.collections6")} link={{ href: "/dashboard/deals", label: t("dashboard.live.allReceipts") }}>
                 <div className="mb-2 flex items-center gap-2 text-sm">
@@ -179,7 +179,7 @@ export function LiveDashboard() {
           </div>
 
           {s && (
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
               <Section title={t("dashboard.live.overdue")} link={{ href: "/dashboard/deals", label: t("dashboard.live.bookings") }}>
                 {s.overdueList.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">{t("dashboard.live.nothingOverdue")}</p> : (
                   <ul className="space-y-2">

@@ -1,0 +1,7 @@
+run exit 0 pass=26 fail=0
+finance exit 0 pass=21 fail=0
+sales exit 0 pass=12 fail=0
+modules exit 0 pass=27 fail=0
+features exit 0 pass=15 fail=0
+language exit 0 pass=19 fail=0
+finished

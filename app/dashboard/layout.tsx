@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, Info, Lock, LogOut } from "lucide-react";
+import { Building2, Info, Lock, LogOut, RefreshCw } from "lucide-react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppTopbar } from "@/components/layout/app-topbar";
@@ -15,6 +15,7 @@ import { usePlanTier } from "@/lib/providers/plan-provider";
 import { tierMeets, tierNeededFor } from "@/lib/plan";
 import { useT } from "@/lib/i18n/provider";
 import { APP_NAME } from "@/lib/brand";
+import { LivePageGuard } from "@/components/live/page-guard";
 
 function Splash({ children }: { children?: React.ReactNode }) {
   const t = useT();
@@ -34,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const { status, signOut } = useAuth();
-  const { company, live, ready, problem } = useCompany();
+  const { company, live, ready, problem, retryAccount } = useCompany();
   const { tier } = usePlanTier();
   const t = useT();
 
@@ -50,10 +51,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Splash>
         <div className="max-w-sm space-y-3">
           <p className="font-heading text-xl font-semibold">{t("shell.splash.cannotOpen")}</p>
-          <p className="text-sm text-muted-foreground">{problem}</p>
-          <Button variant="outline" className="gap-2" onClick={() => void signOut()}>
-            <LogOut className="size-4" /> {t("common.signOut")}
-          </Button>
+          <p className="text-sm text-muted-foreground">{t(problem === "noCompany" ? "shell.splash.noCompany" : "shell.splash.failed")}</p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {problem === "failed" && (
+              <Button className="gap-2" onClick={retryAccount}>
+                <RefreshCw className="size-4" /> {t("common.retry")}
+              </Button>
+            )}
+            <Button variant="outline" className="gap-2" onClick={() => void signOut()}>
+              <LogOut className="size-4" /> {t("common.signOut")}
+            </Button>
+          </div>
         </div>
       </Splash>
     );
@@ -91,6 +99,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="font-heading text-2xl font-semibold">{t("shell.groupUnavailable.title")}</p>
               <p className="mt-2 text-sm text-muted-foreground">{t("shell.groupUnavailable.body")}</p>
             </div>
+          ) : live ? (
+            <LivePageGuard key={pathname}>{children}</LivePageGuard>
           ) : (
             children
           )}

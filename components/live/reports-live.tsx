@@ -125,7 +125,7 @@ function BalanceSheetTab({ asOf }: { asOf: string }) {
   if (q.isLoading || !q.data) return <Loading />;
   const d = q.data;
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <Card className="p-5">
         <Statement title={t("rep.assets")} totalLabel={t("rep.totalAssets")} items={d.assets} total={d.totalAssets} />
       </Card>

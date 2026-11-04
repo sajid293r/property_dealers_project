@@ -1,0 +1,26 @@
+// QA scratch (live): sign in through the real login page. Credentials come ONLY from QA_EMAIL / QA_PASSWORD.
+import puppeteer from "puppeteer-core";
+import fs from "node:fs";
+const BASE = "https://property-dealers-project.netlify.app";
+const SH = new URL("../shots/qa", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const browser = await puppeteer.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: "new", args: ["--no-sandbox"], defaultViewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage();
+const errs = []; page.on("pageerror", (e) => errs.push(e.message)); page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0, 200)); });
+let t0 = Date.now();
+await page.goto(BASE + "/login", { waitUntil: "networkidle2" });
+console.log("login page load ms", Date.now() - t0);
+await page.screenshot({ path: `${SH}/live-login-empty.png` });
+await page.type("#email", process.env.QA_EMAIL);
+await page.type("#password", process.env.QA_PASSWORD);
+t0 = Date.now();
+await page.click("button[type=submit]");
+await page.waitForFunction(() => location.pathname.startsWith("/dashboard") || /invalid|incorrect|wrong|confirm/i.test(document.body.innerText), { timeout: 30000 }).catch(() => {});
+await sleep(1500);
+console.log("after submit ms", Date.now() - t0, "path", await page.evaluate(() => location.pathname));
+const body = await page.evaluate(() => document.body.innerText.slice(0, 400).replace(/\s+/g, " "));
+console.log("text:", body);
+await page.screenshot({ path: `${SH}/live-after-login.png` });
+const tok = await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (/auth-token$/.test(k)) return JSON.parse(localStorage[k]).access_token; return null; });
+console.log("token captured:", !!tok, "errors:", errs.slice(0, 5));
+await browser.close();

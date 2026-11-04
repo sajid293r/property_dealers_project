@@ -1,0 +1,21 @@
+  PASS starts in English, left to right 
+  PASS sidebar is on the left in English 
+  PASS language menu offers Urdu 
+  PASS picked Urdu 
+  PASS html is rtl and lang=ur 
+  PASS sidebar moved to the right 
+  PASS the cookie remembers it 
+  PASS the page text is Urdu (dashboard menu) 
+  PASS still Urdu after a reload 
+  PASS a fresh browser profile starts in English 
+  PASS after signing in on a fresh profile the account's Urdu comes back 
+  PASS company default set to Arabic 
+  PASS My account offers 'use my company's default' (Urdu text) 
+  PASS the person's own choice is cleared and Arabic (the company default) applies 
+  PASS a new browser for that person (no personal choice) opens in the company default, Arabic 
+  PASS picked English 
+  PASS English restores left to right 
+  PASS sidebar is back on the left 
+  PASS no hydration warnings or missing keys in the console 
+
+19/19 checks passed

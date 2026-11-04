@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { ExportButton } from "@/components/live/export-button";
 import { AttachmentsButton } from "@/components/live/attachments";
 import { useT } from "@/lib/i18n/provider";
+import { useRequestId } from "@/lib/request-id";
 
 const STATUS: Record<ChequeStatus, { cls: string }> = {
   in_hand: { cls: "bg-primary/12 text-primary" },
@@ -155,12 +156,14 @@ function NewChequeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
   const [date, setDate] = React.useState(todayIso());
   const bookings = useQuery({ queryKey: ["live", "bookings", "all"], queryFn: () => listBookings(company.id), enabled: open && direction === "received", staleTime: 15_000 });
   const mine = (bookings.data ?? []).filter((b) => b.status !== "cancelled" && (!partyId || b.customerId === partyId));
+  const requestId = useRequestId();
 
   return (
     <FormDialog open={open} onOpenChange={onOpenChange} icon={CalendarClock} title={t("chq.add")} description={t("chq.new.description")}
       submitLabel={t("chq.new.submit")} submitDisabled={!no.trim() || !bank.bankName.trim() || !partyId || num(amount) <= 0}
       onSubmit={async () => {
-        await createCheque(company.id, { direction, chequeNo: no.trim(), bankName: bank.bankName.trim(), partyId, bookingId: direction === "received" ? bookingId || undefined : undefined, amount, chequeDate: date });
+        await createCheque(company.id, { direction, chequeNo: no.trim(), bankName: bank.bankName.trim(), partyId, bookingId: direction === "received" ? bookingId || undefined : undefined, amount, chequeDate: date }, requestId.current());
+        requestId.renew();
         await invalidate();
         toast.success(t("chq.new.saved"));
         setNo(""); setAmount("");

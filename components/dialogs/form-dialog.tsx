@@ -48,7 +48,12 @@ export function FormDialog({
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Set synchronously: a second click in the same instant (before React has re-rendered the disabled button) must not save twice.
+  const inFlight = React.useRef(false);
+
   async function handleSubmit() {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -60,6 +65,7 @@ export function FormDialog({
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.somethingWrong"));
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   }

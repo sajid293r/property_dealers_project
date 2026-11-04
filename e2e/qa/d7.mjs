@@ -1,0 +1,14 @@
+const API = "http://localhost:4100", AUTH = "http://localhost:54339";
+const tok = (await (await fetch(`${AUTH}/auth/v1/token?grant_type=password`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: "owner@bytecraft.local", password: "sandbox-pass" }) })).json()).access_token;
+const co = (await (await fetch(`${API}/v1/me`, { headers: { authorization: `Bearer ${tok}` } })).json()).companies[0].companyId;
+const api = async (m, p, b) => { const r = await fetch(API + p, { method: m, headers: { authorization: `Bearer ${tok}`, "x-company-id": co, "content-type": "application/json" }, body: b ? JSON.stringify(b) : undefined }); return { status: r.status, body: await r.json().catch(() => null) }; };
+const types = (await api("GET", "/v1/property-types")).body; const typeId = (types.rows ?? types)[0].id;
+const c = (await api("POST", "/v1/parties", { name: "QA-D7 buyer", roles: ["customer"] })).body;
+const p = (await api("POST", "/v1/properties", { title: "QA-D7 plot", typeId, listPrice: "100000" })).body;
+const b = (await api("POST", "/v1/bookings", { propertyId: p.id, customerId: c.id, paymentType: "cash" })).body;
+const e = await api("PATCH", `/v1/properties/${p.id}`, { listPrice: "250000", reason: "QA price change" });
+const g = (await api("GET", `/v1/bookings/${b.id}`)).body; const gp = (await api("GET", `/v1/properties/${p.id}`)).body;
+console.log("PATCH", e.status, JSON.stringify(e.body).slice(0, 150), "| property list price", gp.listPrice, "| booking net", g.netPrice, "list", g.listPrice, "| history", JSON.stringify(gp.priceHistory ?? gp.statusHistory ?? "").slice(0, 120));
+const p2 = (await api("POST", "/v1/properties", { title: "QA-D7 plot 2", typeId, listPrice: "100000" })).body;
+const e2 = await api("PATCH", `/v1/properties/${p.id}`, { status: "blocked" }); console.log("block live-booked", e2.status, JSON.stringify(e2.body?.error?.message ?? e2.body).slice(0, 140));
+const e3 = await api("PATCH", `/v1/properties/${p2.id}`, { status: "blocked" }); const e4 = await api("PATCH", `/v1/properties/${p2.id}`, { status: "rented" }); const e5 = await api("PATCH", `/v1/properties/${p2.id}`, { status: "available" }); console.log("block free", e3.status, "then rent", e4.status, JSON.stringify(e4.body?.error?.message ?? "").slice(0, 80), "then available", e5.status);

@@ -1,0 +1,17 @@
+
+> propiq-api@0.1.0 sandbox
+> tsx sandbox/sandbox.ts
+
+
+PropIQ sandbox is running (in-memory; everything resets when you stop it)
+
+  API            http://localhost:4400
+  Sign-in        http://localhost:54369   (stand-in for Supabase Auth)
+  Sign in as     owner@bytecraft.local  /  sandbox-pass   (Owner of ByteCraft)
+
+Start the website against it (a second terminal, from the project root):
+
+  NEXT_PUBLIC_SUPABASE_URL=http://localhost:54369 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sandbox NEXT_PUBLIC_API_URL=http://localhost:4400 npm run dev
+
+Press Ctrl+C to stop.
+

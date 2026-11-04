@@ -74,7 +74,7 @@ export function ExpenseTab({ from, to }: { from: string; to: string }) {
   const top = d.byAccount[0];
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat label={t("rep.totalExpenses")} value={money(total)} />
         <Stat label={t("rep.exp.accounts")} value={String(d.byAccount.length)} />
         <Stat label={t("rep.exp.largest")} value={top ? top.accountName : "—"} />
@@ -130,7 +130,7 @@ export function CashFlowTab({ from, to }: { from: string; to: string }) {
   const biggest = Math.max(1, ...d.months.flatMap((m) => [num(m.inflow), num(m.outflow)]));
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={t("rep.cash.opening")} value={money(opening)} />
         <Stat label={t("rep.cash.in")} value={money(inflow)} tone="text-success" />
         <Stat label={t("rep.cash.out")} value={money(outflow)} tone="text-destructive" />
@@ -187,7 +187,7 @@ export function AgingTab() {
   const overdue = sum("d30") + sum("d60") + sum("d90") + sum("d90plus");
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat label={t("rep.age.totalOwed")} value={money(sum("total"))} />
         <Stat label={t("rep.age.overdue")} value={money(overdue)} tone={overdue > 0 ? "text-warning" : undefined} />
         <Stat label={t("rep.age.over90")} value={money(sum("d90plus"))} tone={sum("d90plus") > 0 ? "text-destructive" : undefined} />
@@ -231,7 +231,7 @@ export function SalesTab() {
   const sum = (k: "bookedValue" | "received" | "outstanding" | "availableValue") => rows.reduce((s, r) => s + num(r[k]), 0);
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={t("rep.sales.bookedValue")} value={money(sum("bookedValue"))} />
         <Stat label={t("rep.sales.received")} value={money(sum("received"))} tone="text-success" />
         <Stat label={t("rep.sales.outstanding")} value={money(sum("outstanding"))} tone="text-warning" />
@@ -278,12 +278,12 @@ export function CollectionsTab({ from, to }: { from: string; to: string }) {
   const biggest = Math.max(1, ...d.months.map((m) => num(m.amount)));
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat label={t("rep.coll.total")} value={money(total)} tone="text-success" />
         <Stat label={t("rep.coll.receipts")} value={String(count)} />
         <Stat label={t("rep.coll.average")} value={money(count ? total / count : 0)} />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="font-heading text-sm font-semibold">{t("rep.byMonth")}</h3>
@@ -342,7 +342,7 @@ export function PayablesTab({ asOf }: { asOf: string }) {
   const total = rows.reduce((s, r) => s + num(r.balance), 0);
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Stat label={t("rep.pay.total")} value={money(total)} tone={total > 0 ? "text-warning" : undefined} />
         <Stat label={t("rep.pay.count")} value={String(rows.length)} />
       </div>

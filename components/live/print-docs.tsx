@@ -13,6 +13,8 @@ import { tOr } from "@/lib/i18n/runtime";
 import { methodLabel } from "@/lib/live-sales";
 import { amountInWords } from "@/lib/amount-words";
 import { fiscalYearOf, todayIso } from "@/lib/fiscal";
+import { ApiError } from "@/lib/api/client";
+import { Button } from "@/components/ui/button";
 import { formatDate, formatMoney } from "@/lib/format";
 
 const m = (n: string | number | null | undefined) => formatMoney(num(n));
@@ -20,8 +22,19 @@ function Loading() {
   const t = useT();
   return <p className="py-20 text-center text-neutral-500">{t("print.preparing")}</p>;
 }
-function Missing() {
+/** Nothing to print: either the document is not there (or not yours), or the server could not be reached. Say which. */
+function Missing({ q }: { q?: { isError: boolean; error: unknown; refetch: () => unknown } }) {
   const t = useT();
+  const failed = q?.isError && !(q.error instanceof ApiError && [400, 403, 404].includes(q.error.status));
+  if (failed) {
+    return (
+      <div className="py-20 text-center text-neutral-500" role="alert">
+        <p className="font-medium text-neutral-800">{t("common.loadFailed.title")}</p>
+        <p className="mt-1">{t("common.loadFailed.body")}</p>
+        <Button className="mt-4" variant="outline" onClick={() => void q.refetch()}>{t("common.retry")}</Button>
+      </div>
+    );
+  }
   return <p className="py-20 text-center text-neutral-500">{t("print.missing")}</p>;
 }
 
@@ -37,7 +50,7 @@ export function ReceiptDoc({ id }: { id: string }) {
   const r = q.data;
   const b = useQuery({ queryKey: ["live", "print", "receipt-booking", r?.bookingId], queryFn: () => getBooking(company.id, r!.bookingId!), enabled: !!r?.bookingId });
   if (q.isLoading) return <Loading />;
-  if (!r) return <Missing />;
+  if (!r) return <Missing q={q} />;
   return (
     <PrintShell title={r.status === "void" ? t("print.receipt.titleVoid") : t("print.receipt.title")} number={r.receiptNo} date={formatDate(r.receivedOn)} signatures={[t("print.sig.receivedBy"), t("print.sig.customer")]} ready={!r.bookingId || !!b.data}>
       <div className="grid grid-cols-2 gap-5">
@@ -72,7 +85,7 @@ export function VoucherDoc({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["live", "print", "voucher", id], queryFn: () => getVoucher(company.id, id) });
   const v = q.data;
   if (q.isLoading) return <Loading />;
-  if (!v) return <Missing />;
+  if (!v) return <Missing q={q} />;
   const meta = localMeta(v.type);
   const lines = v.journal.length ? v.journal : null;
   return (
@@ -108,7 +121,7 @@ export function ServiceInvoiceDoc({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["live", "print", "service-invoices"], queryFn: () => listServiceInvoices(company.id) });
   const i = q.data?.find((x) => x.id === id);
   if (q.isLoading) return <Loading />;
-  if (!i) return <Missing />;
+  if (!i) return <Missing q={q} />;
   return (
     <PrintShell title={i.status === "void" ? t("print.invoice.titleVoid") : t("print.invoice.title")} number={i.number} date={formatDate(i.issueDate)} signatures={[t("print.sig.authorised")]}>
       <div className="grid grid-cols-2 gap-5">
@@ -137,7 +150,7 @@ export function BookingDoc({ id }: { id: string }) {
   const rec = useQuery({ queryKey: ["live", "print", "booking-receipts", id], queryFn: () => listReceipts(company.id, { bookingId: id, status: "posted" }) });
   const b = q.data;
   if (q.isLoading) return <Loading />;
-  if (!b) return <Missing />;
+  if (!b) return <Missing q={q} />;
   return (
     <PrintShell title={t("print.plan.title")} number={b.bookingNo} date={formatDate(b.bookingDate)} signatures={[t("print.sig.company"), t("print.plan.customer")]} ready={!!rec.data}>
       <div className="grid grid-cols-3 gap-5">
@@ -174,7 +187,7 @@ export function StatementDoc({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["live", "print", "statement", id], queryFn: () => partyStatement(company.id, id, "2000-01-01", todayIso()) });
   const s = q.data;
   if (q.isLoading) return <Loading />;
-  if (!s) return <Missing />;
+  if (!s) return <Missing q={q} />;
   const closing = s.lines.length ? num(s.lines[s.lines.length - 1]!.balance) : num(s.openingBalance);
   void fy;
   return (
@@ -204,7 +217,7 @@ export function QuotationDoc({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["live", "print", "quotations"], queryFn: () => listQuotations(company.id) });
   const x = q.data?.find((r) => r.id === id);
   if (q.isLoading) return <Loading />;
-  if (!x) return <Missing />;
+  if (!x) return <Missing q={q} />;
   const rest = num(x.netPrice) - num(x.downPayment);
   return (
     <PrintShell title={t("print.quote.title")} number={x.quoteNo} date={formatDate(x.quoteDate)} signatures={[t("print.sig.forCompany"), t("print.sig.acceptance")]}>
@@ -236,7 +249,7 @@ export function ContractDoc({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["live", "print", "contracts"], queryFn: () => listContracts(company.id) });
   const c = q.data?.find((r) => r.id === id);
   if (q.isLoading) return <Loading />;
-  if (!c) return <Missing />;
+  if (!c) return <Missing q={q} />;
   return (
     <PrintShell title={t("print.contract.title")} number={c.contractNo} date={c.signedOn ? t("print.contract.signed", { date: formatDate(c.signedOn) }) : t("print.contract.draft")} signatures={[t("print.sig.forCompany"), c.partyName ?? t("print.sig.otherParty"), t("print.sig.witness")]}>
       <h2 className="mb-3 font-heading text-lg font-semibold">{c.title}</h2>
@@ -262,7 +275,7 @@ export function PayslipDoc({ id, lineId }: { id: string; lineId: string }) {
   const run = q.data;
   const l = run?.lines.find((x) => x.id === lineId);
   if (q.isLoading) return <Loading />;
-  if (!run || !l) return <Missing />;
+  if (!run || !l) return <Missing q={q} />;
   const earn = num(l.basic) + num(l.allowances) + num(l.bonus);
   return (
     <PrintShell title={t("print.payslip.title")} number={run.runNo} date={run.month} signatures={[t("print.sig.accounts"), t("print.sig.employee")]}>

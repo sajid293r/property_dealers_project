@@ -104,7 +104,8 @@ export const createReceipt = (
     instrumentRef?: string;
     allocations?: { installmentId: string; amount: string }[];
   },
-) => api<ReceiptDetail>("/v1/receipts", { method: "POST", companyId, body });
+  requestId?: string,
+) => api<ReceiptDetail>("/v1/receipts", { method: "POST", companyId, body, idempotencyKey: requestId });
 export const voidReceipt = (companyId: string, id: string, reason: string, date?: string) =>
   api<ReceiptDetail>(`/v1/receipts/${id}/void`, { method: "POST", companyId, body: { reason, date } });
 

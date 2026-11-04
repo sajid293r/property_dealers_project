@@ -1,0 +1,28 @@
+  PASS signed out: /dashboard redirects to /login 
+  PASS login page offers sign-in and the demo 
+  PASS wrong password: plain-language error 
+  PASS signed in: lands on the dashboard 
+  PASS shows the real company (ByteCraft) 
+  PASS topbar says Live (not Demo) 
+  PASS no demo data leaks in: no 'Ahmed Khan', 'Al-Noor' or demo cash pill 
+  PASS empty company shows the getting-started guide, not zeros 
+  PASS sidebar lists the real pages of an Advanced company 
+  PASS 'Group Overview' (demo-only) is not offered to a real company 
+  PASS typing the demo-only address shows a plain message, not demo data 
+  PASS empty company shows the getting-started steps 
+  PASS projects page: no 'not connected' notice 
+  PASS project saved through the API and listed 
+  PASS project shows a database-made code PRJ-00001 
+  PASS property saved through the API and listed 
+  PASS property shows its database code PRP-00001 
+  PASS property shows its size in marla and square feet (5 Marla, 1,361) 
+  PASS property shows its block and project 
+  PASS project card counts the new property (1 available) 
+  PASS after a reload the property is still there (stored on the server) 
+  PASS account menu shows who is signed in 
+  PASS sign out returns to the login page 
+  PASS after sign out the dashboard is closed again 
+  PASS demo mode: sample companies and data (Al-Noor), marked Demo 
+  PASS no JavaScript errors during the whole run 
+
+26 passed, 0 failed

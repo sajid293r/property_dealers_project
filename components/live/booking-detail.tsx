@@ -96,7 +96,7 @@ export function LiveBookingDetail() {
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-5">
           <Card className="p-5">
             <h3 className="mb-3 font-heading text-base font-semibold">{t("deals.d.plan")}</h3>

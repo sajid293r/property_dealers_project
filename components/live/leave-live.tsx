@@ -88,7 +88,7 @@ export function LiveLeave() {
           </Card>
         </TabsContent>
         <TabsContent value="balances" className="mt-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {bal.isLoading ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-44 rounded-xl" />) : [...byEmployee.entries()].map(([name, rows]) => (
               <Card key={name} className="space-y-3 p-4">
                 <p className="font-heading text-base font-semibold">{name}</p>

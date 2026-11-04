@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "Enregistrer le relevé",
   "stmt.saved": "Relevé enregistré",
   "stmt.savedMismatch": "Relevé enregistré — mais les lignes ne totalisent pas le solde de clôture",
+  "stmt.allowMismatch": "Enregistrer quand même (les chiffres de la banque peuvent différer)",
   "stmt.from": "Période du",
   "stmt.to": "Période au",
   "stmt.opening": "Solde d'ouverture",

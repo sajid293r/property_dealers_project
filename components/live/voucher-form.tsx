@@ -29,6 +29,7 @@ import { INSTRUMENTS, LIVE_VOUCHER_TYPES, instrumentLabel, isVoucherType, localM
 import { amountInWords } from "@/lib/amount-words";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/provider";
+import { useRequestId } from "@/lib/request-id";
 import { groupLabel } from "@/lib/live-vouchers";
 
 interface FormLine {
@@ -136,6 +137,7 @@ function VoucherLineTable({
 
 export function LiveVoucherForm() {
   const t = useT();
+  const requestId = useRequestId();
   const router = useRouter();
   const search = useSearchParams();
   const editId = search.get("edit");
@@ -281,13 +283,16 @@ export function LiveVoucherForm() {
     };
   }
 
+  const persisting = React.useRef(false);
   async function persist(submit: boolean) {
+    if (persisting.current) return; // a second click in the same instant must not save twice
+    persisting.current = true;
     setError(null);
     setBusy(submit ? "submit" : "draft");
     try {
       const input = buildInput();
       if (input.lines.length === 0) throw new Error(t("vch.p.oneLine"));
-      const saved = savedId ? await updateVoucher(company.id, savedId, input) : await createVoucher(company.id, type, input);
+      const saved = savedId ? await updateVoucher(company.id, savedId, input) : await createVoucher(company.id, type, input, requestId.current());
       setSavedId(saved.id);
       setNumber(saved.number);
       if (submit) {
@@ -299,6 +304,7 @@ export function LiveVoucherForm() {
     } catch (e) {
       setError(e instanceof ApiError || e instanceof Error ? e.message : t("common.somethingWrong"));
       setBusy(null);
+      persisting.current = false;
     }
   }
 

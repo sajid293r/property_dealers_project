@@ -49,6 +49,8 @@ const shell: Record<keyof typeof en, string> = {
 
   "shell.splash.opening": "{app}を開いています…",
   "shell.splash.cannotOpen": "ワークスペースを開けません",
+  "shell.splash.noCompany": "まだどの会社にも追加されていません。管理者に追加を依頼してください。",
+  "shell.splash.failed": "アカウントを今は読み込めませんでした。多くは一時的なもので、データは失われていません。もう一度お試しください。",
   "shell.notice.partial": "ほかのセクションが接続されるにつれて、ダッシュボードの内容が増えていきます。物件とプロジェクトはすでに実データで動作しています。",
   "shell.notice.preview": "このセクションはまだ実データに接続されていません。ここに表示されているのはプレビューで、追加した内容は保存されません。",
   "shell.lock.title": "これは{plan}プランの機能です",

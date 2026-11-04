@@ -4,6 +4,7 @@ import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useCompany } from "@/lib/providers/company-provider";
 import { useAuth } from "@/lib/providers/auth-provider";
+import { ApiError } from "@/lib/api/client";
 
 function createClient() {
   return new QueryClient({
@@ -11,6 +12,10 @@ function createClient() {
       queries: {
         staleTime: 60 * 1000,
         refetchOnWindowFocus: false,
+        // try again once or twice for a hiccup, but never for an answer (not signed in, not allowed, not found, invalid)
+        retry: (count: number, err: unknown) => count < 2 && !(err instanceof ApiError && err.status >= 400 && err.status < 500),
+        // when the network is down, try anyway and fail with a message instead of waiting silently
+        networkMode: "always",
       },
     },
   });

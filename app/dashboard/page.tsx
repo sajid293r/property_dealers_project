@@ -139,7 +139,7 @@ function DemoDashboardPage() {
       ) : (
         <>
           {/* ─────────── health + to-do */}
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="xl:col-span-4"><HealthScore {...model.health} /></div>
             <div className="xl:col-span-8"><AttentionCenter items={model.attention} /></div>
           </div>
@@ -163,29 +163,29 @@ function DemoDashboardPage() {
 
           {/* ─────────── money */}
           <SectionTitle eyebrow={t("dashboard.section.money")} title={t("dashboard.section.moneyTitle")} />
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="xl:col-span-8"><CollectionSchedule schedule={model.schedule} /></div>
             <div className="xl:col-span-4"><ReceivableAging rec={model.rec} customers={data.customers} /></div>
           </div>
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="xl:col-span-7"><CashflowCard position={model.cash} weekly={model.flow} /></div>
             <div className="xl:col-span-5"><ExpenseBreakdown data={model.expenses} /></div>
           </div>
 
           {/* ─────────── sales */}
           <SectionTitle eyebrow={t("dashboard.section.sales")} title={t("dashboard.section.salesTitle")} />
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="xl:col-span-8"><PortfolioTable rows={model.port} /></div>
             <div className="xl:col-span-4"><AgentLeaderboard rows={model.agents} /></div>
           </div>
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <SpotlightCard className="p-5 xl:col-span-8"><CollectionsChart /></SpotlightCard>
             <SpotlightCard className="p-5 xl:col-span-4"><SalesFunnel leads={data.leads} /></SpotlightCard>
           </div>
 
           {/* ─────────── operations */}
           <SectionTitle eyebrow={t("dashboard.section.operations")} title={t("dashboard.section.operationsTitle")} />
-          <div className="grid gap-4 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="xl:col-span-5"><UpcomingTimeline events={model.events} /></div>
             <SpotlightCard className="p-5 xl:col-span-4"><ActivityFeed events={model.activity} /></SpotlightCard>
             <div className="xl:col-span-3"><PeopleSnapshot data={model.team} /></div>
@@ -265,7 +265,7 @@ function DemoDashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 xl:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <Skeleton className="h-[34rem] rounded-xl xl:col-span-4" />
         <Skeleton className="h-[34rem] rounded-xl xl:col-span-8" />
       </div>

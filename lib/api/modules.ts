@@ -74,7 +74,7 @@ export interface ChequeRow {
   clearedOn: string | null; bouncedOn: string | null; bounceReason: string | null; receiptId: string | null; notes: string | null;
 }
 export const listCheques = (companyId: string, f: { direction?: string; status?: string; search?: string } = {}) => api<ChequeRow[]>(`/v1/cheques${qs(f)}`, { companyId });
-export const createCheque = (companyId: string, body: Record<string, unknown>) => api<ChequeRow>("/v1/cheques", { method: "POST", companyId, body });
+export const createCheque = (companyId: string, body: Record<string, unknown>, requestId?: string) => api<ChequeRow>("/v1/cheques", { method: "POST", companyId, body, idempotencyKey: requestId });
 export const chequeAction = (companyId: string, id: string, action: "deposit" | "clear" | "bounce" | "return", body: Record<string, unknown> = {}) =>
   api<ChequeRow>(`/v1/cheques/${id}/${action}`, { method: "POST", companyId, body });
 
@@ -84,7 +84,7 @@ export interface ServiceInvoiceRow {
 }
 export const listServiceInvoices = (companyId: string, f: { status?: string; search?: string } = {}) => api<ServiceInvoiceRow[]>(`/v1/service-invoices${qs(f)}`, { companyId });
 export const createServiceInvoice = (companyId: string, body: Record<string, unknown>) => api<ServiceInvoiceRow>("/v1/service-invoices", { method: "POST", companyId, body });
-export const payServiceInvoice = (companyId: string, id: string, body: Record<string, unknown>) => api<ServiceInvoiceRow>(`/v1/service-invoices/${id}/payments`, { method: "POST", companyId, body });
+export const payServiceInvoice = (companyId: string, id: string, body: Record<string, unknown>, requestId?: string) => api<ServiceInvoiceRow>(`/v1/service-invoices/${id}/payments`, { method: "POST", companyId, body, idempotencyKey: requestId });
 export const voidServiceInvoice = (companyId: string, id: string, reason: string) => api<ServiceInvoiceRow>(`/v1/service-invoices/${id}/void`, { method: "POST", companyId, body: { reason } });
 
 export type ContractKind = "sale_agreement" | "rent" | "service" | "construction" | "employment" | "other";
@@ -125,7 +125,7 @@ export interface PayrollLineRow { id: string; employeeId: string; fullName: stri
 export interface PayrollDetail extends PayrollRunRow { lines: PayrollLineRow[] }
 export const listPayroll = (companyId: string) => api<PayrollRunRow[]>("/v1/payroll", { companyId });
 export const getPayroll = (companyId: string, id: string) => api<PayrollDetail>(`/v1/payroll/${id}`, { companyId });
-export const createPayroll = (companyId: string, month: string) => api<PayrollDetail>("/v1/payroll", { method: "POST", companyId, body: { month } });
+export const createPayroll = (companyId: string, month: string, requestId?: string) => api<PayrollDetail>("/v1/payroll", { method: "POST", companyId, body: { month }, idempotencyKey: requestId });
 export const editPayrollLine = (companyId: string, runId: string, lineId: string, body: { bonus?: string; tax?: string }) => api<PayrollDetail>(`/v1/payroll/${runId}/lines/${lineId}`, { method: "PATCH", companyId, body });
 export const payrollAction = (companyId: string, id: string, action: "approve" | "pay", body: Record<string, unknown> = {}) => api<PayrollDetail>(`/v1/payroll/${id}/${action}`, { method: "POST", companyId, body });
 export const discardPayroll = (companyId: string, id: string) => api<void>(`/v1/payroll/${id}`, { method: "DELETE", companyId });

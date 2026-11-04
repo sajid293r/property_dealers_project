@@ -1,0 +1,17 @@
+  PASS login offers 'Forgot your password?' 
+  PASS signed in 
+  PASS my account shows the person's email 
+  PASS activity log lists changes with who made them 
+  PASS collections tab opens with the reminder tools 
+  PASS commissions tab opens 
+  PASS each receipt has a Print link 
+  PASS the printed receipt carries the company, number, amount and words 
+  PASS Export produces a CSV with a header row and the customers 
+  PASS a property title links to its detail page 
+  PASS property detail shows legal, ownership and documents sections 
+  PASS legal details are saved 
+  PASS a document is uploaded and listed 
+  PASS booking page offers transfer, documents and printing 
+  PASS no JavaScript errors 
+
+15 passed, 0 failed

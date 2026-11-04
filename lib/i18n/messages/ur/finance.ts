@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "اسٹیٹمنٹ محفوظ کریں",
   "stmt.saved": "اسٹیٹمنٹ محفوظ ہو گئی",
   "stmt.savedMismatch": "اسٹیٹمنٹ محفوظ ہو گئی — لیکن لائنیں اختتامی بیلنس کے برابر نہیں بنتیں",
+  "stmt.allowMismatch": "پھر بھی محفوظ کریں (بینک کے اپنے اعداد مختلف ہو سکتے ہیں)",
   "stmt.from": "مدت از",
   "stmt.to": "مدت تا",
   "stmt.opening": "ابتدائی بیلنس",

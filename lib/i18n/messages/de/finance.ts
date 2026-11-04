@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "Kontoauszug speichern",
   "stmt.saved": "Kontoauszug gespeichert",
   "stmt.savedMismatch": "Kontoauszug gespeichert — aber die Zeilen ergeben nicht den Schlusssaldo",
+  "stmt.allowMismatch": "Trotzdem speichern (die Zahlen der Bank können abweichen)",
   "stmt.from": "Zeitraum von",
   "stmt.to": "Zeitraum bis",
   "stmt.opening": "Anfangssaldo",

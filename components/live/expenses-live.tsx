@@ -78,7 +78,7 @@ export function LiveExpenses() {
         <DataTableSearch value={search} onChange={setSearch} placeholder={t("exp.search")} />
         <ExportButton name="expenses" headers={[t("common.date"), t("vch.csv.voucher"), t("exp.csv.accountCode"), t("vch.d.colAccount"), t("exp.csv.paidTo"), t("exp.csv.note"), t("common.amount")]} rows={(q.data?.rows ?? []).map((r) => [r.date, r.number, r.accountCode, r.accountName, r.partyName, r.description, num(r.amount)])} />
       </div>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card className="p-4">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">

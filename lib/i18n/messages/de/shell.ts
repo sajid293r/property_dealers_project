@@ -49,6 +49,8 @@ const shell: Record<keyof typeof en, string> = {
 
   "shell.splash.opening": "{app} wird geöffnet…",
   "shell.splash.cannotOpen": "Wir können Ihren Arbeitsbereich nicht öffnen",
+  "shell.splash.noCompany": "Sie wurden noch keinem Unternehmen hinzugefügt. Bitten Sie Ihren Administrator, Sie hinzuzufügen.",
+  "shell.splash.failed": "Ihr Konto konnte gerade nicht geladen werden. Das ist meist vorübergehend, und es ist nichts verloren gegangen. Bitte versuchen Sie es erneut.",
   "shell.notice.partial": "Ihr Dashboard füllt sich, sobald weitere Bereiche angebunden sind. Immobilien und Projekte laufen bereits mit Echtdaten.",
   "shell.notice.preview": "Dieser Bereich ist noch nicht mit Ihren Echtdaten verbunden. Was Sie hier sehen, ist eine Vorschau, und alles, was Sie hinzufügen, wird nicht gespeichert.",
   "shell.lock.title": "Das gehört zum Tarif {plan}",

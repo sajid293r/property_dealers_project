@@ -108,7 +108,7 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
   if (!draft) {
     const last = history.data?.find((r) => r.status === "finalized");
     return (
-      <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[420px_1fr]">
         <Card className="space-y-4 p-5">
           <div>
             <h3 className="font-heading text-base font-semibold">{t("rec.start.title")}</h3>
@@ -207,7 +207,7 @@ function ReconcileTab({ bankAccountId, bookBalance }: { bankAccountId: string; b
   const payments = r.items.filter((i) => num(i.credit) > 0);
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
       <Card className="p-5">
         <div className="mb-1 flex items-center justify-between gap-2">
           <div>

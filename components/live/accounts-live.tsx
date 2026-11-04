@@ -82,7 +82,7 @@ export function LiveAccounts() {
 
         <TabsContent value="banks" className="mt-4">
           {banks.isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />)}</div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />)}</div>
           ) : (banks.data ?? []).length === 0 ? (
             <Card className="p-10 text-center">
               <Landmark className="mx-auto size-8 text-muted-foreground" />
@@ -90,7 +90,7 @@ export function LiveAccounts() {
               <p className="mt-1 text-sm text-muted-foreground">{t("acc.noBanksHint")}</p>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {(banks.data ?? []).map((b, i) => (
                 <motion.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                   <Card className="h-full space-y-3 p-4 transition-all hover:-translate-y-0.5 hover:shadow-lg">

@@ -49,6 +49,8 @@ const shell: Record<keyof typeof en, string> = {
 
   "shell.splash.opening": "Ouverture de {app}…",
   "shell.splash.cannotOpen": "Impossible d'ouvrir votre espace de travail",
+  "shell.splash.noCompany": "Vous n'avez pas encore été ajouté à une entreprise. Demandez à votre administrateur de vous ajouter.",
+  "shell.splash.failed": "Impossible de charger votre compte pour le moment. C'est généralement temporaire et rien n'a été perdu. Veuillez réessayer.",
   "shell.notice.partial": "Votre tableau de bord se remplit à mesure que d'autres sections sont connectées. Les biens et les projets sont en direct dès maintenant.",
   "shell.notice.preview": "Cette section n'est pas encore connectée à vos données réelles. Ce que vous voyez est un aperçu, et rien de ce que vous ajoutez n'est enregistré.",
   "shell.lock.title": "Cette fonction fait partie de l'offre {plan}",

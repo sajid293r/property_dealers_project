@@ -89,3 +89,5 @@ stateDiagram-v2
 ```
 
 Maker-checker: the person who submits and the person who approves are different permissions.
+
+`approved → void` is only accepted once the voucher's ledger entry has been reversed (trigger `vouchers_void_guard`, migration 0017): the only way is `app.void_voucher`, i.e. the Void button. A voucher that was submitted, approved or voided can never be physically deleted either (`vouchers_delete_guard`); "Discard" in the screens only applies to drafts and rejected vouchers.

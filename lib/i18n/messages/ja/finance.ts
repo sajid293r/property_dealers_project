@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "明細を保存",
   "stmt.saved": "明細を保存しました",
   "stmt.savedMismatch": "明細を保存しました — ただし行の合計が期末残高と一致しません",
+  "stmt.allowMismatch": "それでも保存する（銀行側の数字が異なる場合があります）",
   "stmt.from": "期間（開始）",
   "stmt.to": "期間（終了）",
   "stmt.opening": "期首残高",

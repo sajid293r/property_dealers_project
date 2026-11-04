@@ -77,6 +77,7 @@ const finance = {
   "stmt.submit": "Save statement",
   "stmt.saved": "Statement saved",
   "stmt.savedMismatch": "Statement saved — but the lines don’t add up to the closing balance",
+  "stmt.allowMismatch": "Save it anyway (the bank's own figures may differ)",
   "stmt.from": "Period from",
   "stmt.to": "Period to",
   "stmt.opening": "Opening balance",

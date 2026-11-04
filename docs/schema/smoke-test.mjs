@@ -615,7 +615,7 @@ console.log("\nCross-tenant references");
   const gaps = await db.query(`select child_table, child_column from v_tenant_fk_gaps`);
   const core = gaps.rows.filter((g) => chain.includes(g.child_table));
   core.length === 0 ? ok(`lint view: all ${chain.length} core-chain tables are tenant-safe`) : bad("core chain has single-column references", JSON.stringify(core));
-  console.log(`  INFO ${gaps.rows.length} single-column tenant references remain outside the core chain (phase-2 tables) — see v_tenant_fk_gaps`);
+  gaps.rows.length === 0 ? ok("lint view: no single-column reference between tenant tables is left (migration 0017)") : bad("tenant reference gaps", JSON.stringify(gaps.rows.slice(0, 10)));
 }
 
 // ═════════════════════════════════════════════════ State machines (D1.4)
@@ -680,6 +680,11 @@ console.log("\nState machines");
   await expectError("voucher: only an approver can approve", () => run("accounts.create,accounts.edit", `update vouchers set status='approved' where id='${V}'`), "accounts.approve");
   await expectError("voucher: the status cannot be flipped to approved by hand (approving means posting)", () => run("accounts.approve", `update vouchers set status='approved' where id='${V}'`), "approved by posting it");
   await run("accounts.approve", `select app.approve_voucher('${V}','${U}')`).then(() => ok("voucher: pending > approved with accounts.approve (posts the entry)"), (e) => bad("approve", e));
+  // BUG-001: a posted voucher can only leave through a void that reverses its entry
+  await expectError("voucher: an approved voucher cannot be marked void by hand (its entry would stay in the books)", () => run("accounts.approve", `update vouchers set status='void' where id='${V}'`), "Void it with a reason");
+  await expectError("voucher: an approved voucher cannot be physically deleted", () => run(null, `delete from vouchers where id='${V}'`), "cannot be deleted");
+  const reconV = await asCompany(C1, () => db.query(`select check_name from v_reconciliation where check_name in ('void_voucher_not_reversed','approved_voucher_without_entry')`));
+  reconV.rows.length === 0 ? ok("self-check: no voucher is void without a reversal or approved without an entry") : bad("voucher self-check", JSON.stringify(reconV.rows));
 
   // — the lookup the API/UI uses —
   const nxt = await asCompany(C1, () => db.query(`select to_state, required_permission from app.allowed_transitions('booking','confirmed')`));
@@ -897,8 +902,8 @@ console.log("\nReconciliation");
 
   // 1. everything the whole suite did above leaves the books consistent
   const healthy = await rows();
-  healthy.length === 0 ? ok("after every scenario above, all 9 reconciliation checks are clean") : bad("database is not clean", JSON.stringify(healthy.slice(0, 5)));
-  Object.keys(await counts()).length === 9 ? ok("the summary lists all 9 checks, clean ones included") : bad("summary shape");
+  healthy.length === 0 ? ok("after every scenario above, all 11 reconciliation checks are clean") : bad("database is not clean", JSON.stringify(healthy.slice(0, 5)));
+  Object.keys(await counts()).length === 11 ? ok("the summary lists all 11 checks, clean ones included") : bad("summary shape");
 
   // 2. break things the way a bad data fix would (triggers off), and make sure each break is caught
   const PERIOD = "e0000000-0000-0000-0000-000000000002";
@@ -1851,6 +1856,21 @@ console.log("\nAttachments, late charges, refunds, transfers, dealer commission"
   await expectError("a booking without a dealer has no commission", () => q(`select app.accrue_commission('${BT}', 1, '${U}')`), "no dealer");
   await q(`select app.void_commission('${CM}', '${U}', 'Rate was wrong')`);
   (await account("05.02.03.0003")) === 0 ? ok("voiding a commission reverses its entry") : bad("void commission");
+  // — request ids: a repeated money request does its work once (migration 0018) —
+  const IDK = "idem-key-smoke-0001", IDR = "9c000000-0000-0000-0000-0000000000a1";
+  const first = (await q(`select replay, resource_id from app.claim_idempotency('${IDK}', 'receipt', 'hash-a')`)).rows[0];
+  first.replay === false && first.resource_id === null ? ok("request id: the first request is allowed to go ahead") : bad("claim first", JSON.stringify(first));
+  await expectError("request id: a repeat while the first is still unfinished is told to wait", () => q(`select * from app.claim_idempotency('${IDK}', 'receipt', 'hash-a')`), "still being processed");
+  await q(`select app.finish_idempotency('${IDK}', '${IDR}')`);
+  const again = (await q(`select replay, resource_id from app.claim_idempotency('${IDK}', 'receipt', 'hash-a')`)).rows[0];
+  again.replay === true && again.resource_id === IDR ? ok("request id: a repeat gets the first request's record back") : bad("claim replay", JSON.stringify(again));
+  await expectError("request id: the same id with different details is refused", () => q(`select * from app.claim_idempotency('${IDK}', 'receipt', 'hash-b')`), "different details");
+  await expectError("request id: the same id for another kind of request is refused", () => q(`select * from app.claim_idempotency('${IDK}', 'voucher', 'hash-a')`), "different details");
+  (await asCompany("00000000-0000-0000-0000-0000000000d4", () => db.query(`select count(*)::int n from idempotency_keys`))).rows[0].n === 0 ? ok("request id: another company cannot see it, and may use the same id for itself") : bad("idempotency isolation");
+  await expectError("request id: an id that is too short is refused", () => q(`select * from app.claim_idempotency('short', 'receipt', 'h')`), "idempotency_keys_key_check");
+  const none = (await q(`select replay from app.claim_idempotency(null, 'receipt', 'h')`)).rows[0];
+  none.replay === false ? ok("request id: no id means no protection, as before") : bad("null key");
+
   // — interface language (migration 0016) —
   (await q(`select preferred_language from users where id='${U}'`)).rows[0].preferred_language === null ? ok("a person starts with no language chosen of their own (null)") : bad("language default");
   await q(`update users set preferred_language = 'ur' where id='${U}'`);

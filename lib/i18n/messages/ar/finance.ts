@@ -78,6 +78,7 @@ const finance: Record<keyof typeof en, string> = {
   "stmt.submit": "حفظ الكشف",
   "stmt.saved": "تم حفظ الكشف",
   "stmt.savedMismatch": "تم حفظ الكشف — لكن مجموع السطور لا يطابق الرصيد الختامي",
+  "stmt.allowMismatch": "احفظه على أي حال (قد تختلف أرقام البنك نفسها)",
   "stmt.from": "الفترة من",
   "stmt.to": "الفترة إلى",
   "stmt.opening": "الرصيد الافتتاحي",

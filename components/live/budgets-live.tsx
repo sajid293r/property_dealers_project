@@ -57,7 +57,7 @@ export function LiveBudgets() {
         <StatTile icon={TrendingUp} label={t("bud.tile.spent")} value={formatMoney(spent, { compact: true })} accent={total && spent > total ? "warning" : "success"} />
         <StatTile icon={Send} label={t("bud.tile.waiting")} value={all.filter((b) => b.status === "submitted").length} accent="warning" />
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {q.isLoading ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-44 rounded-xl" />) : all.map((b) => {
           const u = usage(b);
           return (

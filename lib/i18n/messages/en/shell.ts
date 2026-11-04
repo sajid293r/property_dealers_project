@@ -48,6 +48,8 @@ const shell = {
 
   "shell.splash.opening": "Opening {app}…",
   "shell.splash.cannotOpen": "We can't open your workspace",
+  "shell.splash.noCompany": "You haven't been added to a company yet. Ask your administrator to add you.",
+  "shell.splash.failed": "We couldn't load your account just now. This is usually temporary and nothing has been lost. Please try again.",
   "shell.notice.partial": "Your dashboard fills in as more sections are connected. Properties and projects are live now.",
   "shell.notice.preview": "This section isn't connected to your live data yet. What you see here is a preview, and anything you add isn't saved.",
   "shell.lock.title": "This is part of the {plan} plan",

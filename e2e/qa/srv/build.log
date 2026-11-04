@@ -1,0 +1,61 @@
+▲ Next.js 16.3.5 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 61ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.9s
+  Running TypeScript ...
+  Finished TypeScript in 11.5s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/37) ...
+  Generating static pages using 11 workers (9/37) 
+  Generating static pages using 11 workers (18/37) 
+  Generating static pages using 11 workers (27/37) 
+✓ Generating static pages using 11 workers (37/37) in 1289ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /dashboard
+├ ƒ /dashboard/account
+├ ƒ /dashboard/accounts
+├ ƒ /dashboard/administration/activity
+├ ƒ /dashboard/administration/company-profile
+├ ƒ /dashboard/administration/roles
+├ ƒ /dashboard/administration/users
+├ ƒ /dashboard/bank-reconciliation
+├ ƒ /dashboard/budgets
+├ ƒ /dashboard/cheques
+├ ƒ /dashboard/companies
+├ ƒ /dashboard/contractors
+├ ƒ /dashboard/contracts
+├ ƒ /dashboard/crm
+├ ƒ /dashboard/customers
+├ ƒ /dashboard/deals
+├ ƒ /dashboard/deals/[id]
+├ ƒ /dashboard/expenses
+├ ƒ /dashboard/leave
+├ ƒ /dashboard/payroll
+├ ƒ /dashboard/plot-map
+├ ƒ /dashboard/projects
+├ ƒ /dashboard/projects/[id]
+├ ƒ /dashboard/properties
+├ ƒ /dashboard/properties/[id]
+├ ƒ /dashboard/quotations
+├ ƒ /dashboard/reports
+├ ƒ /dashboard/sales-invoices
+├ ƒ /dashboard/service-invoices
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/settings/billing
+├ ƒ /dashboard/staff
+├ ƒ /dashboard/vouchers
+├ ƒ /dashboard/vouchers/[id]
+├ ƒ /dashboard/vouchers/new
+├ ƒ /login
+├ ƒ /print/[kind]/[id]
+└ ƒ /reset-password
+
+
+ƒ  (Dynamic)  server-rendered on demand
+
