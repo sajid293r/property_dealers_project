@@ -390,3 +390,24 @@ Created between about 01:25 and 02:30 UTC on 2026-11-03 through the API and one 
 - Vouchers: `JV` drafts and one approved-then-voided JV (narrations start `QA-`); a draft with the same account both sides; an unbalanced draft.
 - Budget (draft) `QA-Budget`; five attachments on `QA-Buyer One` (PNG, 3.9 MB PDF, renamed-executable "PDF", path-named PDF, DOCX).
 - Final live trial balance after the run: debit 721,501.74 = credit 721,501.74.
+
+---
+
+## Re-test 2026-11-04 — **BLOCKED at step 0 (nothing else was run)**
+
+Run by the QA lead at about 18:40 UTC on 2026-11-04 against `https://property-dealers-project.netlify.app`. Nothing was entered on the live site, no one signed in, nothing was fixed or committed. No password is written anywhere.
+
+| Step 0 check | Result | Evidence |
+|---|---|---|
+| 0.1 `GET /api/health` and `/api/health/db` | PASS | both `{"ok":true}` |
+| 0.2 `x-frame-options: DENY` on `/login` | **FAIL → BLOCKED** | `curl -sI /login` (re-probed 4 times over about a minute, with cache-busting query strings): headers present are `Strict-Transport-Security` and `X-Content-Type-Options: nosniff` only. **No** `X-Frame-Options`, **no** `Content-Security-Policy`, **no** `Referrer-Policy`, **no** `Permissions-Policy`. Same on `/api/health` and `/api/health/db`. |
+| 0.3 automated baseline on this machine | NOT-RUN | the brief says to stop when 0.2 fails |
+
+**What I could establish about the deploy**
+- The repository is in step: local `main` = `origin/main` = `c773e09`, nothing unpushed, and `netlify.toml` lines 21-28 contain the five headers for `/*`. So the fix is in the pushed code.
+- The deployed **API function looks new**: an unauthenticated `POST /api/v1/customers` with broken JSON answers `400 invalid_request` with a plain sentence (the BUG-007 fix; the old build answered 500).
+- The deployed **site/header configuration is not applying** `[[headers]]`. So the live deployment is partial or the latest Netlify build for the site did not publish (or is still building or failed). I cannot see the Netlify dashboard (rule 3), so I cannot say which.
+
+**What is needed from the owner:** open Netlify → Deploys, confirm the deploy of `c773e09` finished and is "Published" (read its log if it failed), confirm `0016`-`0019` were applied with `cd api && npm run migrate`, then ask for the re-test again. I will not test the fixes against a half-deployed site, because a PASS or FAIL would not mean anything for the release that customers will get.
+
+**Recommendation for now: NO-GO (unchanged).** The five blockers (BUG-001 to 005) and the ten-at-once receipt test have not been re-tested; nothing from the first run has been re-graded.

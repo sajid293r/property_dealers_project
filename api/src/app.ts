@@ -70,6 +70,11 @@ export function buildApp({ config, db, verifier, cnic = null }: AppDeps): Fastif
   app.addHook("onSend", async (req, reply) => {
     reply.header("x-request-id", String(req.id));
     reply.header("cache-control", "no-store");
+    // netlify.toml headers do not reach function answers, so the API sets the hardening headers itself (BUG-016).
+    reply.header("x-frame-options", "DENY");
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("referrer-policy", "strict-origin-when-cross-origin");
+    reply.header("content-security-policy", "frame-ancestors 'none'");
   });
 
   // One place turns every failure into a clear answer; nothing technical reaches the person.
