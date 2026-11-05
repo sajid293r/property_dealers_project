@@ -1,0 +1,17 @@
+import puppeteer from "puppeteer-core";
+const BASE = process.env.BASE; const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const browser = await puppeteer.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: "new", args: ["--no-sandbox"], defaultViewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage();
+await page.goto(BASE + "/login", { waitUntil: "networkidle2", timeout: 120000 }); await sleep(2500);
+await page.type("#email", process.env.QA_EMAIL); await page.type("#password", process.env.QA_PASSWORD); await page.click("button[type=submit]");
+await page.waitForFunction(() => location.pathname.startsWith("/dashboard"), { timeout: 60000 }); await sleep(2000);
+const tok = await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (/auth-token$/.test(k)) return JSON.parse(localStorage[k]).access_token; });
+const co = (await (await fetch(BASE + "/api/v1/me", { headers: { authorization: "Bearer " + tok } })).json()).companies[0].companyId;
+const bl = await (await fetch(BASE + "/api/v1/bookings", { headers: { authorization: "Bearer " + tok, "x-company-id": co } })).json();
+const rowsB = Array.isArray(bl) ? bl : bl.rows; const b0 = rowsB.find((b) => /QA-SmokeE/.test(b.customerName ?? "")) ?? rowsB[0];
+await page.goto(BASE + "/dashboard/deals/" + b0.id, { waitUntil: "domcontentloaded" }); await sleep(7000);
+const info = await page.evaluate(() => { const b = [...document.querySelectorAll("button")].filter((x) => /void/i.test(x.textContent) || /void/i.test(x.getAttribute("aria-label") ?? "") || /void/i.test(x.title ?? "")); return b.map((x) => ({ t: x.textContent.trim(), aria: x.getAttribute("aria-label"), title: x.title, disabled: x.disabled, vis: x.offsetParent !== null, html: x.outerHTML.slice(0, 200) })); });
+console.log(JSON.stringify(info, null, 1));
+await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Void")?.click()); await sleep(1500);
+console.log("after click, dialogs:", await page.evaluate(() => [...document.querySelectorAll("[role=dialog],[role=alertdialog]")].map((d) => d.tagName + ":" + d.innerText.replace(/\s+/g, " ").slice(0, 150))));
+await browser.close();

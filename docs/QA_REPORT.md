@@ -393,21 +393,111 @@ Created between about 01:25 and 02:30 UTC on 2026-11-03 through the API and one 
 
 ---
 
-## Re-test 2026-11-04 — **BLOCKED at step 0 (nothing else was run)**
+## Re-test 2026-11-05 (run between 18:40 and 20:00 UTC on 2026-11-04, local date 2026-11-05)
 
-Run by the QA lead at about 18:40 UTC on 2026-11-04 against `https://property-dealers-project.netlify.app`. Nothing was entered on the live site, no one signed in, nothing was fixed or committed. No password is written anywhere.
+Commit under test: `39ba5af` "Send security headers from Next.js and the API" (migrations 0016-0019 applied on live). Run by the QA lead against `https://property-dealers-project.netlify.app` (seeded ByteCraft, Advanced, owner role) and on the local test databases. Nothing was fixed, nothing was committed. The sign-in password was used only as a process environment variable; it is not in any file, script, log, screenshot or this report. Everything created on live starts with `QA-`.
 
-| Step 0 check | Result | Evidence |
-|---|---|---|
-| 0.1 `GET /api/health` and `/api/health/db` | PASS | both `{"ok":true}` |
-| 0.2 `x-frame-options: DENY` on `/login` | **FAIL → BLOCKED** | `curl -sI /login` (re-probed 4 times over about a minute, with cache-busting query strings): headers present are `Strict-Transport-Security` and `X-Content-Type-Options: nosniff` only. **No** `X-Frame-Options`, **no** `Content-Security-Policy`, **no** `Referrer-Policy`, **no** `Permissions-Policy`. Same on `/api/health` and `/api/health/db`. |
-| 0.3 automated baseline on this machine | NOT-RUN | the brief says to stop when 0.2 fails |
+*History: the first attempt (earlier on 2026-11-04) stopped at step 0 because the live site did not send the security headers (an old deploy). That is resolved; this is the full re-test.*
 
-**What I could establish about the deploy**
-- The repository is in step: local `main` = `origin/main` = `c773e09`, nothing unpushed, and `netlify.toml` lines 21-28 contain the five headers for `/*`. So the fix is in the pushed code.
-- The deployed **API function looks new**: an unauthenticated `POST /api/v1/customers` with broken JSON answers `400 invalid_request` with a plain sentence (the BUG-007 fix; the old build answered 500).
-- The deployed **site/header configuration is not applying** `[[headers]]`. So the live deployment is partial or the latest Netlify build for the site did not publish (or is still building or failed). I cannot see the Netlify dashboard (rule 3), so I cannot say which.
+### Recommendation: **GO with conditions**
 
-**What is needed from the owner:** open Netlify → Deploys, confirm the deploy of `c773e09` finished and is "Published" (read its log if it failed), confirm `0016`-`0019` were applied with `cd api && npm run migrate`, then ask for the re-test again. I will not test the fixes against a half-deployed site, because a PASS or FAIL would not mean anything for the release that customers will get.
+In plain words: every fix that could be proven now holds. The books balanced at every check (live trial balance 864,509.74 = 864,509.74 at the end). An approved voucher can no longer be deleted; ten receipts sent at the same instant with one request id made exactly one receipt, four runs out of four; the browser double-click made one receipt every time; the smoke test passed twice in a row; the security headers are live and the site refuses to be framed; no page scrolls sideways at any phone width. **One of the five blockers did not fully pass:** the "failing request shows a clear error, never zeros" fix (BUG-004) works in about 14 of 15 cases but **intermittently (about 1 in 15 failing loads) still shows zero tiles with no error panel**. That is a new, narrower bug (BUG-020, S2). It only appears while the server is failing and no data is lost or wrong, so under section 8 of the brief it is a condition, not a block. If you consider "a customer might see 0 during an outage" unacceptable for the first customer, treat condition 1 as a blocker and hold the launch until it is fixed.
 
-**Recommendation for now: NO-GO (unchanged).** The five blockers (BUG-001 to 005) and the ten-at-once receipt test have not been re-tested; nothing from the first run has been re-graded.
+Rule check (section 8): no S1 open **yes**; no cross-company exposure **none seen** (but see "proven only on a test database"); books balance at every check **yes**; no role/plan bypass found **none** (on test databases); ten-at-once never made a second receipt **yes (4/4)**; smoke test passed twice in a row **yes (runs F and G, 25/25 each)**.
+
+**Conditions** (owner and date are proposed; the owner must confirm them):
+1. **BUG-020** (S2), intermittent missing error panel / zeros during a failing load. Owner: PropIQ developer. Date: before the first customer is onboarded. Re-test: `e2e/qa/flaky-states.mjs` must show 40/40 and `e2e/qa/states-live.mjs` 25/25 on two runs in a row.
+2. **Prove blockers 2, 3 and 4 on live** where they were only proven on a test database: once a second company, a Sales Agent test account and a Basic/Professional organisation exist, repeat them. Owner: the owner (provides the accounts) and QA. Date: before a second customer organisation is created.
+3. **Smoke-run B oddity**: in one of 7 smoke attempts, "Save receipt" produced no receipt (0 receipts, no screenshot, cause unknown; my script clicked right after the plan dialog closed, so a timing fault in my script is likely but not proven). Owner: QA with the developer. Date: re-run Q five more times after condition 1 is fixed; any repeat becomes an S2 on its own.
+4. **S3/S4 leftovers** (BUG-019 re-measure from Pakistan, API lacks `Permissions-Policy`, voucher tabs wrap at 375 px): owner: developer; date: next release.
+
+### Results table (live unless stated; "TDB" = test database, in-memory Postgres with the real API; scratch scripts are `e2e/qa/*-live.mjs`, screenshots `e2e/shots/qa/`)
+
+| # | Item | Result | Evidence |
+|---|---|---|---|
+| 0.1 | `/api/health`, `/api/health/db` | PASS | both `{"ok":true}` |
+| 0.2 | Headers on `/login` and `/api/health` (raw `curl -sI` below) | PASS (page) / PARTIAL (API) | page has all five; the API has `X-Frame-Options: DENY`, `CSP frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, HSTS but **no `Permissions-Policy`** (S4, see observations) |
+| 0.3 | Baseline on this machine | PASS | `api npm test` **170/170** (expected 169, one test added), smoke test **512/512**, `tsc --noEmit` clean, `eslint app components lib` clean, `check-i18n` OK (3178 keys, 8 languages), API `typecheck` clean |
+| B1 | **Blocker 1** BUG-001 approved voucher cannot be deleted | **PASS (live)** | `retest-live` B1: `DELETE` of an approved JV -> **409** "Only a draft or rejected voucher can be discarded. To cancel an approved voucher, void it with a reason."; status afterwards `approved`; B1b proper void **200**; B1c unknown id -> **404**; two clean runs (run 1 hit a script defect: its helper sent a JSON content type with no body, so submit/approve got 400; fixed in a scratch copy). In the browser (`voucher-ui-live.mjs`): the approved voucher page offers only **Void** (no Delete/Discard); Void from the screen -> status `void`; trial balance 864,509.74 = 864,509.74. |
+| B2 | **Blocker 2** BUG-002 cross-company budget link | **PASS (TDB only)** | `vitest -t "BUG-002"` 5/5; the smoke test's `v_tenant_fk_gaps` check passes (512/512). **Not proven on live** (live has one company). |
+| B3 | **Blocker 3** BUG-003 Sales Agent vs a colleague's booking | **PASS (TDB only)** | `vitest -t "BUG-003"` 7/7. **Not proven on live** (no agent account). |
+| B4 | **Blocker 4** BUG-005 plan gating of routes (incl. `leads-summary`, `budget-check`, `budget-revisions`) | **PASS (TDB only)** | `vitest test/plans-routes.test.ts` 5/5 (every route called as Basic and Professional). **Not proven on live** (live is Advanced and must not change). |
+| B5 | **Blocker 5** BUG-004 clear error + Try again, never zeros; skeleton while slow | **FAIL (intermittent)** | `states-live.mjs` (copy of `g3-states.mjs` that signs in with the env vars; blocks each screen's main request in the browser, no server change). Run 1: **22/25** (no panel on Projects, Reports, Bank Reconciliation). Run 2: **23/25** (Contracts, Leave). Different screens each time. Targeted loop `flaky-states.mjs` (5 screens x 8 repeats): **39/40** (Contracts #1: no panel after 45 s, the page showed "0 Contracts 0 Active 0"). So about **6 misses in 90 failing loads (about 7 %)**. When the panel appears it appears in 3.9-5.4 s (once 8.3 s) and Try again recovers every screen; the slow-load skeleton with no zeros **25/25 in both full runs**; a 403 shows the plain "Your role does not allow this (inventory.view)." sentence. New bug: **BUG-020**. |
+| R1 | Ten-at-once, one request id | **PASS 4/4** | `retest-live`, 4 runs: 10 x `201`, **1 distinct receipt id**, **1 receipt on the booking**, 9 replays flagged (`idempotent-replayed`), 1.9-2.4 s each. **No run made a second receipt.** |
+| R2 | 3 at once, no request id | PASS 4/4 | 3 receipts each time (old clients unchanged) |
+| R3 | Same id, different amount | PASS 4/4 | `409 This request was already sent with different details.` |
+| R4 | Browser double-click on Record receipt (`dbl-live.mjs`: same-instant `click(); click()` x3 + mouse triple-click) | **PASS 4/4** | exactly **1** receipt each; no page errors |
+| Q | Release smoke test in the browser, **twice in a row** (`smoke-live.mjs`, runs F then G, no retry) | **PASS x2** | each **25/25**: sign in (7.6-8.0 s to dashboard) -> add customer through the screen -> book (screen) -> payment plan (screen) -> receive payment (screen) -> receipt on customer statement and trial balance -> print page renders -> attachment uploaded and downloaded (sha-256 equal) -> void from the screen -> bank reconciliation opens -> Urdu kept after reload (rtl) -> English restored -> no page errors. Earlier attempts A-E were script debugging (where Void and Documents live in the screens); step 5 failed once in them (run B), see condition 3. |
+| Q+ | New checks, in each of runs F and G | **PASS** | text file `MZ...` named `.pdf` -> **415** "This file is not what its name says it is."; PDF renamed `.png` -> same 415; print of `/print/receipt/00000000-0000-0000-0000-0000000000ff` -> "This document could not be found, or you do not have access to it." in **1.4-2.1 s**; statement imported twice -> **201 then 409** "already been imported"; closing balance 9999 -> **422** with the figures ("lines lead from 1000.00 to 1700.00 ... or save it anyway"); `allowMismatch` -> **201**; same cheque number twice for the same person and bank -> **201 then 409**; second late fee while one is open -> **201 then 409** "A late fee of Rs 100.00 is already open". |
+| H | Header check (raw headers below; iframe test; nothing broke) | **PASS** | A local HTML page with `<iframe src=".../login">`: the frame shows "refused to connect" and Chrome logs "violates ... frame-ancestors 'none'" (`retest-iframe.png`). Sign-in, sign-out (back to `/login`) and signed-out `/dashboard/customers` -> `/login` work; no CSP violation, no console error; English, Urdu, Chinese, Japanese, Arabic render (screenshots `retest-<lang>.png`, fonts load, no overflow). |
+| P | Phone-width sweep `g3-overflow.mjs`, live, 320/375/768/1024 | **PASS** | **0 overflows in 128 page/width combinations**. Looked at 375 px Vouchers, Deals, booking detail, Accounts (`retest-375-*.png`): tables scroll inside their cards, nothing cut off with no way to reach it. Cosmetic only: the voucher type tabs wrap ("PIV", "DN", "JV" under the row) and the Netlify badge overlaps the last row. |
+| S6 | BUG-007 body over 1 MB | PASS | 413 "That is more information than can be sent at once." |
+| S6 | BUG-007 broken JSON / 20-digit amount | PASS | 400 / 400 (never 500) |
+| S6 | BUG-008 overlapping leave | PASS | 201 then **409** "QA-Leave Tester ... already has leave on some of these days" |
+| S6 | BUG-009 five bad requests (unknown account, unknown property/customer, duplicate CNIC, statement line without amount, cheque for unknown person) | PASS | all 4xx with plain sentences; no `constraint`, `_fkey`, `_check`, table or column names in any body |
+| S6 | BUG-010 same account both sides | PASS | created (201) but **submit refused 422**: "The account 01.01.01.0001 Owner's Capital is on both the debit and the credit side ..." |
+| S6 | BUG-014 print unknown id | PASS | see Q+ |
+| S6 | BUG-015 `/v1/me` blocked | PASS | "We can't open your workspace. We couldn't load your account just now. This is usually temporary and nothing has been lost." + **Try again** + **Sign out**, no raw server text (the blocked answer carried a marker string, it was not shown); after unblocking, Try again returns to the dashboard |
+
+### Status of the 19 original bugs after the re-test
+BUG-001 verified fixed (live). BUG-002 verified fixed (TDB). BUG-003 verified fixed (TDB). **BUG-004 NOT fully fixed: see BUG-020.** BUG-005 verified fixed (TDB). BUG-006 verified fixed (live: 4/4 ten-at-once, 4/4 browser double-click, never more than one receipt in the smoke attempts). BUG-007, 008, 009, 010 verified (live). BUG-011 verified (live: second late fee refused). BUG-012 verified (live: import twice, wrong closing balance, override). BUG-013 verified (live: 0/128). BUG-014, 015 verified (live). BUG-016 verified for pages (live); the API still lacks `Permissions-Policy` (S4, below). BUG-017 verified (live: renamed files refused; a real PDF round-trips byte for byte). BUG-018 verified (live). BUG-019 not re-measured (needs a Pakistani connection; the 3.9/4.1 MB uploads were not repeated).
+
+### Re-graded rows of the original matrix
+A14, B2, B3 (TDB), C3 (TDB), G5, G6, H2, H4, H9, H10, I2, K2, K3, N1, O6, O7, O9: **FAIL -> PASS** (live except B2, B3, C3, which are TDB only; K3 re-tested for the renamed-file cases only, not the 3.9/4.1 MB sizes; O7 re-tested for the 1 MB body only, not 6 MB). **N3 stays FAIL** (BUG-020). New counts for the 119 rows: **PASS 87, FAIL 1, NOT-RUN 31, BLOCKED 0** (was 70 / 18 / 31 / 0). The 31 NOT-RUN rows from the first run were not re-attempted.
+
+### New bugs
+
+#### BUG-020 — S2 — UX — The "couldn't load this page" panel is missing in about 1 of 15 failing loads; zero tiles stay visible
+- **Steps:** signed in on live, block the main request of a screen with browser request interception (`e2e/qa/states-live.mjs`, `flaky-states.mjs`) so it answers 500, open the screen. Repeat. Screens seen failing: Projects, Reports, Bank Reconciliation (run 1), Contracts, Leave (run 2), Contracts (targeted loop).
+- **Expected:** the panel "We couldn't load this page" with Try again within about 5 s, never zero tiles (the fix for BUG-004).
+- **Actual:** in about 7 % of attempts (6 of 90) the screen shows its normal layout with zero tiles ("0 Contracts 0 Active 0") and the panel never appears, even after 45 s with all 3 attempts used. No console error. The same screen shows the panel on the next try.
+- **Frequency:** 3/25 and 2/25 in the two full runs, 1/40 in the targeted loop. Not tied to one screen.
+- **Impact:** during a real outage a customer could believe records vanished (the original BUG-004 risk), in a minority of cases. No wrong data is saved.
+- **Suspected cause (not verified):** `components/live/page-guard.tsx`: `outcome` is latched to "ok" the first moment no request is fetching (after an 80 ms grace). If a screen registers its data request a little later (slow device, hydration), the guard has already latched "ok", so a later failure only produces the slim notice while the zero tiles remain visible. Worth reproducing with a CPU-throttled browser.
+- **Evidence:** the run counts above; no screenshot of the failing case was captured (the scripts record text only). `e2e/qa/flaky-states.mjs` reproduces it in a few minutes.
+- **Status:** **Fixed, to be re-tested on live.** Cause found and reproduced (sandbox, `e2e/qa/flaky-states.mjs` with `HIDDEN_MS=2500`): TanStack Query *pauses* a failed request's retry while the browser tab is in the background (`fetchStatus: "paused"`). The guard only counted `"fetching"`, so a paused request looked like "nothing running", the guard latched "ok" and the zero tiles showed (before the fix: **0 of 20** failing loads showed the panel, zeros every time). `components/live/page-guard.tsx` now (1) counts a paused request as still unsettled, (2) never latches "ok" until a watched request has been answered (data or a 404) or has failed, with a timer fallback only for a page that registered no request (400 ms) or whose requests never started (1.5 s), and (3) still lets a failure with nothing to show produce the full panel. After the fix: hidden-tab run **20/20**, normal run **40/40**, `g2-states.mjs` **25/25** (skeleton, panel, Try again, no zeros, 403 sentence), the six browser scripts **120/120**. CPU throttling (x6) and 400 ms network latency alone did not reproduce it. The same change adds `Permissions-Policy` to every API answer (`api/src/app.ts`) with a test that calls the API and compares the value with the pages' (`api/test/security-headers.test.ts`).
+
+### Observations that are not bugs (new)
+1. **API answers have no `Permissions-Policy`** (pages do). The retest script's header check for `/api/health` therefore fails 4 of 4; everything else it checks is present. S4: it matters little for JSON.
+2. The API answers **400** to a request that carries `content-type: application/json` with an empty body (the website never does that; the old QA helper did). Harmless for the website; a third-party client would need to omit the header.
+3. Voucher type tabs wrap at 375 px; the "Powered by Netlify" badge covers the last visible row on phones (obs. 17 of the first run).
+4. Voiding a receipt is on the Deals page, Receipts tab; the booking page lists receipts without an action. Fine, but the owner may expect it on the booking.
+5. API tests are now 170 (CLAUDE.md says 169); smoke test 512 (as expected).
+6. A late fee needs an overdue installment: a first installment inside the grace period correctly answers "This installment is not late yet".
+
+### Raw headers (live, `curl -sI`, 2026-11-04 19:47 UTC)
+```
+GET /login
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
+GET /api/health
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  (no Permissions-Policy)
+```
+
+### What was proven where
+- **Proven on live:** blockers 1 and 5 (5 failed intermittently), the ten-at-once test, the browser double-click, the smoke test twice, the header check, the sweep, all spot checks.
+- **Proven only on a test database (not on live):** blockers **2** (cross-company budget link), **3** (Sales Agent) and **4** (plan gating). Live has one company, no Sales Agent and is Advanced.
+- **Not run:** everything the first report listed as NOT-RUN; the 3.9 MB / 4.1 MB / 6 MB uploads; BUG-019 timing from Pakistan; dark mode; the screen-level lock cards for Basic/Professional.
+
+### Test data on live ByteCraft to clean up (all prefixed `QA-`; counts are the totals now on the site, which include the first run's records; accounting entries cannot be erased, only voided)
+- **Customers:** 26 (`QA-Retest <n>`, `QA-Double Click <n>`, `QA-Smoke<A..G> Buyer <n>`, `QA-DupCNIC <n>` and `QA-DupCNIC <n>b`, plus the first run's). **Properties:** 44 (`QA-Retest plot`, `QA-dbl ...`, `QA-Smoke<run> plot`, `QA-Smoke<run> late plot`, ...). **Projects:** 3 (first run).
+- **Bookings:** 31 with QA customers (28 pending, 1 confirmed, 2 cancelled). **Receipts on them: 24 still live (not voided) and 3 voided.** This session's: the four ten-at-once bookings hold 1 x 1,000 + 3 x 10 each; the double-click bookings 1 x 1,000 each; smoke runs A-E (not voided) 15,000 each; runs F and G were voided by the test. To neutralise the money, void the remaining QA receipts on the Deals page (Receipts tab) with a reason.
+- **Open late fees:** Rs 100.00 on each `QA-Smoke<run> late plot` booking (one per smoke attempt that reached step 13, so up to 7); waive them in the booking or leave them.
+- **Vouchers:** 5 void, 2 draft (`JV-00003`, `JV-00004`, safe to delete in the screen). This session's approved-then-voided JVs: `QA-Retest delete test` (2) and `QA-UI void` (1); the same-account draft from the spot check was deleted by the test.
+- **Cheques:** 8 (`QA-CHQ-<n>`, amount 5,000, status received). Cancel them in the register if wanted.
+- **Bank statements:** 16 (`QA-stmt <n>` and `QA-stmt bad <n>`, including the mismatch ones saved on purpose). Not reconciled; leave or ignore.
+- **Staff:** 1 employee `QA-Leave Tester <n>` with one cancelled leave request.
+- **Attachments:** `QA-real.pdf` (a tiny PDF) on each smoke booking, plus the first run's attachments.
+- **Your account:** the interface language was switched to Urdu/Chinese/Japanese/Arabic and back; confirmed English again (`/v1/me` shows `en`).
+- **On this machine (uncommitted, no secrets):** scratch scripts `e2e/qa/{retest-live-run,states-live,flaky-states,diag-states,diag-booking,diag-void,dbl-live,smoke-live,spot-live,headers-live,voucher-ui-live,inventory-live}.mjs` and screenshots in `e2e/shots/qa/`.
+- **Final live trial balance:** debit 864,509.74 = credit 864,509.74 (BALANCED).

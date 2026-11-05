@@ -20,26 +20,40 @@ import { useT } from "@/lib/i18n/provider";
  * A page that already has cached data shows it at once. Mark a request `meta: { quiet: true }` to keep it out of this.
  */
 
-type Snapshot = { fetching: number; failed: number };
+/**
+ * What the guard knows about the page's requests (those with a screen watching them):
+ *  fetching: running, or paused (a failed request waits to retry while the browser tab is in the background: still unsettled)
+ *  waiting:  registered but not started (disabled until something else arrives)
+ *  failed:   failed and has nothing to show
+ *  answered: delivered data, or answered 404 (a screen shows "not found" itself)
+ *  total:    every request registered so far
+ */
+type Snapshot = { fetching: number; waiting: number; failed: number; answered: number; total: number };
 
 // a missing record (404) is an answer the screen shows itself ("not found"), not a failure of the page
 const isMissing = (e: unknown) => e instanceof ApiError && e.status === 404;
-const watched = (q: Query) => q.getObserversCount() > 0 && q.meta?.quiet !== true && q.state.data === undefined && !isMissing(q.state.error);
+const observed = (q: Query) => q.getObserversCount() > 0 && q.meta?.quiet !== true;
+// a request that still has nothing to show and is not a 404 answer
+const unanswered = (q: Query) => q.state.data === undefined && !isMissing(q.state.error);
+const watched = (q: Query) => observed(q) && unanswered(q);
 
 function readSnapshot(qc: QueryClient): string {
-  let fetching = 0;
-  let failed = 0;
+  let fetching = 0, waiting = 0, failed = 0, answered = 0, total = 0;
   for (const q of qc.getQueryCache().getAll()) {
-    if (!watched(q)) continue;
-    if (q.state.fetchStatus === "fetching") fetching++;
+    if (!observed(q)) continue;
+    total++;
+    if (!unanswered(q)) { answered++; continue; }
+    // "fetching" AND "paused": TanStack pauses a failed request's retry while the tab is hidden, and a paused request is not a settled one
+    if (q.state.fetchStatus !== "idle") fetching++;
     else if (q.state.status === "error") failed++;
+    else waiting++;
   }
-  return `${fetching}|${failed}`;
+  return `${fetching}|${waiting}|${failed}|${answered}|${total}`;
 }
 
 function firstFailure(qc: QueryClient): { message: string; requestId?: string } | null {
   for (const q of qc.getQueryCache().getAll()) {
-    if (watched(q) && q.state.status === "error" && q.state.fetchStatus !== "fetching") {
+    if (watched(q) && q.state.status === "error" && q.state.fetchStatus === "idle") {
       const e = q.state.error;
       if (e instanceof ApiError) return { message: e.message, requestId: e.requestId };
       return { message: e instanceof Error ? e.message : "" };
@@ -52,10 +66,10 @@ function useSnapshot(qc: QueryClient): Snapshot {
   const raw = React.useSyncExternalStore(
     (notify) => qc.getQueryCache().subscribe(notify),
     () => readSnapshot(qc),
-    () => "0|0",
+    () => "0|0|0|0|0",
   );
-  const [fetching, failed] = raw.split("|").map(Number);
-  return { fetching: fetching ?? 0, failed: failed ?? 0 };
+  const [fetching, waiting, failed, answered, total] = raw.split("|").map(Number);
+  return { fetching: fetching ?? 0, waiting: waiting ?? 0, failed: failed ?? 0, answered: answered ?? 0, total: total ?? 0 };
 }
 
 /** A placeholder shaped like a typical list screen: heading, a row of tiles, a table. */
@@ -83,18 +97,28 @@ export function LivePageGuard({ children }: { children: React.ReactNode }) {
   const t = useT();
   const qc = useQueryClient();
   const snap = useSnapshot(qc);
-  // "started": give the page one beat to register its requests before we decide there is nothing to wait for
+  // "started": give the page one beat to register its requests before we look at them at all
   const [started, setStarted] = React.useState(false);
+  // two timers, both from mount: a page with no request at all is given 400 ms to register one; a page whose requests are
+  // all registered but none has started, failed or delivered (e.g. waiting on each other) is given 1.5 s, then shown
+  const [noRequestGrace, setNoRequestGrace] = React.useState(false);
+  const [stuckGrace, setStuckGrace] = React.useState(false);
   React.useEffect(() => {
-    const id = window.setTimeout(() => setStarted(true), 80);
-    return () => window.clearTimeout(id);
+    const ids = [window.setTimeout(() => setStarted(true), 80), window.setTimeout(() => setNoRequestGrace(true), 400), window.setTimeout(() => setStuckGrace(true), 1500)];
+    return () => ids.forEach((id) => window.clearTimeout(id));
   }, []);
   const [retrying, setRetrying] = React.useState(false);
-  // latched the first time everything has settled: "ok" (data is there) or "failed" (a request failed, nothing to show)
+  // latched the first time the page has settled: "ok" (data is there) or "failed" (a request failed, nothing to show)
   const [outcome, setOutcome] = React.useState<"ok" | "failed" | null>(null);
-  const settledAs = snap.failed > 0 ? "failed" : "ok";
-  // before the first settle we latch either way; a page that has shown its data stays "ok" (later trouble is a notice)
-  if (started && !retrying && snap.fetching === 0 && outcome !== settledAs && outcome !== "ok") setOutcome(settledAs);
+  // QA BUG-020: never decide "ok" just because nothing is running at this instant (a retry can be paused, a request can register a
+  // moment late). The page must have been answered (data, or a 404 it shows itself) or have failed. Only a page that never
+  // registered a request, or whose requests never started, falls back to a timer. (The layout observes no queries of its own,
+  // so every observed query belongs to the page.)
+  const evidence = snap.failed > 0 || snap.answered > 0;
+  const settled = snap.fetching === 0 && (evidence ? snap.waiting === 0 || stuckGrace : snap.total === 0 ? noRequestGrace : stuckGrace);
+  const target = snap.failed > 0 ? "failed" : "ok";
+  // a page that has shown its data stays "ok" (later trouble is a notice); a panel may clear when the data later arrives
+  if (started && !retrying && settled && outcome !== "ok" && outcome !== target) setOutcome(target);
 
   async function retry() {
     setRetrying(true);

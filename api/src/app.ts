@@ -75,6 +75,7 @@ export function buildApp({ config, db, verifier, cnic = null }: AppDeps): Fastif
     reply.header("x-content-type-options", "nosniff");
     reply.header("referrer-policy", "strict-origin-when-cross-origin");
     reply.header("content-security-policy", "frame-ancestors 'none'");
+    reply.header("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
   });
 
   // One place turns every failure into a clear answer; nothing technical reaches the person.
