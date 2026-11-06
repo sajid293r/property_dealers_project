@@ -32,6 +32,8 @@ type Snapshot = { fetching: number; waiting: number; failed: number; answered: n
 
 // a missing record (404) is an answer the screen shows itself ("not found"), not a failure of the page
 const isMissing = (e: unknown) => e instanceof ApiError && e.status === 404;
+// A query marked `meta: { quiet: true }` is left out (shell parts such as the top bar's cash figure observe queries of their own; counting one as
+// "the page was answered" made the guard decide "ok" about 0.7 s after a hard load, before a slow page had even started: QA BUG-020, second cause).
 const observed = (q: Query) => q.getObserversCount() > 0 && q.meta?.quiet !== true;
 // a request that still has nothing to show and is not a 404 answer
 const unanswered = (q: Query) => q.state.data === undefined && !isMissing(q.state.error);
@@ -99,21 +101,48 @@ export function LivePageGuard({ children }: { children: React.ReactNode }) {
   const snap = useSnapshot(qc);
   // "started": give the page one beat to register its requests before we look at them at all
   const [started, setStarted] = React.useState(false);
-  // two timers, both from mount: a page with no request at all is given 400 ms to register one; a page whose requests are
-  // all registered but none has started, failed or delivered (e.g. waiting on each other) is given 1.5 s, then shown
-  const [noRequestGrace, setNoRequestGrace] = React.useState(false);
+  // BUG-020 (second cause): on a slow first visit the page's own code can arrive long after the guard has mounted; until then the route's
+  // loading placeholder is on screen and the page has registered no request. "This page makes no request" may therefore only be concluded
+  // once the page itself is running. Until then the children stay hidden behind the skeleton, so nothing the page paints on its first
+  // render (zero tiles) can ever be seen; deciding early and taking it back afterwards always shows a flash.
+  const wrapRef = React.useRef<HTMLDivElement>(null);
+  const [hydrated, setHydrated] = React.useState(false);
+  const [settleAfterHydration, setSettleAfterHydration] = React.useState(false);
+  const [giveUp, setGiveUp] = React.useState(false);
   const [stuckGrace, setStuckGrace] = React.useState(false);
   React.useEffect(() => {
-    const ids = [window.setTimeout(() => setStarted(true), 80), window.setTimeout(() => setNoRequestGrace(true), 400), window.setTimeout(() => setStuckGrace(true), 1500)];
-    return () => ids.forEach((id) => window.clearTimeout(id));
+    // While the page's own code is still downloading, Next shows the route's loading placeholder (app/dashboard/loading.tsx, marked
+    // data-route-loading) inside this wrapper; the page replaces it the moment it runs. So "the page is running" = the placeholder is gone.
+    // (Checked in the browser: with the page's code delayed 6 s the placeholder is there for 6 s. If it were ever renamed, the 20 s limit
+    // below keeps pages usable, and e2e/qa/guard-timeline.mjs fails loudly: pages without requests would sit on the skeleton for 20 s.)
+    // Both signals are needed: right after a hard load the wrapper first holds the page's server-rendered markup (no placeholder yet, but
+    // none of its elements has run), and only later the placeholder. Elements React has hydrated or created carry a private "__reactFiber$"
+    // key (checked on every screen: a running page has no element without it).
+    const isHydrated = () => {
+      const root = wrapRef.current;
+      if (!root || root.querySelector("[data-route-loading]")) return false;
+      for (const node of Array.from(root.querySelectorAll("*")).slice(0, 4000)) {
+        if (!Object.keys(node).some((k) => k.startsWith("__reactFiber$"))) return false;
+      }
+      return true;
+    };
+    const poll = window.setInterval(() => { if (isHydrated()) { setHydrated(true); window.clearInterval(poll); } }, 50);
+    const ids = [window.setTimeout(() => setStarted(true), 80), window.setTimeout(() => setStuckGrace(true), 1500), window.setTimeout(() => setGiveUp(true), 20000)];
+    return () => { window.clearInterval(poll); ids.forEach((id) => window.clearTimeout(id)); };
   }, []);
+  React.useEffect(() => {
+    // the page's requests register in the same commit that hydrates it; a short beat covers the passive effects
+    if (!hydrated) return;
+    const id = window.setTimeout(() => setSettleAfterHydration(true), 250);
+    return () => window.clearTimeout(id);
+  }, [hydrated]);
+  const noRequestGrace = settleAfterHydration || giveUp;
   const [retrying, setRetrying] = React.useState(false);
   // latched the first time the page has settled: "ok" (data is there) or "failed" (a request failed, nothing to show)
   const [outcome, setOutcome] = React.useState<"ok" | "failed" | null>(null);
   // QA BUG-020: never decide "ok" just because nothing is running at this instant (a retry can be paused, a request can register a
   // moment late). The page must have been answered (data, or a 404 it shows itself) or have failed. Only a page that never
-  // registered a request, or whose requests never started, falls back to a timer. (The layout observes no queries of its own,
-  // so every observed query belongs to the page.)
+  // registered a request (once it is running), or whose requests never started, falls back to a timer. (Shell queries are excluded in `observed`.)
   const evidence = snap.failed > 0 || snap.answered > 0;
   const settled = snap.fetching === 0 && (evidence ? snap.waiting === 0 || stuckGrace : snap.total === 0 ? noRequestGrace : stuckGrace);
   const target = snap.failed > 0 ? "failed" : "ok";
@@ -136,7 +165,7 @@ export function LivePageGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative" aria-busy={loading}>
-      <div className={loading || failed ? "invisible" : undefined} inert={loading || failed ? true : undefined}>{children}</div>
+      <div ref={wrapRef} className={loading || failed ? "invisible" : undefined} inert={loading || failed ? true : undefined}>{children}</div>
       {loading && started && (
         <div className="absolute inset-x-0 top-0">
           <PageSkeleton />

@@ -23,12 +23,13 @@ const go = async (p) => { await page.goto(BASE + p, { waitUntil: "domcontentload
 
 console.log(`=== SMOKE RUN ${RUN} ${new Date().toISOString()}`);
 const t0 = Date.now();
-await page.goto(BASE + "/login", { waitUntil: "networkidle2", timeout: 120000 });
+await page.goto(BASE + "/login", { waitUntil: "domcontentloaded", timeout: 150000 });
+await page.waitForSelector("#email", { timeout: 150000 });
 await sleep(2500);
 await page.type("#email", process.env.QA_EMAIL);
 await page.type("#password", process.env.QA_PASSWORD);
 await page.click("button[type=submit]");
-await page.waitForFunction(() => location.pathname.startsWith("/dashboard"), { timeout: 60000 });
+await page.waitForFunction(() => location.pathname.startsWith("/dashboard"), { timeout: 150000 });
 check("1 signed in, dashboard loads", await waitText("ByteCraft", 30000), `${Date.now() - t0} ms`);
 const token = await page.evaluate(() => { for (const k of Object.keys(localStorage)) if (/auth-token$/.test(k)) return JSON.parse(localStorage[k]).access_token; });
 const co = (await (await fetch(API + "/v1/me", { headers: { authorization: `Bearer ${token}` } })).json()).companies[0].companyId;
@@ -56,9 +57,9 @@ await go("/dashboard/deals");
 await waitText("New booking", 20000);
 await clickText("New booking", "button"); await sleep(900);
 await clickText("Choose an available property", "[role=combobox]"); await sleep(600);
-const gotProp = await clickText(title, "[role=option]"); await sleep(400);
+let gotProp = false; for (let i = 0; i < 60 && !gotProp; i++) { gotProp = await clickText(title, "[role=option]"); if (!gotProp) await sleep(500); } await sleep(400);
 await clickText("Choose a customer", "[role=combobox]"); await sleep(600);
-const gotCust = await clickText(cname, "[role=option]"); await sleep(400);
+let gotCust = false; for (let i = 0; i < 60 && !gotCust; i++) { gotCust = await clickText(cname, "[role=option]"); if (!gotCust) await sleep(500); } await sleep(400);
 await clickText("Create booking", "[role=dialog] button");
 check("3 booking created, its page opens", gotProp && gotCust && (await waitText("Payment plan", 40000)), `property option ${gotProp}, customer option ${gotCust}`);
 const bookingId = page.url().split("/").pop();
@@ -75,8 +76,13 @@ check("4 payment plan created", await waitText("Down payment", 20000));
 // receipt
 await sleep(600);
 await clickText("Receive payment", "button"); await sleep(800);
-const amt = await page.$$("[role=dialog] input[inputmode='decimal'], [role=dialog] input[placeholder='0.00']");
-await amt[0].type("15000"); await sleep(300);
+// only the dialog titled "Receive payment" counts: the payment-plan dialog can still be fading out when this one opens, and typing into it
+// looked like a vanishing amount (QA "BUG-021", withdrawn: it was this script, not the product; see e2e/qa/bug021.mjs)
+let amtField = null;
+for (let i = 0; i < 80 && !amtField; i++) { const h = await page.evaluateHandle(() => { const d = [...document.querySelectorAll("[role=dialog]")].find((x) => x.textContent.includes("Receive payment") && x.querySelector("input[inputmode=decimal]")); return d ? d.querySelector("input[inputmode=decimal]") : null; }); amtField = h.asElement(); if (!amtField) await sleep(150); }
+await amtField.click(); await page.keyboard.type("15000"); await sleep(500);
+const typedOk = await page.evaluate(() => { const d = [...document.querySelectorAll("[role=dialog]")].find((x) => x.textContent.includes("Receive payment")); const i = d?.querySelector("input[inputmode=decimal]"); return i ? i.value : null; });
+if (!typedOk) { console.log("   NOTE amount field was EMPTY after typing"); await shot("5-amount-lost"); }
 await clickText("Save receipt", "[role=dialog] button");
 const rok = await waitText("RCT-", 20000);
 check("5 receipt saved with a number", rok, rok ? "" : "dialogs/toasts: " + (await dlg()));
@@ -193,15 +199,29 @@ check("15 bank reconciliation opens", (await waitText("Bank Reconciliation", 250
 
 // language persists, then back to English
 const docLang = () => page.evaluate(() => ({ lang: document.documentElement.lang, dir: document.documentElement.dir }));
-const openMenu = async () => { const h = await page.evaluateHandle(() => [...document.querySelectorAll("header button")].find((b) => b.querySelector("svg.lucide-globe"))); await h.asElement()?.click(); await sleep(700); };
-await openMenu(); await clickText("اردو", "[role=menuitem]"); await sleep(2500);
+const openMenu = async () => {
+  for (let k = 0; k < 12; k++) {
+    const h = await page.evaluateHandle(() => [...document.querySelectorAll("header button")].find((b) => b.querySelector("svg.lucide-globe")) ?? null);
+    if (h.asElement()) await h.asElement().click();
+    await sleep(900);
+    if (await page.evaluate(() => document.querySelectorAll("[role=menuitem]").length > 0)) return true;
+    await sleep(1500);
+  }
+  return false;
+};
+await openMenu(); await clickText("اردو", "[role=menuitem]");
+for (let i = 0; i < 60 && (await docLang()).lang !== "ur"; i++) await sleep(500);
 const d1 = await docLang();
-await page.reload({ waitUntil: "domcontentloaded" }); await sleep(3500);
+await page.reload({ waitUntil: "domcontentloaded", timeout: 120000 });
+await waitText("ByteCraft", 120000); await sleep(2500); // the language attribute is server-rendered at once; wait for the page itself
+for (let i = 0; i < 60 && (await docLang()).lang !== "ur"; i++) await sleep(500);
 const d3 = await docLang();
 check("16 Urdu chosen, kept after reload (rtl)", d1.lang === "ur" && d3.lang === "ur" && d3.dir === "rtl", JSON.stringify([d1, d3]));
-await openMenu(); await clickText("English", "[role=menuitem]"); await sleep(2500);
+await openMenu(); await clickText("English", "[role=menuitem]");
+for (let i = 0; i < 60 && (await docLang()).lang !== "en"; i++) await sleep(500);
 const d4 = await docLang();
 check("16b English restored", d4.lang === "en", JSON.stringify(d4));
+await api("PATCH", "/v1/me", { language: "en" }); // safety net: never leave the owner account on another language
 check("no page errors in the browser", errors.length === 0, errors.slice(0, 2).join(" | "));
 await browser.close();
 console.log(`SUMMARY RUN ${RUN}: ${res.filter(Boolean).length}/${res.length} pass`);

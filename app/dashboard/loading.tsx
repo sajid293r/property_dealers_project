@@ -7,7 +7,9 @@ import { Card } from "@/components/ui/card";
  */
 export default function DashboardLoading() {
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5" aria-busy="true" aria-live="polite">
+    // data-route-loading: LivePageGuard waits until this placeholder is gone before it concludes that a page makes no request of its own
+    // (the page's own code has not arrived while it is shown; QA BUG-020)
+    <div className="mx-auto max-w-[1400px] space-y-5" aria-busy="true" aria-live="polite" data-route-loading>
       <div className="flex items-center gap-4">
         <Skeleton className="size-12 rounded-2xl" />
         <div className="space-y-2">

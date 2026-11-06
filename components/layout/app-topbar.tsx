@@ -28,7 +28,7 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useT } from "@/lib/i18n/provider";
 
 export function AppTopbar() {
-  const { data: accounts, isLoading } = useAccounts();
+  const { data: accounts, isLoading } = useAccounts({ quiet: true }); // the top bar's cash figure is not a page's data: the page guard ignores it
   const totalCash = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
   const { company, live } = useCompany();
   const { email, signOut, liveAvailable } = useAuth();

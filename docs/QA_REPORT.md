@@ -401,6 +401,8 @@ Commit under test: `39ba5af` "Send security headers from Next.js and the API" (m
 
 ### Recommendation: **GO with conditions**
 
+> **Latest (round 2, BUG-020 fix on live): still GO with conditions, but condition 1 is NOT met: the fix works for a paused retry yet zero tiles with no error panel still appear on a screen's first visit (second cause, see "Re-test round 2" at the end of this section). Not recommended to onboard the first customer until it is closed.**
+
 In plain words: every fix that could be proven now holds. The books balanced at every check (live trial balance 864,509.74 = 864,509.74 at the end). An approved voucher can no longer be deleted; ten receipts sent at the same instant with one request id made exactly one receipt, four runs out of four; the browser double-click made one receipt every time; the smoke test passed twice in a row; the security headers are live and the site refuses to be framed; no page scrolls sideways at any phone width. **One of the five blockers did not fully pass:** the "failing request shows a clear error, never zeros" fix (BUG-004) works in about 14 of 15 cases but **intermittently (about 1 in 15 failing loads) still shows zero tiles with no error panel**. That is a new, narrower bug (BUG-020, S2). It only appears while the server is failing and no data is lost or wrong, so under section 8 of the brief it is a condition, not a block. If you consider "a customer might see 0 during an outage" unacceptable for the first customer, treat condition 1 as a blocker and hold the launch until it is fixed.
 
 Rule check (section 8): no S1 open **yes**; no cross-company exposure **none seen** (but see "proven only on a test database"); books balance at every check **yes**; no role/plan bypass found **none** (on test databases); ten-at-once never made a second receipt **yes (4/4)**; smoke test passed twice in a row **yes (runs F and G, 25/25 each)**.
@@ -489,7 +491,7 @@ GET /api/health
 - **Proven only on a test database (not on live):** blockers **2** (cross-company budget link), **3** (Sales Agent) and **4** (plan gating). Live has one company, no Sales Agent and is Advanced.
 - **Not run:** everything the first report listed as NOT-RUN; the 3.9 MB / 4.1 MB / 6 MB uploads; BUG-019 timing from Pakistan; dark mode; the screen-level lock cards for Basic/Professional.
 
-### Test data on live ByteCraft to clean up (all prefixed `QA-`; counts are the totals now on the site, which include the first run's records; accounting entries cannot be erased, only voided)
+### Test data on live ByteCraft to clean up — round 1 snapshot (superseded by the updated list in "Re-test round 2") (all prefixed `QA-`; counts are the totals now on the site, which include the first run's records; accounting entries cannot be erased, only voided)
 - **Customers:** 26 (`QA-Retest <n>`, `QA-Double Click <n>`, `QA-Smoke<A..G> Buyer <n>`, `QA-DupCNIC <n>` and `QA-DupCNIC <n>b`, plus the first run's). **Properties:** 44 (`QA-Retest plot`, `QA-dbl ...`, `QA-Smoke<run> plot`, `QA-Smoke<run> late plot`, ...). **Projects:** 3 (first run).
 - **Bookings:** 31 with QA customers (28 pending, 1 confirmed, 2 cancelled). **Receipts on them: 24 still live (not voided) and 3 voided.** This session's: the four ten-at-once bookings hold 1 x 1,000 + 3 x 10 each; the double-click bookings 1 x 1,000 each; smoke runs A-E (not voided) 15,000 each; runs F and G were voided by the test. To neutralise the money, void the remaining QA receipts on the Deals page (Receipts tab) with a reason.
 - **Open late fees:** Rs 100.00 on each `QA-Smoke<run> late plot` booking (one per smoke attempt that reached step 13, so up to 7); waive them in the booking or leave them.
@@ -501,3 +503,86 @@ GET /api/health
 - **Your account:** the interface language was switched to Urdu/Chinese/Japanese/Arabic and back; confirmed English again (`/v1/me` shows `en`).
 - **On this machine (uncommitted, no secrets):** scratch scripts `e2e/qa/{retest-live-run,states-live,flaky-states,diag-states,diag-booking,diag-void,dbl-live,smoke-live,spot-live,headers-live,voucher-ui-live,inventory-live}.mjs` and screenshots in `e2e/shots/qa/`.
 - **Final live trial balance:** debit 864,509.74 = credit 864,509.74 (BALANCED).
+
+
+---
+
+## Re-test round 2 — BUG-020 fix (`a285f6b`) on live (2026-11-05, evening, about 17:25-19:30 UTC)
+
+Run by the QA lead on the live site (seeded ByteCraft, `QA-` records only). Nothing was fixed and nothing was committed. The sign-in password in your message was still the placeholder, so I reused the one you gave earlier in this session for the same account; it was used only as a process environment variable and is in no file, script, log, screenshot or this report.
+
+### Final verdict: **GO with conditions, and condition 1 (BUG-020) is NOT met**
+
+The paused-retry fix is on live and works (hidden-tab case: the zeros are gone). But the guard **still shows zero tiles with no error panel on a screen's first visit when the screen's code arrives late**, which is the original BUG-004 symptom. It is an S2 under the brief's rules (no wrong data, only while the server is failing), so the verdict stays "GO with conditions", but I do **not** recommend onboarding the first customer until BUG-020 is closed again, and I would re-test on a normal connection too. The security headers pass (all five on both the page and the API). The release smoke test passes five in a row with the corrected script, and the one earlier "Save receipt" failure is explained (new minor bug BUG-021, below).
+
+### Results of round 2
+
+| # | Item | Result | Evidence |
+|---|---|---|---|
+| 1a | `states-live.mjs`, 25 screens, run 1 | **FAIL 20/25** | no panel on Quotations (zero tiles visible), Service invoices, Contracts, Vouchers (`0 vouchers`), Expenses |
+| 1b | `states-live.mjs`, run 2 | **FAIL 21/25** | no panel on Service invoices, Cheques, Contractors, Budgets. (Before the fix the same script gave 22/25 and 23/25: **no improvement on live**.) |
+| 1c | `flaky-states.mjs`, 40 loops, run 1 | stopped at 9 loops (I stopped it to investigate) | 8 panels, 1 miss (Contracts #1) |
+| 1d | `flaky-states.mjs`, 40 loops, run 2 (complete) | **FAIL 39/40** | miss: Bank Reconciliation #1 (page showed its normal layout, no panel, after 45 s) |
+| 1e | `flaky-states.mjs` with `HIDDEN_MS=2500` (a tab hidden for the first 2.5 s of each load; 20 loops) | **18/20** | the 2 misses (Contracts #1, Bank Reconciliation #1) are first visits, not paused retries; the paused-retry zeros of the sandbox repro (0/20 before the fix) do not appear. A first attempt of this run crashed at sign-in (60 s script limit on the slow connection) and was repeated with a 150 s limit. |
+| 1f | Frame-by-frame probe (`timeline-live.mjs`), failing Contracts load | warm cache **8/8** OK; cold cache (browser cache off) **4/6 OK, 1 MISS, 1 blank** | warm: skeleton at about 1 s, panel at about 4.3 s, never zeros. Cold miss #6: skeleton 4.8 s, **page with zero tiles at 5.8 s**, the page's first request only at 5.7 s, a slim "Some information couldn't be loaded" notice at 8.9 s, never the panel. Cold #5: the screen stayed **blank for 40 s** (nothing rendered). |
+| 2 | Release smoke test five times in a row (`smoke-live.mjs`) | **PASS 5 in a row with the corrected script** (M1-M5, 25/25 each; before that L2-L5 25/25, so 9 consecutive passes) | the earlier attempts are listed below and are explained; none is a failure of the sale / receipt / void / upload / statement / cheque / late-fee flow except the lost amount (BUG-021) |
+| 3 | Header check on `/login` and `/api/health` | **PASS** | all five headers on both (raw output below) |
+
+**Smoke attempts in order** (every attempt is reported): H1-H5 (the batch you asked for first): H1 and H4 timed out at sign-in (script limit 60 s; the site's static files were downloading at 5-27 s each from this machine), H2 failed at "choose a property" after a 33 s sign-in, H3 24/25 (the Urdu check read the page before the language had switched), H5 25/25. J1-J5: J1 24/25 (could not switch back to English on the slow page and left the account on Urdu, so J2-J5 stopped at the first screen because all labels were in Urdu; English was restored through the API straight away and confirmed). K1-K5: 24/25 each, all at the same step "English restored" (script waited too early after the reload, before the page was usable); everything else passed. L1-L5: L1 failed at "Save receipt" (BUG-021), L2-L5 25/25. M1-M5: 25/25 each (M5 needed the amount retyped once, BUG-021). After H the script was changed to wait for conditions instead of fixed pauses and to put the language back to English through the API at the end; these are test-script changes only, the site was not changed.
+
+**Why sign-in was slow today:** the page's static files (JavaScript, CSS, fonts) took 5-27 s each to download in the timing probe (`signin-timing-live.mjs`; sign-in itself, `POST` to Supabase, took 0.8-2.8 s and the API 0.7 s). A single 527 KB file downloads at about 240 KB/s from this machine (an unrelated site: 870 KB/s; `/api/health` takes 1.4-1.7 s, it was about 0.4 s on 2026-11-04). It is most likely this connection and the CDN together, not the application, but two of five early smoke attempts and one of four timing probes did not reach the dashboard within 60-90 s, so **sign-in on a slow connection is a risk worth re-measuring from a Pakistani office connection** (a section 8 NO-GO item if it fails more than rarely there).
+
+### BUG-020 (update): still reproducible on live, with a second cause
+
+- **What is fixed:** the paused retry (a failed request waiting while the tab is in the background) no longer counts as "nothing running"; confirmed on the sandbox (0/20 before, 20/20 after) and on live (hidden-tab run shows no paused-retry zeros).
+- **What is still wrong:** on a screen's **first visit** (nothing cached) when its code arrives late, the guard decides "ok" about 400 ms after it has appeared if the page has not registered a request yet (the 400 ms `noRequestGrace`), so the page shows its zero tiles; when its request then fails there is only the slim notice, never the panel. Live evidence: the cold-cache probe (miss #6 above) and the pattern of every miss in rounds 1 and 2: always a screen opened for the first time in that browser session (Contracts #1, Bank Reconciliation #1, the first Sales/Finance screens in `states-live`). It did not show in my sandbox because the code there arrives instantly.
+- **Frequency on live:** `states-live` 4-5 screens of 25 (16-20 %), `flaky-states` 1 in 40, `hidden` 2 in 20, cold-cache probe 1 in 6 (plus 1 blank).
+- **Suspected cause (not verified):** `components/live/page-guard.tsx`: `settled` accepts `snap.total === 0 && noRequestGrace` (400 ms). A short timer cannot tell "this page makes no request" from "this page's code has not loaded yet". Possible direction for the developer: do not latch "ok" on a timer alone while the page body has not rendered yet (for example let the page announce itself when it mounts), or use a much longer cap; also test on a throttled network (Chrome "Slow 3G" with the cache disabled), which reproduces it locally without a live site.
+- **Impact:** during an outage, on a first visit and a slow connection, a customer could see zero tiles instead of an error, as in the original BUG-004. No wrong data is saved.
+- **Blank screen on cold loads:** in one cold-cache probe the screen stayed blank for 40 s while its code was downloading (no skeleton); a person on a slow line would see an empty page. Related to the same slowness; worth a skeleton as soon as the layout is on screen.
+
+### BUG-021 — S3 — UX — Receive payment: the typed amount can vanish if the dialog is opened right after the payment plan is saved
+- **Steps (live):** create a booking, set the payment plan (toast "Payment plan created"), immediately press Receive payment and type 15,000.
+- **Expected:** the amount stays. **Actual:** in 3 of about 18 smoke attempts that reached this step (earlier run B, run L1 and run M5) the field was empty after typing (`0.00` placeholder) and the **Save receipt** button was disabled, so **no receipt was created and nothing was half-saved**; retyping works (M5). That is the "one earlier Save receipt failure": no wrong data, no duplicate, no error message, the person just has to type again.
+- **Evidence:** screenshots `e2e/shots/qa/smoke-L1-5-receipt.png` and `smoke-M5-5-amount-lost.png` (the plan-created toast is still on screen in M5); an isolated probe on a settled page (`receipt-input-probe-live.mjs`, typing after 0-1000 ms, 8 tries) lost the amount **0 of 8** times, so the trigger is the dialog being open while the booking data is still refreshing after the plan was saved.
+- **Suspected cause (not verified):** the form is reset when the booking refreshes after the plan is created (the dialog keeps `amount` in its own state in `components/live/receipt-dialog.tsx`, so something remounts the dialog or its form at that moment). Severity S3 (retype), frequency about 1 in 6 when done within about 2 s of saving the plan.
+
+### Raw headers (live, `curl -s -D -`, 2026-11-05 17:26 UTC)
+```
+GET /login                                         GET /api/health  (same on /api/health/db)
+  Content-Security-Policy: frame-ancestors 'none';   Content-Security-Policy: frame-ancestors 'none'
+    base-uri 'self'; form-action 'self';             Permissions-Policy: camera=(), microphone=(),
+    object-src 'none'                                  geolocation=(), payment=(), usb=()
+  Permissions-Policy: camera=(), microphone=(),      Referrer-Policy: strict-origin-when-cross-origin
+    geolocation=(), payment=(), usb=()               Strict-Transport-Security: max-age=31536000;
+  Referrer-Policy: strict-origin-when-cross-origin     includeSubDomains; preload
+  Strict-Transport-Security: max-age=31536000;       X-Content-Type-Options: nosniff
+    includeSubDomains; preload                       X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+```
+The API now sends `Permissions-Policy` too (S4 from round 1 closed).
+
+### Conditions (updated)
+1. **BUG-020, second cause** (S2): developer, before the first customer is onboarded. Re-test: `states-live.mjs` 25/25 twice in a row **and** `flaky-states.mjs` 40/40 on live, plus the cold-cache probe (`COLD=1 LOOPS=20 node e2e/qa/timeline-live.mjs`) with no "ZERO-TILES" line.
+2. Prove blockers 2, 3 and 4 on live (second company, Sales Agent, Basic/Professional organisation): owner provides the accounts, QA repeats; before a second customer organisation exists.
+3. **Sign-in on a slow connection** (re-measure from a Pakistani office line; consider a skeleton as soon as the layout is on screen): owner and developer, before go-live.
+4. **BUG-021** (S3, retype of a vanished amount), BUG-019 (large upload from Pakistan), voucher tabs wrap at 375 px: developer, next release.
+
+The earlier condition 3 (the unexplained "Save receipt" failure) is **closed**: explained as BUG-021.
+
+### Updated test data on live ByteCraft to clean up (all prefixed `QA-`; totals now on the site, including every earlier round; accounting entries cannot be erased, only voided)
+- **Customers 45** (`QA-Retest`, `QA-Double Click`, `QA-Smoke<run> Buyer <n>` for runs A-G, H-M, `QA-DupCNIC`, plus the first run's). **Properties 86.** **Projects 3.** **Bookings 67** (64 pending, 1 confirmed, 2 cancelled).
+- **Receipts on them: 24 still live (not voided) and 20 voided.** All of this evening's smoke receipts were voided by the test; the 24 live ones are from the first run, the ten-at-once runs, the double-click bookings and smoke runs A-E of the first re-test round (void them on the Deals page, Receipts tab, with a reason).
+- **Open late fees:** Rs 100.00 on each `QA-Smoke<run> late plot` booking, about 24 in total (one per smoke attempt that reached step 13); waive them or leave them.
+- **Vouchers:** 5 void, 2 draft (`JV-00003`, `JV-00004`, safe to delete in the screen).
+- **Cheques 26** (`QA-CHQ-<n>`, Rs 5,000, received; cancel in the register if wanted). **Bank statements 54** (`QA-stmt <n>`, `QA-stmt bad <n>`; unreconciled, can be ignored).
+- **Staff:** 1 (`QA-Leave Tester <n>`, one cancelled leave request). **Attachments:** `QA-real.pdf` on each smoke booking.
+- **Your account:** the interface language is **English** (restored and confirmed with `/v1/me`: `en`) after the tests switched it to Urdu and back.
+- **Final live trial balance:** debit 1,376,309.74 = credit 1,376,309.74 (BALANCED).
+- **On this machine (uncommitted, no secrets):** new scratch scripts `e2e/qa/{timeline-live,signin-timing-live,receipt-input-probe-live,restore-lang-live,run-local}.mjs` in addition to the ones listed in round 1 (`smoke-live.mjs`, `flaky-states.mjs`, `states-live.mjs` were edited to wait for conditions and to take `HIDDEN_MS`, `LATENCY`, `THROTTLE`, `REPEAT`, `API`); screenshots in `e2e/shots/qa/`.
+
+### Fix status after round 2 (sandbox; not yet re-tested on live)
+
+- **BUG-020, second cause: fixed on the sandbox.** Reproduced against the old guard with the screen's own code delayed 6 s (`PAGE_CHUNK_DELAY=6000 node e2e/qa/flaky-states.mjs`): **0 of 15** failing loads showed the panel (zero tiles plus the slim notice, exactly the live symptom). Two causes: (1) the guard decided "ok" about 0.4 s after mounting when no request had registered, long before a slow page's code arrived; (2) the top bar's own demo-data query (`useAccounts`) was counted as "the page was answered", which settled every page about 0.7 s after a hard load whatever the page was doing. A "provisional ok that reverts" version was tried and rejected: the page paints its zero tiles once before the guard can revert (150-300 ms flash). Final fix (`components/live/page-guard.tsx`, `app/dashboard/loading.tsx`, `lib/hooks/use-data.ts`, `components/layout/app-topbar.tsx`): a page with no request of its own is concluded only after the page is running (the route's `data-route-loading` placeholder is gone and every element is hydrated), and the top bar's query is `quiet`. Results on the new build: slow page code **40/40**, hidden tab (`HIDDEN_MS=2500`) **20/20**, plain **40/40**, `g2-states.mjs` **25/25**, the six original browser scripts **120/120**, `guard-timeline.mjs` **0 false zeros** with and without slow page code (page appears at the moment its data does), account and settings (no requests of their own) open in about 0.5 s normally and as soon as their code runs when it is slow. tsc, eslint, i18n, 171 API tests clean. **Still to do: deploy and re-run `states-live.mjs` / `flaky-states.mjs` / the cold-cache probe on live.**
+- **BUG-021: withdrawn (a QA error, not a product bug).** The "vanishing amount" came from my smoke script selecting the first `[role=dialog]` input on the page, which in those runs was the **payment-plan dialog still fading out**; the keystrokes went into a closing dialog (the screenshots show the Receive payment dialog open and untouched). With only the "Receive payment" dialog targeted and a click-then-type input (`e2e/qa/bug021.mjs`, plan saved then dialog opened after 0-2000 ms), the amount was lost in **0 of 30** tries on the sandbox, and the old selector reproduces the "loss" in 5 of 12. No product change. `smoke-live.mjs` now targets the right dialog. The round-2 sections above that call BUG-021 a minor product bug should be read as superseded.

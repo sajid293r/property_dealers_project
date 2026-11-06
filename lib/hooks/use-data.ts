@@ -31,9 +31,12 @@ import {
  * Reads a collection for the active company. Each company has its own query
  * cache (see QueryProvider), so the key stays a plain collection name.
  */
-function useCompanyQuery<T>(key: string, fetcher: (companyId: string) => Promise<T>) {
-  const { company } = useCompany();
-  return useQuery({ queryKey: [key], queryFn: () => fetcher(company.id) });
+function useCompanyQuery<T>(key: string, fetcher: (companyId: string) => Promise<T>, quiet = false) {
+  const { company, live } = useCompany();
+  // quiet: LivePageGuard ignores it (for shell parts that are not a page's own data; see components/live/page-guard.tsx). In live mode it gets its
+  // own key so the flag can never be overwritten by a screen that reads the same collection; in the demo the key stays shared on purpose
+  // (the demo's dialogs update it with setQueryData(["accounts"]) and the top bar must follow).
+  return useQuery({ queryKey: quiet && live ? ["shell", key] : [key], queryFn: () => fetcher(company.id), meta: quiet ? { quiet: true } : undefined });
 }
 
 export const useUnits = () => useCompanyQuery("units", unitsService.list);
@@ -41,7 +44,7 @@ export const useCustomers = () => useCompanyQuery("customers", customersService.
 export const useDeals = () => useCompanyQuery("deals", dealsService.list);
 export const useLeads = () => useCompanyQuery("leads", leadsService.list);
 export const useStaff = () => useCompanyQuery("staff", staffService.list);
-export const useAccounts = () => useCompanyQuery("accounts", accountsService.list);
+export const useAccounts = (opts?: { quiet?: boolean }) => useCompanyQuery("accounts", accountsService.list, opts?.quiet);
 export const useTransactions = () => useCompanyQuery("transactions", accountsService.transactions);
 export const useExpenses = () => useCompanyQuery("expenses", expensesService.list);
 export const useContracts = () => useCompanyQuery("contracts", contractsService.list);
